@@ -41,24 +41,6 @@ class ShowElem(object):
     def format(self):
         pass
 
-    # def match(self, title):
-    #     title = match.format_title(title)
-
-    #     # make sure is in match terms
-    #     reg = r"(\]|^)\s*(%s)([^-&\w]|$)" % r"|".join(self.match_terms())
-    #     matches = re.search(reg, title, re.IGNORECASE)
-
-    #     # make sure does not match something different
-    #     # e.g. if we want a season, make sure it doesn't look like an episode
-    #     um_terms = self.unmatch_terms()
-    #     if um_terms:
-    #         ureg = r"(^|[^-&\w])(%s)([^-&\w]|$)" % r"|".join(um_terms)
-    #         unmatches = re.search(ureg, title, re.IGNORECASE)
-    #     else:
-    #         unmatches = False
-
-    #     return matches and not unmatches
-
 
 class ShowParentElem(dict):
 
@@ -161,17 +143,6 @@ class Show(ShowParentElem, ShowElem):
     def search_terms(self):
         return set(map(match.format_title, self.titles))
 
-    # def match_terms(self):
-    #     m_terms = []
-    #     for term in map(re.escape, self.search_terms()):
-    #         m_terms.append(r"%s(?:$|.*(?:complete|batch|collection))" % term)
-    #     return m_terms
-
-    # def unmatch_terms(self):
-    #     return [
-    #         r"S(?:eason)?\s*\d+"
-    #     ]
-
     def match(self, f, total=True):
         if total and not (f.season is None and f.episode is None):
             return False
@@ -238,42 +209,6 @@ class Season(ShowParentElem, ShowElem):
                 else:
                     terms.append(t)
         return terms
-
-    # def match_terms(self):
-    #     terms = []
-    #     for n in self.names(True):
-    #         for t in n["titles"]:
-    #             if t == "":
-    #                 continue
-    #             if "senum" in n:
-    #                 terms.append(r"%s[\s\-]+(?:S(?:eason?))?\s*0*%s"
-    #                              % (t, n["senum"]))
-    #             else:
-    #                 terms.append(re.escape(t))
-    #     return terms
-
-    # def unmatch_terms(self):
-    #     suffixes = [
-    #         # must not contain an episode number
-    #         r"(?:E|x|\s)\d+",
-    #         # must not contain common season episode combos
-    #         r"S\d+\w+E\d+",
-    #         r"\d+x\d+",
-    #         # must not contain multiple seasons
-    #         r"[,\-&]\s*\d+",
-    #         # must not contain the word episode
-    #         r"episodes?",
-    #         # no promotional material
-    #         "trailer",
-    #         "preview"
-    #     ]
-
-    #     terms = []
-    #     for term in self.match_terms():
-    #         for suffix in suffixes:
-    #             terms.append(r"%s\s*%s" % (term, suffix))
-
-    #     return terms
 
     def match(self, f, total=True):
         if total and f.episode is not None:
@@ -412,28 +347,6 @@ class Episode(ShowElem):
                     terms += ["%s %s" % (t, et)
                               for et in n["eptitles"] if et != ""]
         return terms
-
-    # def match_terms(self):
-    #     terms = []
-    #     for n in self.names(True):
-    #         suffixes = []
-    #         if "senum" in n and "epnum" in n:
-    #             suffixes.append(r"S0*%d[\s\-]*(?:[\s\-]|Ep?)0*%d(?:v\d+)?"
-    #                             % (n["senum"], n["epnum"]))
-    #         if "senum" not in n and "epnum" in n:
-    #             suffixes.append(r"(?:Ep?)?0*%d(?:v\d+)?" % n["epnum"])
-    #         if "eptitles" in n:
-    #             ets = [re.escape(et) for et in n["eptitles"] if et != ""]
-    #             suffixes.append(r"(?:%s)" % r"|".join(ets))
-
-    #         if suffixes:
-    #             titles = r"|".join([re.escape(t) for t in n["titles"]
-    #                                 if t != ""])
-    #             terms += [r"(%s)[\s\-]+%s" % (titles, s) for s in suffixes]
-    #     return terms
-
-    # def unmatch_terms(self):
-    #     return []
 
     def match(self, f):
         if self.season.num == 0:
