@@ -8,11 +8,6 @@ def run():
     app.run()
 
 
-@app.route('/')
-def hello():
-    return 'Hello World!'
-
-
 @app.route('/log')
 def log():
     response = make_response(file('log.txt').read())
