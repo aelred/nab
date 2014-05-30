@@ -58,6 +58,11 @@ class Groups(KeywordFilter):
 Groups.register("groups")
 
 
+class Fansubs(Groups):
+    pass
+Fansubs.register("fansubs")
+
+
 class Seeds(FileFilter):
     def filter(self, f):
         return 1.0 - 1.0 / (f.seeds + 1.0)
