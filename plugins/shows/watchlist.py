@@ -3,9 +3,10 @@ from files import File
 from show_tree import Show
 
 
-class Watchlist:
+class Watchlist(ShowSource):
 
-    def __init__(self, filename):
+    def __init__(self, filename='watchlist.txt'):
+        ShowSource.__init__(self)
         self.filename = filename
 
     def entries(self):
@@ -15,13 +16,6 @@ class Watchlist:
                 entry = File(line.rstrip())
                 entries.append(entry)
         return entries
-
-
-class WatchlistSource(Watchlist, ShowSource):
-
-    def __init__(self, filename='watchlist.txt'):
-        ShowSource.__init__(self)
-        Watchlist.__init__(self, filename)
 
     def get_shows(self):
         shows = []
@@ -39,4 +33,4 @@ class WatchlistSource(Watchlist, ShowSource):
                ep.show.match(entry)):
                 return True
         return False
-WatchlistSource.register("watchlist")
+Watchlist.register("watchlist")
