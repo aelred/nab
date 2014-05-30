@@ -54,6 +54,7 @@ class Trakt:
         return j
 
     def __init__(self, username, password, api):
+        ShowSource.__init__(self)
         self.username = username
         self.password = password
         self.api = api

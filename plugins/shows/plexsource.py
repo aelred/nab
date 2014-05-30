@@ -7,6 +7,8 @@ from show_tree import Show
 class Plex(ShowSource):
 
     def __init__(self, ip="localhost", port=32400):
+        ShowSource.__init__(self)
+
         self.server = Server(ip, port)
 
         shows = [sec.getContent() for sec in self.server.library.shows]

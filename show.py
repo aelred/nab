@@ -1,6 +1,7 @@
 import config
 import register
 import log
+import time
 
 _log = log.log.getChild("show")
 
@@ -23,8 +24,21 @@ class ShowSource(register.Entry):
     _register = register.Register(config.config["shows"]["sources"])
     _type = "show source"
 
+    def __init__(self, cache_timeout=60*60):
+        self._cached_shows = None
+        self._cached_time = 0
+        self.cache_timeout = 60 * 60
+
     def get_shows(self):
         raise NotImplemented()
+
+    def get_cached_shows(self):
+        elapsed = time.time() - self._cached_time
+        if self._cached_shows is None or elapsed > self.cache_timeout:
+            self._cached_time = time.time()
+            self._cached_shows = self.get_shows()
+
+        return self._cached_shows
 
     def is_watched(self, episode):
         return False
@@ -33,13 +47,13 @@ class ShowSource(register.Entry):
         return NotImplemented()
 
     def filter_show(self, show):
-        return show in self.get_shows()
+        return show in self.get_cached_shows()
 
     def filter_season(self, season):
-        return season.show in self.get_shows()
+        return season.show in self.get_cached_shows()
 
     def filter_episode(self, episode):
-        return episode.show in self.get_shows()
+        return episode.show in self.get_cached_shows()
 
 
 def get_shows():
@@ -48,7 +62,7 @@ def get_shows():
     shows = []
     for source in ShowSource.get_all():
         source.__class__.log.info("Searching show source %s" % source)
-        shows += source.get_shows()
+        shows += source.get_cached_shows()
 
     return shows
 

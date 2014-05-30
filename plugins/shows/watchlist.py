@@ -20,6 +20,7 @@ class Watchlist:
 class WatchlistSource(Watchlist, ShowSource):
 
     def __init__(self, filename='watchlist.txt'):
+        ShowSource.__init__(self)
         Watchlist.__init__(self, filename)
 
     def get_shows(self):

@@ -16,6 +16,8 @@ class FileSystem(ShowSource):
         Args:
             paths: A list of path strings specifying where to search for files.
         """
+        ShowSource.__init__(self)
+
         self.paths = config.config["settings"]["videos"]
 
         # find show directories
