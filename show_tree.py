@@ -169,6 +169,12 @@ class Show(ShowParentElem, ShowElem):
 
         return f.title in map(match.format_title, self.titles)
 
+    def __eq__(self, other):
+        for title in self.titles:
+            if title in other.titles:
+                return True
+        return False
+
     def __str__(self):
         return self.title.encode('utf-8')
 

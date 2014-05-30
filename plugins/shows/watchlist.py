@@ -1,4 +1,4 @@
-from show import ShowSource, ShowFilter
+from show import ShowSource
 from files import File
 from show_tree import Show
 
@@ -30,13 +30,6 @@ class WatchlistSource(Watchlist, ShowSource):
 
     def is_owned(self, ep):
         return False
-WatchlistSource.register("watchlist")
-
-
-class WatchlistFilter(Watchlist, ShowFilter):
-
-    def __init__(self, filename='watchlist.txt'):
-        Watchlist.__init__(self, filename)
 
     def filter_episode(self, ep):
         for entry in self.entries():
@@ -45,4 +38,4 @@ class WatchlistFilter(Watchlist, ShowFilter):
                ep.show.match(entry)):
                 return True
         return False
-WatchlistFilter.register("watchlist")
+WatchlistSource.register("watchlist")

@@ -5,6 +5,20 @@ import log
 _log = log.log.getChild("show")
 
 
+class ShowFilter(register.Entry):
+    _register = register.Register(config.config["shows"]["filters"])
+    _type = "show filter"
+
+    def filter_show(self, show):
+        return True
+
+    def filter_season(self, season):
+        return True
+
+    def filter_episode(self, episode):
+        return True
+
+
 class ShowSource(register.Entry):
     _register = register.Register(config.config["shows"]["sources"])
     _type = "show source"
@@ -18,19 +32,14 @@ class ShowSource(register.Entry):
     def is_owned(self, episode):
         return NotImplemented()
 
-
-class ShowFilter(register.Entry):
-    _register = register.Register(config.config["shows"]["filters"])
-    _type = "show filter"
-
     def filter_show(self, show):
-        return True
+        return show in self.get_shows()
 
     def filter_season(self, season):
-        return True
+        return season.show in self.get_shows()
 
     def filter_episode(self, episode):
-        return True
+        return episode.show in self.get_shows()
 
 
 def get_shows():
@@ -47,6 +56,7 @@ def get_shows():
 def filter_shows(shows):
     _log.info("Filtering shows")
 
+    # get owned/watched info for all episodes
     for ep in shows.episodes:
         for source in ShowSource.get_all():
             if source.is_owned(ep):
@@ -59,11 +69,13 @@ def filter_shows(shows):
 
     _log.info("Applying filters")
 
-    def filter_entry(entry, filter_funcs):
-        wanted = True
+    def filter_entry(entry, filter_funcs, permissive):
+        # permissive = False means must be accepted by ALL filters
+
+        wanted = not permissive
         for f in filter_funcs:
-            if not f(entry):
-                wanted = False
+            if f(entry) == permissive:
+                wanted = permissive  # change wanted status from default
                 break
 
         if not wanted:
@@ -71,18 +83,26 @@ def filter_shows(shows):
                 ep.wanted = False
         return wanted
 
-    filters = ShowFilter.get_all()
-
-    for sh in shows.itervalues():
-        if not filter_entry(sh, [f.filter_show for f in filters]):
-            continue
-
-        for se in sh.itervalues():
-            if not filter_entry(se, [f.filter_season for f in filters]):
+    def filter_all(filters, permissive):
+        for sh in shows.itervalues():
+            if not filter_entry(sh, [f.filter_show for f in filters],
+                                permissive):
                 continue
 
-            for ep in se.itervalues():
-                filter_entry(ep, [f.filter_episode for f in filters])
+            for se in sh.itervalues():
+                if not filter_entry(se, [f.filter_season for f in filters],
+                                    permissive):
+                    continue
+
+                for ep in se.itervalues():
+                    filter_entry(ep, [f.filter_episode for f in filters],
+                                 permissive)
+
+    # first filter using show sources and permissive filtering
+    filter_all(ShowSource.get_all(), True)
+
+    # filter using show filters and strict filtering (must meet all criteria)
+    filter_all(ShowFilter.get_all(), False)
 
     _log.info("Found %s needed episodes" % len(shows.epwanted))
     for ep in shows.epwanted:
