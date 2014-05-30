@@ -7,6 +7,7 @@ _log = log.log.getChild("database")
 
 class Database(register.Entry):
     _register = register.Register(config.config["databases"])
+    _type = "database"
 
     def get_show_titles(self, show):
         return []

@@ -61,8 +61,8 @@ class Trakt:
 
 class TraktSource(ShowSource, Trakt):
 
-    def __init__(self, *args, **kwargs):
-        Trakt.__init__(self, *args, **kwargs)
+    def __init__(self):
+        Trakt.__init__(self)
 
     def get_shows(self):
         TraktSource.log.debug("Getting library")
@@ -124,8 +124,8 @@ TraktSource.register("trakt")
 
 class TraktDB(Database, Trakt):
 
-    def __init__(self, *args, **kwargs):
-        Trakt.__init__(self, *args, **kwargs)
+    def __init__(self):
+        Trakt.__init__(self)
 
     def get_show_titles(self, show):
         return [self.show_data(show)["title"]]

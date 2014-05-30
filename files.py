@@ -16,6 +16,7 @@ _log = log.log.getChild("files")
 
 class FileSource(register.Entry):
     _register = register.Register(config["files"]["sources"])
+    _type = "file source"
 
     def find(self, show, season=None, episode=None):
         raise NotImplemented()
@@ -23,6 +24,7 @@ class FileSource(register.Entry):
 
 class FileFilter(register.Entry):
     _register = register.Register(config["files"]["filters"])
+    _type = "file filter"
 
     def filter(self, f):
         raise NotImplemented()

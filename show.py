@@ -7,6 +7,7 @@ _log = log.log.getChild("show")
 
 class ShowSource(register.Entry):
     _register = register.Register(config.config["shows"]["sources"])
+    _type = "show source"
 
     def get_shows(self):
         raise NotImplemented()
@@ -20,6 +21,7 @@ class ShowSource(register.Entry):
 
 class ShowFilter(register.Entry):
     _register = register.Register(config.config["shows"]["filters"])
+    _type = "show filter"
 
     def filter_show(self, show):
         return True

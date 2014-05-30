@@ -5,7 +5,7 @@ from show_tree import Show
 
 class Watchlist:
 
-    def __init__(self, filename='watchlist.txt'):
+    def __init__(self, filename):
         self.filename = filename
 
     def entries(self):
@@ -19,8 +19,8 @@ class Watchlist:
 
 class WatchlistSource(Watchlist, ShowSource):
 
-    def __init__(self, *args, **kwargs):
-        Watchlist.__init__(self, *args, **kwargs)
+    def __init__(self, filename='watchlist.txt'):
+        Watchlist.__init__(self, filename)
 
     def get_shows(self):
         shows = []
@@ -35,8 +35,8 @@ WatchlistSource.register("watchlist")
 
 class WatchlistFilter(Watchlist, ShowFilter):
 
-    def __init__(self, *args, **kwargs):
-        Watchlist.__init__(self, *args, **kwargs)
+    def __init__(self, filename='watchlist.txt'):
+        Watchlist.__init__(self, filename)
 
     def filter_episode(self, ep):
         for entry in self.entries():

@@ -1,6 +1,6 @@
-from itertools import chain
 import log
 import plugins
+import inspect
 
 
 class Register:
@@ -82,6 +82,59 @@ class Entry(object):
     @classmethod
     def get_all(cls, cfg=None):
         return cls._register.load(cfg)
+
+    @classmethod
+    def list_entries(cls):
+        return cls._register.table.values()
+
+    @classmethod
+    def help_text(cls):
+        text = "Name\n\t%s\nType\n\t%s\n" % (cls.name, cls._type)
+
+        try:
+            argspec = inspect.getargspec(cls.__init__)
+        except TypeError:
+            # has no __init__ method
+            params = []
+        else:
+            # get parameters by inspection
+            args = argspec.args
+            if argspec.defaults:
+                defaults = map(lambda d: [d], argspec.defaults)
+            else:
+                defaults = []
+            defaults = [None] * (len(args) - len(defaults)) + defaults
+            params = []
+
+            # get regular parameters
+            for arg, default in zip(args, defaults)[1:]:
+                params.append(arg)
+                if default:
+                    if default[0] is None:
+                        params[-1] += "\t(optional)"
+                    else:
+                        params[-1] += "\t(default: %s)" % default[0]
+
+            # get variable arguments
+            if argspec.varargs:
+                params += argspec.varargs + "\t(list)"
+
+            # get keyword arguments
+            if argspec.keywords:
+                params += argspec.keywords + "\t(dictionary)"
+
+        # add parameter info
+        text += "Parameters\n"
+        if len(params) == 0:
+            params.append("None")
+        for param in params:
+            text += "\t" + param + "\n"
+
+        # add docstring
+        if __doc__:
+            text += "Description\n\t" + cls.__doc__ + "\n"
+
+        return text.rstrip()
 
     def __str__(self):
         return type(self).name

@@ -7,6 +7,7 @@ _log = log.log.getChild("download")
 
 class Downloader(register.Entry):
     _register = register.Register(config.config["downloaders"])
+    _type = "downloader"
 
     def download(self, file_):
         raise NotImplemented()
