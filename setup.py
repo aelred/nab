@@ -22,7 +22,7 @@ setup(
         'includes':
         ['lxml._elementpath', 'dbhash']}},
     console=['__main__.py'],
-    data_files=[('.', ['config.yaml'])] + plugins,
+    data_files=[('.', ['config_default.yaml'])] + plugins,
     )
 
 # rename main file to ensemble.exe
