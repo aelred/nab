@@ -144,6 +144,15 @@ class Show(ShowParentElem, ShowElem):
 
         ShowParentElem.format(self)
 
+        # remove any titles that conflict with season titles past season 1
+        for season in self:
+            if season == 1:
+                continue
+            for t in set(self.titles):
+                ft = match.format_title(t)
+                if ft in map(match.format_title, self[season].titles):
+                    self.titles.remove(t)
+
     def merge(self, other):
         ShowParentElem.__merge__(self, other)
         ShowElem.__merge__(self, other)
