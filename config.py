@@ -1,9 +1,13 @@
 import yaml
 import os.path
 from optparse import OptionParser
+from shutil import copyfile
 
 
 def _load_config():
+    if not os.path.exists("config.yaml"):
+        copyfile("config_default.yaml", "config.yaml")
+
     c = yaml.load(file("config.yaml", "r"))
 
     # create directories in settings
