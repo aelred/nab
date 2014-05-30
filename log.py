@@ -19,7 +19,5 @@ def _init():
     stream_handler.setFormatter(formatter)
     log.addHandler(stream_handler)
 
-    logging.info("HI EVERYONE")
-
     return log
 log = _init()
