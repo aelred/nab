@@ -6,6 +6,7 @@ import show_tree
 import config
 import plugins
 import downloader
+import server
 from scheduler import scheduler
 
 shows = show_tree.ShowTree()
@@ -55,4 +56,5 @@ if config.options.plugin:
 else:
     # start nabbing shows
     renamer.init(shows)
+    server.run()
     scheduler.add(0, get_data)
