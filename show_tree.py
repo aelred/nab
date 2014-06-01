@@ -42,7 +42,10 @@ class ShowElem(object):
         pass
 
     def __eq__(self, other):
-        return self.id == other.id
+        try:
+            return self.id == other.id
+        except AttributeError:
+            return False
 
     def __hash__(self):
         return hash(self.id)

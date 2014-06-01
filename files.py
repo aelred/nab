@@ -236,7 +236,7 @@ class Torrent(File):
         self.seeds = seeds
 
 
-def find_file(entry, reschedule=True):
+def find_file(entry, reschedule):
 
     def schedule_find():
         if entry.aired is None:
@@ -251,7 +251,7 @@ def find_file(entry, reschedule=True):
         else:
             delay = -time_since_aired  # nab as soon as it airs
 
-        scheduler.add(delay, "find_file", entry)
+        scheduler.add(delay, "find_file", entry, True)
 
     def best_file(files):
         for f in files:
@@ -281,9 +281,14 @@ def find_file(entry, reschedule=True):
     if entry.wanted:
         f = find()
         if f:
-            downloader.download(entry, f)
-            return
-        elif reschedule:
+            try:
+                downloader.download(entry, f)
+            except downloader.DownloadException:
+                pass  # reschedule download
+            else:
+                return  # succesful, return
+
+        if reschedule:
             schedule_find()
             reschedule = False
 
@@ -302,4 +307,4 @@ def find_files(shows):
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):
         if len(sh.epwanted):
-            scheduler.add(0, "find_file", sh)
+            scheduler.add(0, "find_file", sh, True)

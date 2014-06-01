@@ -21,6 +21,9 @@ plugin_types = [
 
 
 def get_data():
+    # reschedule to get data every hour
+    scheduler.scheduler.add(60 * 60, "refresh")
+
     new_shows = show.get_shows()
 
     for sh in new_shows:
@@ -31,9 +34,6 @@ def get_data():
 
     show.filter_shows(shows)
     files.find_files(shows)
-
-    # reschedule to get data every hour
-    scheduler.scheduler.add(60 * 60, "refresh")
 
     # write data to file for backup purposes
     shows.save()

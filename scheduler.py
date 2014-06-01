@@ -31,26 +31,23 @@ class Scheduler:
     def __init__(self):
         self.queue = []
         self.queue_asap = deque()
+        self.queue_set = set()
         self._qlock = threading.Condition()
 
         self._last_save = 0.0
         self._save_invalidate = False
 
     def to_yaml(self):
-        yml = {"queue": [], "asap": []}
+        yml = {"queue": []}
 
         def yaml_entry(dtime, action, argument):
-            return {
-                "time": dtime,
-                "action": action,
-                "argument": self._encode_argument(argument)
-            }
+            return {"time": dtime, "action": action, "argument": argument}
 
         for dtime, action, argument in self.queue:
             yml["queue"].append(yaml_entry(dtime, action, argument))
 
         for action, argument in self.queue_asap:
-            yml["asap"].append(yaml_entry(None, action, argument))
+            yml["queue"].append(yaml_entry(None, action, argument))
 
         return yml
 
@@ -59,15 +56,19 @@ class Scheduler:
                 yml = yaml.load(f)
 
                 for entry in yml["queue"]:
-                    heapq.heappush(
-                        self.queue,
-                        (entry["time"], entry["action"],
-                         self._decode_argument(entry["argument"])))
+                    dtime = entry["time"]
+                    action = entry["action"]
+                    argument = self._decode_argument(entry["argument"])
+                    argument = self._encode_argument(argument)
+                    # yes I did just encode the decoded argument
+                    # this is to add back in tuples, which are hashable
 
-                for entry in yml["asap"]:
-                    self.queue_asap.append(
-                        (entry["action"],
-                         self._decode_argument(entry["argument"])))
+                    if dtime is None:
+                        self.queue_asap.append((action, argument))
+                    else:
+                        heapq.heappush(self.queue, (dtime, action, argument))
+
+                    self.queue_set.add((action, argument))
 
     def save(self):
         yaml.safe_dump(self.to_yaml(), file('schedule.yaml', 'w'))
@@ -110,7 +111,9 @@ class Scheduler:
     def _run(self):
         while True:
             action, argument = self._wait_next()
-            tasks[action](*argument)
+            self.queue_set.remove((action, argument))
+
+            tasks[action](*self._decode_argument(argument))
             self._save_invalidate = True
             self._save_decision()
 
@@ -123,7 +126,7 @@ class Scheduler:
             except AttributeError:
                 pass
             new_arguments.append(arg)
-        return new_arguments
+        return tuple(new_arguments)
 
     def _decode_argument(self, argument):
         new_arguments = []
@@ -140,32 +143,42 @@ class Scheduler:
                         raise TypeError("No match for entry %s" % arg)
                     arg = narg
             new_arguments.append(arg)
-        return new_arguments
+        return tuple(new_arguments)
 
     def add(self, delay, action, *argument):
+        argument = self._encode_argument(argument)
+
+        if (action, argument) in self.queue_set:
+            return
+
         with self._qlock:
             dtime = time.time() + delay
             _log.debug("Scheduling %s%s at %s"
                        % (action, tuple(argument), time.ctime(dtime)))
             heapq.heappush(self.queue, (dtime, action, argument))
+            self.queue_set.add((action, argument))
+
             self._save_invalidate = True
             self._save_decision()
             self._qlock.notify()
 
     def add_asap(self, action, *argument):
+        argument = self._encode_argument(argument)
+
+        if (action, argument) in self.queue_set:
+            return
+
         with self._qlock:
             _log.debug("Scheduling %s%s ASAP" % (action, tuple(argument)))
             self.queue_asap.append((action, argument))
+            self.queue_set.add((action, argument))
+
             self._save_invalidate = True
             self._save_decision()
             self._qlock.notify()
 
     def contains(self, action):
-        for (_, entry_action, _) in self.queue:
-            if entry_action == action:
-                return True
-
-        for (entry_action, _) in self.queue_asap:
+        for (entry_action, _) in self.queue_set:
             if entry_action == action:
                 return True
 
