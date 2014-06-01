@@ -8,7 +8,7 @@ import string
 import config
 import log
 from files import File
-from scheduler import scheduler
+from scheduler import scheduler, tasks
 
 path = config.config["settings"]["completed"]
 pattern = config.config["renamer"]["pattern"]
@@ -30,7 +30,7 @@ class Renamer(FileSystemEventHandler):
     log = log.log.getChild("renamer")
 
     def on_created(self, event):
-        scheduler.add_asap(rename_file, event.src_path)
+        scheduler.add_asap("rename_file", event.src_path)
 
 
 def _find_episode(file_):
@@ -117,3 +117,4 @@ def rename_file(path):
     else:
         shutil.move(path, dest)
     Renamer.log.info("Successfully moved %s" % f)
+tasks["rename_file"] = rename_file

@@ -7,6 +7,10 @@ from collections import deque
 _log = log.log.getChild("scheduler")
 
 
+# lists all valid scheduler tasks
+tasks = {}
+
+
 class Scheduler:
 
     def __init__(self):
@@ -14,6 +18,7 @@ class Scheduler:
         self.queue_asap = deque()
         self._qlock = threading.Condition()
 
+    def start(self):
         threading.Thread(target=self._run).start()
 
     def _wait_next(self):
@@ -42,20 +47,19 @@ class Scheduler:
     def _run(self):
         while True:
             action, argument = self._wait_next()
-            action(*argument)
+            tasks[action](*argument)
 
     def add(self, delay, action, *argument):
         with self._qlock:
             dtime = time.time() + delay
             _log.debug("Scheduling %s%s at %s"
-                       % (action.__name__, tuple(argument), time.ctime(dtime)))
+                       % (action, tuple(argument), time.ctime(dtime)))
             heapq.heappush(self.queue, (dtime, action, argument))
             self._qlock.notify()
 
     def add_asap(self, action, *argument):
         with self._qlock:
-            _log.debug("Scheduling %s%s ASAP"
-                       % (action.__name__, tuple(argument)))
+            _log.debug("Scheduling %s%s ASAP" % (action, tuple(argument)))
             self.queue_asap.append((action, argument))
             self._qlock.notify()
 

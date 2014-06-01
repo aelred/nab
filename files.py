@@ -7,7 +7,7 @@ import math
 import time
 import match
 import re
-from scheduler import scheduler
+from scheduler import scheduler, tasks
 from show_tree import Show, Season, Episode
 
 
@@ -251,7 +251,7 @@ def find_file(entry, reschedule=True):
         else:
             delay = -time_since_aired  # nab as soon as it airs
 
-        scheduler.add(delay, find_file, entry)
+        scheduler.add(delay, "find_file", entry)
 
     def best_file(files):
         for f in files:
@@ -290,13 +290,14 @@ def find_file(entry, reschedule=True):
     try:
         for child in sorted(entry.values(),
                             key=lambda c: c.aired, reverse=True):
-            scheduler.add(0, find_file, child, reschedule)
+            scheduler.add(0, "find_file", child, reschedule)
     except AttributeError:
         pass
+tasks["find_file"] = find_file
 
 
 def find_files(shows):
     _log.info("Finding files")
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):
-        scheduler.add(0, find_file, sh)
+        scheduler.add(0, "find_file", sh)

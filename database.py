@@ -1,7 +1,7 @@
 import config
 import register
 import log
-from scheduler import scheduler
+from scheduler import scheduler, tasks
 
 _log = log.log.getChild("database")
 
@@ -65,4 +65,5 @@ def get_data(show):
     show.format()
 
     # reschedule to refresh database data in a week's time
-    scheduler.add(60 * 60 * 24 * 7, get_data, show)
+    scheduler.add(60 * 60 * 24 * 7, "get_data", show)
+tasks["get_data"] = get_data

@@ -6,7 +6,7 @@ from shutil import copyfile
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from scheduler import scheduler
+from scheduler import scheduler, tasks
 
 
 def _load_config():
@@ -32,6 +32,7 @@ def _load_config():
 
     return c
 config = _load_config()
+tasks["load_config"] = _load_config
 
 
 def init():
