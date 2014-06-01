@@ -1,4 +1,5 @@
 from distutils.core import setup
+from distutils.dir_util import remove_tree
 import py2exe
 import os
 import shutil
@@ -13,6 +14,12 @@ for folder, sub, files in os.walk('plugins'):
         if os.path.isfile(path) and os.path.splitext(f)[1] == '.py':
             plugins_sub.append(path)
     plugins.append((folder, plugins_sub))
+
+# delete previous dist
+try:
+    remove_tree('./dist', False)
+except WindowsError:
+    pass
 
 setup(
     options={'py2exe': {
