@@ -6,7 +6,7 @@ import show_tree
 import config
 import plugins
 import downloader
-from scheduler import scheduler, tasks
+import scheduler
 
 shows = show_tree.ShowTree()
 
@@ -32,12 +32,13 @@ def get_data():
     show.filter_shows(shows)
     files.find_files(shows)
 
+    # reschedule to get data every hour
+    scheduler.scheduler.add(60 * 60, "refresh")
+
     # write data to file for backup purposes
     shows.save()
 
-    # reschedule to get data every hour
-    scheduler.add(60 * 60, "refresh")
-tasks["refresh"] = get_data
+scheduler.tasks["refresh"] = get_data
 
 config.init()
 
@@ -61,5 +62,8 @@ if config.options.plugin:
 else:
     # start nabbing shows
     renamer.init(shows)
-    scheduler.add(0, "refresh")
-    scheduler.start()
+    scheduler.init(shows)
+
+    # add command to refresh data if none is scheduled
+    if not scheduler.scheduler.contains("refresh"):
+        scheduler.scheduler.add(0, "refresh")

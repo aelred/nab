@@ -290,7 +290,8 @@ def find_file(entry, reschedule=True):
     try:
         for child in sorted(entry.values(),
                             key=lambda c: c.aired, reverse=True):
-            scheduler.add(0, "find_file", child, reschedule)
+            if len(child.epwanted):
+                scheduler.add(0, "find_file", child, reschedule)
     except AttributeError:
         pass
 tasks["find_file"] = find_file
@@ -300,4 +301,5 @@ def find_files(shows):
     _log.info("Finding files")
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):
-        scheduler.add(0, "find_file", sh)
+        if len(sh.epwanted):
+            scheduler.add(0, "find_file", sh)

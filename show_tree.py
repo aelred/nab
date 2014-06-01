@@ -102,6 +102,19 @@ class ShowParentElem(dict):
         return dict([(k, child_type.from_yaml(v, k, parent))
                      for k, v in yml.iteritems()])
 
+    def find(self, id_):
+        if self.id != id_[0:len(self.id)]:
+            return None
+        if id_ == self.id:
+            return self
+
+        for child in self.itervalues():
+            f = child.find(id_)
+            if f is not None:
+                return f
+
+        return None
+
 
 class ShowTree(ShowParentElem):
 
@@ -113,8 +126,14 @@ class ShowTree(ShowParentElem):
         except IOError:
             pass  # no shows.yaml file, doesn't matter!
 
-    def get(self, name):
-        return next(sh for sh in self.itervalues() if name in sh.titles)
+    def find(self, id_):
+        if isinstance(id_, str):
+            id_ = (id_,)
+
+        for child in self.itervalues():
+            f = child.find(id_)
+            if f is not None:
+                return f
 
     def save(self):
         yaml.safe_dump(self.to_yaml(), file('shows.yaml', 'w'))
@@ -136,7 +155,7 @@ class Show(ShowParentElem, ShowElem):
 
     @property
     def id(self):
-        return self.title
+        return (self.title,)
 
     def format(self):
         # for all titles, remove bracketed year info
@@ -210,7 +229,7 @@ class Season(ShowParentElem, ShowElem):
 
     @property
     def id(self):
-        return (self.show.id, self.num)
+        return self.show.id + (self.num,)
 
     def merge(self, season):
         ShowParentElem.merge(self, season)
@@ -348,6 +367,13 @@ class Episode(ShowElem):
     def id(self):
         return self.season.id + (self.num,)
 
+    @property
+    def epwanted(self):
+        if self.wanted:
+            return [self]
+        else:
+            return []
+
     def has_aired(self):
         if ShowElem.has_aired(self):
             return True
@@ -387,6 +413,12 @@ class Episode(ShowElem):
         ep.watched = yml["watched"]
         ep.wanted = yml["wanted"]
         return ep
+
+    def find(self, id_):
+        if self.id == id_:
+            return self
+        else:
+            return None
 
     def names(self, full=False):
         names = self.season.names(full)
