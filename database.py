@@ -1,6 +1,7 @@
 import config
 import register
 import log
+from scheduler import scheduler
 
 _log = log.log.getChild("database")
 
@@ -25,43 +26,43 @@ class Database(register.Entry):
         return []
 
 
-def get_data(shows):
-    _log.info("Adding show data")
+def get_data(show):
+    _log.debug("Searching for %s" % show)
 
-    for show in shows.itervalues():
-        _log.debug("Searching for %s" % show)
+    # get all titles for show
+    _log.debug("Getting titles")
+    for db in Database.get_all():
+        show.titles.update(db.get_show_titles(show))
 
-        # get all titles for show
-        _log.debug("Getting titles")
-        for db in Database.get_all():
-            show.titles.update(db.get_show_titles(show))
+    # get if should use absolute numbering
+    _log.debug("Getting absolute numbering")
+    for db in Database.get_all():
+        if db.get_show_absolute_numbering(show):
+            show.absolute = True
+            break
 
-        # get if should use absolute numbering
-        _log.debug("Getting absolute numbering")
-        for db in Database.get_all():
-            if db.get_show_absolute_numbering(show):
-                show.absolute = True
-                break
+    # get ids of show
+    _log.debug("Getting ids")
+    for db in Database.get_all():
+        show.ids = dict(show.ids.items() + db.get_show_ids(show).items())
 
-        # get ids of show
-        _log.debug("Getting ids")
-        for db in Database.get_all():
-            show.ids = dict(show.ids.items() + db.get_show_ids(show).items())
-
-        # get seasons for show
-        _log.debug("Getting seasons and episodes")
-        for db in Database.get_all():
-            for season in db.get_seasons(show):
-                # get episodes for season
-                for episode in db.get_episodes(season):
-                    if episode.num in season:
-                        season[episode.num].merge(episode)
-                    else:
-                        season[episode.num] = episode
-
-                if season.num in show:
-                    show[season.num].merge(season)
+    # get seasons for show
+    _log.debug("Getting seasons and episodes")
+    for db in Database.get_all():
+        for season in db.get_seasons(show):
+            # get episodes for season
+            for episode in db.get_episodes(season):
+                if episode.num in season:
+                    season[episode.num].merge(episode)
                 else:
-                    show[season.num] = season
+                    season[episode.num] = episode
 
-        show.format()
+            if season.num in show:
+                show[season.num].merge(season)
+            else:
+                show[season.num] = season
+
+    show.format()
+
+    # reschedule to refresh database data in a week's time
+    scheduler.add(60 * 60 * 24 * 7, get_data, show)

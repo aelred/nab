@@ -25,9 +25,10 @@ def get_data():
 
     for sh in new_shows:
         if not sh.title in shows:
+            # get database info and add to shows
+            database.get_data(sh)
             shows[sh.title] = sh
 
-    database.get_data(shows)
     show.filter_shows(shows)
     files.find_files(shows)
 
