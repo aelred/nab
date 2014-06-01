@@ -5,14 +5,14 @@ from show_tree import Show
 
 class Watchlist(ShowSource):
 
-    def __init__(self, filename='watchlist.txt'):
+    def __init__(self, *shows):
         ShowSource.__init__(self)
-        self.filename = filename
+        self.config_entries = list(shows)
 
     def entries(self):
         entries = []
-        with file(self.filename, 'a+') as f:
-            for line in f:
+        with file('watchlist.txt', 'a+') as f:
+            for line in list(f) + self.config_entries:
                 entry = File(line.rstrip())
                 entries.append(entry)
         return entries
