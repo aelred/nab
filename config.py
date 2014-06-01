@@ -15,8 +15,16 @@ def _load_config():
 
     c = yaml.load(file("config.yaml", "r"))
 
-    # create directories in settings
+    # find and create directories in settings
     s = c["settings"]
+
+    def format_path(path):
+        return path.format(user=os.getenv('USERPROFILE'),
+                           home=os.getenv('HOME'))
+    s["downloads"] = format_path(s["downloads"])
+    s["completed"] = format_path(s["completed"])
+    s["videos"] = map(format_path, s["videos"])
+
     dirs = [s["downloads"], s["completed"]] + s["videos"]
     for d in dirs:
         if not os.path.exists(d):

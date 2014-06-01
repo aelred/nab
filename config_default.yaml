@@ -1,8 +1,8 @@
 settings:
-  downloads: .\downloads\in_progress
-  completed: .\downloads\completed
+  downloads: '{user}\downloads\nab\in_progress'
+  completed: '{user}\downloads\nab\completed'
   videos:
-    - .\downloads\videos
+    - '{user}\videos'
 shows:
   sources:
     - filesystem
