@@ -41,6 +41,12 @@ class ShowElem(object):
     def format(self):
         pass
 
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
+
 
 class ShowParentElem(dict):
 
@@ -128,6 +134,10 @@ class Show(ShowParentElem, ShowElem):
     def show(self):
         return self
 
+    @property
+    def id(self):
+        return self.title
+
     def format(self):
         # for all titles, remove bracketed year info
         # e.g. Archer (2009) -> Archer, Archer 2009, Archer (2009)
@@ -179,10 +189,7 @@ class Show(ShowParentElem, ShowElem):
         return f.title in map(match.format_title, self.titles)
 
     def __eq__(self, other):
-        for title in self.titles:
-            if title in other.titles:
-                return True
-        return False
+        return ShowElem.__eq__(self, other)
 
     def __str__(self):
         return self.title.encode('utf-8')
@@ -200,6 +207,10 @@ class Season(ShowParentElem, ShowElem):
     @property
     def season(self):
         return self
+
+    @property
+    def id(self):
+        return (self.show.id, self.num)
 
     def merge(self, season):
         ShowParentElem.merge(self, season)
@@ -260,6 +271,9 @@ class Season(ShowParentElem, ShowElem):
         return ((f.title in map(match.format_title, self.titles)
                  and f.season is None) or
                 (self.show.match(f, False) and f.season == self.num))
+
+    def __eq__(self, other):
+        return ShowElem.__eq__(self, other)
 
     def __str__(self):
         if self.title:
@@ -329,6 +343,10 @@ class Episode(ShowElem):
     @property
     def aired_max(self):
         return self.aired
+
+    @property
+    def id(self):
+        return self.season.id + (self.num,)
 
     def has_aired(self):
         if ShowElem.has_aired(self):
