@@ -34,6 +34,7 @@ def get_data():
     # reschedule to get data every hour
     scheduler.add(60 * 60, get_data)
 
+config.init()
 
 if config.options.plugin:
     # load plugins

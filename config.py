@@ -1,7 +1,12 @@
 import yaml
+import os
 import os.path
 from optparse import OptionParser
 from shutil import copyfile
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+from scheduler import scheduler
 
 
 def _load_config():
@@ -19,6 +24,21 @@ def _load_config():
 
     return c
 config = _load_config()
+
+
+def init():
+    global config
+    config = _load_config()
+    handler = ConfigWatcher()
+    observer = Observer()
+    observer.schedule(handler, ".")
+    observer.start()
+
+
+class ConfigWatcher(FileSystemEventHandler):
+    def on_modified(self, event):
+        if event.src_path == os.path.join(os.getcwd(), "config.yaml"):
+            scheduler.add_asap(_load_config)
 
 
 def _load_options():
