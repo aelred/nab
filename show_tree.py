@@ -91,6 +91,11 @@ class ShowParentElem(dict):
     def to_yaml(self):
         return dict([(k, v.to_yaml()) for k, v in self.iteritems()])
 
+    @staticmethod
+    def from_yaml(yml, child_type, parent):
+        return dict([(k, child_type.from_yaml(v, k, parent))
+                     for k, v in yml.iteritems()])
+
 
 class ShowTree(ShowParentElem):
 
@@ -100,11 +105,21 @@ class ShowTree(ShowParentElem):
     def get(self, name):
         return next(sh for sh in self.itervalues() if name in sh.titles)
 
-    def dump_yaml(self):
+    def save(self):
         yaml.safe_dump(self.to_yaml(), file('shows.yaml', 'w'))
+
+    @staticmethod
+    def load():
+        return ShowTree.from_yaml(yaml.load(file('shows.yaml', 'r')))
 
     def to_yaml(self):
         return ShowParentElem.to_yaml(self)
+
+    @staticmethod
+    def from_yaml(yml):
+        tree = ShowTree()
+        tree.update(ShowParentElem.from_yaml(yml, Show, tree))
+        return tree
 
 
 class Show(ShowParentElem, ShowElem):
@@ -153,6 +168,12 @@ class Show(ShowParentElem, ShowElem):
             "seasons": ShowParentElem.to_yaml(self)
         }
 
+    @staticmethod
+    def from_yaml(yml, title, parent):
+        show = Show(title, yml["ids"], yml["absolute"], yml["titles"])
+        show.update(ShowParentElem.from_yaml(yml["seasons"], Season, show))
+        return show
+
     def search_terms(self):
         return set(map(match.format_title, self.titles))
 
@@ -195,6 +216,13 @@ class Season(ShowParentElem, ShowElem):
             "titles": list(self.titles),
             "episodes": ShowParentElem.to_yaml(self)
         }
+
+    @staticmethod
+    def from_yaml(yml, num, show):
+        season = Season(show, num, yml["title"], yml["titles"])
+        season.update(
+            ShowParentElem.from_yaml(yml["episodes"], Episode, season))
+        return season
 
     def names(self, full=False):
         names = []
@@ -338,6 +366,14 @@ class Episode(ShowElem):
             "watched": self.watched,
             "wanted": self.wanted
         }
+
+    @staticmethod
+    def from_yaml(yml, num, season):
+        ep = Episode(season, num, yml["title"], yml["aired"], yml["titles"])
+        ep.owned = yml["owned"]
+        ep.watched = yml["watched"]
+        ep.wanted = yml["wanted"]
+        return ep
 
     def names(self, full=False):
         names = self.season.names(full)

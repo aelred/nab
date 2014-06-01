@@ -33,7 +33,7 @@ def get_data():
     files.find_files(shows)
 
     # write data to file for backup purposes
-    shows.dump_yaml()
+    shows.save()
 
     # reschedule to get data every hour
     scheduler.add(60 * 60, get_data)
