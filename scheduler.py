@@ -1,6 +1,5 @@
 import time
 import threading
-import show_tree
 import log
 import heapq
 from collections import deque
@@ -44,7 +43,6 @@ class Scheduler:
         while True:
             action, argument = self._wait_next()
             action(*argument)
-            # show_tree.shows.refresh()
 
     def add(self, delay, action, *argument):
         with self._qlock:

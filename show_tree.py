@@ -88,6 +88,9 @@ class ShowParentElem(dict):
         for child in self.itervalues():
             child.format()
 
+    def to_yaml(self):
+        return dict([(k, v.to_yaml()) for k, v in self.iteritems()])
+
 
 class ShowTree(ShowParentElem):
 
@@ -97,9 +100,11 @@ class ShowTree(ShowParentElem):
     def get(self, name):
         return next(sh for sh in self.itervalues() if name in sh.titles)
 
-    def refresh(self):
-        self.format()
-        yaml.dump(self, file('shows.yaml', 'w'))
+    def dump_yaml(self):
+        yaml.safe_dump(self.to_yaml(), file('shows.yaml', 'w'))
+
+    def to_yaml(self):
+        return ShowParentElem.to_yaml(self)
 
 
 class Show(ShowParentElem, ShowElem):
@@ -140,6 +145,14 @@ class Show(ShowParentElem, ShowElem):
         ShowElem.__merge__(self, other)
         self.ids = dict(self.ids.items() + other.ids.items())
 
+    def to_yaml(self):
+        return {
+            "ids": self.ids,
+            "titles": list(self.titles),
+            "absolute": self.absolute,
+            "seasons": ShowParentElem.to_yaml(self)
+        }
+
     def search_terms(self):
         return set(map(match.format_title, self.titles))
 
@@ -175,6 +188,13 @@ class Season(ShowParentElem, ShowElem):
     def merge(self, season):
         ShowParentElem.merge(self, season)
         ShowElem.merge(self, season)
+
+    def to_yaml(self):
+        return {
+            "title": self.title,
+            "titles": list(self.titles),
+            "episodes": ShowParentElem.to_yaml(self)
+        }
 
     def names(self, full=False):
         names = []
@@ -308,6 +328,16 @@ class Episode(ShowElem):
             self.aired = episode.aired
 
         ShowElem.merge(self, episode)
+
+    def to_yaml(self):
+        return {
+            "title": self.title,
+            "titles": list(self.titles),
+            "aired": self.aired,
+            "owned": self.owned,
+            "watched": self.watched,
+            "wanted": self.wanted
+        }
 
     def names(self, full=False):
         names = self.season.names(full)
