@@ -101,6 +101,11 @@ class ShowTree(ShowParentElem):
 
     def __init__(self):
         ShowParentElem.__init__(self)
+        try:
+            with file('shows.yaml', 'r') as f:
+                self.update(ShowTree.from_yaml(yaml.load(f), Show, self))
+        except IOError:
+            pass  # no shows.yaml file, doesn't matter!
 
     def get(self, name):
         return next(sh for sh in self.itervalues() if name in sh.titles)
@@ -108,18 +113,8 @@ class ShowTree(ShowParentElem):
     def save(self):
         yaml.safe_dump(self.to_yaml(), file('shows.yaml', 'w'))
 
-    @staticmethod
-    def load():
-        return ShowTree.from_yaml(yaml.load(file('shows.yaml', 'r')))
-
     def to_yaml(self):
         return ShowParentElem.to_yaml(self)
-
-    @staticmethod
-    def from_yaml(yml):
-        tree = ShowTree()
-        tree.update(ShowParentElem.from_yaml(yml, Show, tree))
-        return tree
 
 
 class Show(ShowParentElem, ShowElem):
