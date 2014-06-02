@@ -20,7 +20,7 @@ plugin_types = [
 ]
 
 
-def get_data():
+def refresh():
     # reschedule to get data every hour
     scheduler.scheduler.add(60 * 60, "refresh")
 
@@ -38,7 +38,7 @@ def get_data():
     # write data to file for backup purposes
     shows.save()
 
-scheduler.tasks["refresh"] = get_data
+scheduler.tasks["refresh"] = refresh
 
 config.init()
 
