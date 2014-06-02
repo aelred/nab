@@ -236,50 +236,53 @@ class Torrent(File):
         self.seeds = seeds
 
 
-def find_file(entry, reschedule):
+def _schedule_find(entry):
+    if entry.aired is None:
+        time_since_aired = time.time()
+    else:
+        time_since_aired = time.time() - entry.aired
 
-    def schedule_find():
-        if entry.aired is None:
-            time_since_aired = time.time()
-        else:
-            time_since_aired = time.time() - entry.aired
+    if time_since_aired > 0:
+        delay = time_since_aired * math.log(time_since_aired) / 200
+        delay = min(delay, 30 * 24 * 60 * 60)  # at least once a month
+        delay = max(delay, 60 * 60)  # no more than once an hour
+    else:
+        delay = -time_since_aired  # nab as soon as it airs
 
-        if time_since_aired > 0:
-            delay = time_since_aired * math.log(time_since_aired) / 200
-            delay = min(delay, 30 * 24 * 60 * 60)  # at least once a month
-            delay = max(delay, 60 * 60)  # no more than once an hour
-        else:
-            delay = -time_since_aired  # nab as soon as it airs
+    scheduler.add(delay, "find_file", entry, True)
 
-        scheduler.add(delay, "find_file", entry, True)
 
-    def best_file(files):
-        for f in files:
-            f.rank = sum(filt.filter(f) for filt in FileFilter.get_all())
+def _rank_file(f):
+    return sum(filt.filter(f) for filt in FileFilter.get_all())
 
-        if files:
-            return max(files, key=lambda f: f.rank)
+
+def _best_file(files):
+    if files:
+        return max(files, key=lambda f: _rank_file(f))
+    return None
+
+
+def _find_all_files(entry):
+    # only search for aired shows
+    if not entry.has_aired():
         return None
 
-    def find():
-        # only search for aired shows
-        if not entry.has_aired():
-            return None
+    _log.info("Searching for %s" % entry)
+    files = []
+    for source in FileSource.get_all():
+        source.__class__.log.debug("Searching in %s" % source)
+        files += source.find(entry)
 
-        _log.info("Searching for %s" % entry)
-        files = []
-        for source in FileSource.get_all():
-            source.__class__.log.debug("Searching in %s" % source)
-            files += source.find(entry)
+    if not files:
+        _log.info("No file found for %s" % entry)
 
-        if not files:
-            _log.info("No file found for %s" % entry)
+    return files
 
-        return best_file(files)
 
+def find_file(entry, reschedule):
     # get entry only if wanted
     if entry.wanted:
-        f = find()
+        f = _best_file(_find_all_files(entry))
         if f:
             try:
                 downloader.download(entry, f)
@@ -289,7 +292,7 @@ def find_file(entry, reschedule):
                 return  # succesful, return
 
         if reschedule:
-            schedule_find()
+            _schedule_find(entry)
             reschedule = False
 
     try:
