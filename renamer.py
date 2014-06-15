@@ -112,9 +112,13 @@ def rename_file(path):
 
     # copy across
     Renamer.log.info("Moving %s to %s" % (f, dest))
-    if copy:
-        shutil.copyfile(path, dest)
+    try:
+        if copy:
+            shutil.copyfile(path, dest)
+        else:
+            shutil.move(path, dest)
+    except IOError, e:
+        Renamer.log.error(str(e))
     else:
-        shutil.move(path, dest)
-    Renamer.log.info("Successfully moved %s" % f)
+        Renamer.log.info("Successfully moved %s" % f)
 tasks["rename_file"] = rename_file
