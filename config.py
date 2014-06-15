@@ -47,7 +47,7 @@ def init():
 class ConfigWatcher(FileSystemEventHandler):
     def on_modified(self, event):
         if event.src_path == os.path.join(os.getcwd(), "config.yaml"):
-            scheduler.add_asap(_load_config)
+            scheduler.add_asap("load_config")
 
 
 def _load_options():
