@@ -27,6 +27,9 @@ class Database(register.Entry):
 
 
 def get_data(show):
+    # reschedule to refresh database data in a week's time
+    scheduler.add(60 * 60 * 24 * 7, "get_data", show)
+
     _log.debug("Searching for %s" % show)
 
     # get all titles for show
@@ -63,7 +66,4 @@ def get_data(show):
                 show[season.num] = season
 
     show.format()
-
-    # reschedule to refresh database data in a week's time
-    scheduler.add(60 * 60 * 24 * 7, "get_data", show)
 tasks["get_data"] = get_data
