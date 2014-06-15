@@ -20,7 +20,7 @@ def init(shows):
 
     try:
         scheduler.load()
-    except IOError:
+    except (IOError, ValueError):
         pass
 
     scheduler.start()
@@ -54,6 +54,9 @@ class Scheduler:
     def load(self):
         with file('schedule.yaml', 'r') as f:
                 yml = yaml.load(f)
+                if not yml:
+                    # yaml file is invalid
+                    raise ValueError("Schedule file is invalid yaml")
 
                 for entry in yml["queue"]:
                     dtime = entry["time"]
