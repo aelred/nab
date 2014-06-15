@@ -119,6 +119,7 @@ def rename_file(path):
             shutil.move(path, dest)
     except IOError, e:
         Renamer.log.error(str(e))
+        scheduler.add(5 * 60, "rename_file", path)
     else:
         Renamer.log.info("Successfully moved %s" % f)
 tasks["rename_file"] = rename_file
