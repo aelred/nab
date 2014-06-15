@@ -100,8 +100,6 @@ class TraktSource(ShowSource, Trakt):
                        if ep["episode"] == episode.num)
             return epd["watched"]
         except (KeyError, StopIteration):
-            print episode
-            print shd
             return False
 
     def is_owned(self, episode):
@@ -116,8 +114,6 @@ class TraktSource(ShowSource, Trakt):
                        if ep["episode"] == episode.num)
             return epd["in_collection"]
         except (KeyError, StopIteration):
-            print episode
-            print shd
             return False
 
 TraktSource.register("trakt")
