@@ -1,6 +1,6 @@
-import config
-import register
-import log
+from nab import config
+from nab import register
+from nab import log
 
 _log = log.log.getChild("download")
 

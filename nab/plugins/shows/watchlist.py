@@ -1,6 +1,6 @@
-from show import ShowSource
-from files import File
-from show_tree import Show
+from nab.show import ShowSource
+from nab.files import File
+from nab.show_tree import Show
 
 
 class Watchlist(ShowSource):

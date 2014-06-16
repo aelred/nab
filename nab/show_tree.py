@@ -1,8 +1,9 @@
 from itertools import chain
 import re
 import yaml
-import match
 import time
+
+from nab import match
 
 
 class ShowElem(object):

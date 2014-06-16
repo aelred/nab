@@ -2,7 +2,7 @@ import os
 import sys
 import importlib
 
-import log
+from nab import log
 
 _loaded = False
 
@@ -17,7 +17,7 @@ def load():
     log.log.debug("Loading plugins")
     _loaded = True
 
-    for folder, sub, files in os.walk("plugins/"):
+    for folder, sub, files in os.walk("nab/plugins/"):
         sys.path.insert(0, folder)
         for f in files:
             fname, ext = os.path.splitext(f)

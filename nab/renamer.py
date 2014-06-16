@@ -5,10 +5,10 @@ from watchdog.events import FileSystemEventHandler
 import shutil
 import string
 
-import config
-import log
-from files import File
-from scheduler import scheduler, tasks
+from nab import config
+from nab import log
+from nab.files import File
+from nab.scheduler import scheduler, tasks
 
 path = config.config["settings"]["completed"]
 pattern = config.config["renamer"]["pattern"]
@@ -55,7 +55,7 @@ def rename_file(path):
         Renamer.log.debug("Ignoring non-video file %s" % f)
         return
 
-    if "sample" in f.tags:
+    if "sample" in f.filename.lower():
         Renamer.log.debug("Ignoring sample file %s" % f)
         return
 

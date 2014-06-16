@@ -1,8 +1,9 @@
-from downloader import Downloader
 import libtorrent as lt
-from config import config
 import threading
 import time
+
+from nab.downloader import Downloader
+from nab.config import config
 
 
 class Libtorrent(Downloader):

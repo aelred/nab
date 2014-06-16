@@ -1,14 +1,15 @@
-from config import config
-import register
-import log
 import pprint
-import downloader
 import math
 import time
-import match
 import re
-from scheduler import scheduler, tasks
-from show_tree import Show, Season, Episode
+
+from nab import register
+from nab import log
+from nab import match
+from nab.config import config
+from nab import downloader
+from nab.scheduler import scheduler, tasks
+from nab.show_tree import Show, Season, Episode
 
 
 _log = log.log.getChild("files")

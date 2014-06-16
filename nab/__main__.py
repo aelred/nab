@@ -1,12 +1,12 @@
-import show
-import database
-import files
-import renamer
-import show_tree
-import config
-import plugins
-import downloader
-import scheduler
+from nab import show
+from nab import database
+from nab import files
+from nab import renamer
+from nab import show_tree
+from nab import config
+from nab import plugins
+from nab import downloader
+from nab import scheduler
 
 shows = show_tree.ShowTree()
 

@@ -1,6 +1,7 @@
-from downloader import Downloader
 import requests
 from lxml import html
+
+from nab.downloader import Downloader
 
 
 class uTorrent(Downloader):

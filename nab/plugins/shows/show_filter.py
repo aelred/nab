@@ -1,5 +1,5 @@
-from show import ShowFilter
-import match
+from nab.show import ShowFilter
+from nab import match
 
 
 class Exclude(ShowFilter):

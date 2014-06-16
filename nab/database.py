@@ -1,7 +1,7 @@
-import config
-import register
-import log
-from scheduler import scheduler, tasks
+from nab import config
+from nab import register
+from nab import log
+from nab.scheduler import scheduler, tasks
 
 _log = log.log.getChild("database")
 

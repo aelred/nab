@@ -1,5 +1,5 @@
-import log
-import plugins
+from nab import log
+from nab import plugins
 import inspect
 from memoized import memoized
 

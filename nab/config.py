@@ -6,7 +6,7 @@ from shutil import copyfile
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from scheduler import scheduler, tasks
+from nab.scheduler import scheduler, tasks
 
 
 def _load_config():
