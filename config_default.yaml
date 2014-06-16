@@ -8,9 +8,9 @@ shows:
     - filesystem
     - watchlist
   filters:
-    - specials: no
-    - watched: no
-    - owned: no
+    - specials
+    - watched
+    - owned
 databases:
   - tvdb
   - anidb
