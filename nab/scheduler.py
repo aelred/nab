@@ -180,12 +180,5 @@ class Scheduler:
             self._save_decision()
             self._qlock.notify()
 
-    def contains(self, action):
-        for (entry_action, _) in self.queue_set:
-            if entry_action == action:
-                return True
-
-        return False
-
 
 scheduler = Scheduler()
