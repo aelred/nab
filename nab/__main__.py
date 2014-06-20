@@ -64,6 +64,6 @@ else:
     renamer.init(shows)
     scheduler.init(shows)
 
-    # add command to refresh data if none is scheduled
-    if not scheduler.scheduler.contains("refresh"):
-        scheduler.scheduler.add(0, "refresh")
+    # add command to refresh data
+    # if command is already scheduled, this will be ignored
+    scheduler.scheduler.add(0, "refresh")
