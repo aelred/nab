@@ -65,8 +65,16 @@ else:
 
     if config.options.clean:
         # clean up schedule and show files, start fresh
-        os.remove("shows.yaml")
-        os.remove("schedule.yaml")
+        try:
+            os.remove("shows.yaml")
+        except Exception:  # don't know exception, depends on OS
+            # file may not exist
+            pass
+        try:
+            os.remove("schedule.yaml")
+        except Exception:  # don't know exception, depends on OS
+            # file may not exist
+            pass
 
     # start nabbing shows
     renamer.init(shows)
