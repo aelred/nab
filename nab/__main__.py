@@ -10,6 +10,19 @@ from nab import scheduler
 
 import os
 
+if config.options.clean:
+    # clean up schedule and show files, start fresh
+    try:
+        os.remove("shows.yaml")
+    except Exception:  # don't know exception, depends on OS
+        # file may not exist
+        pass
+    try:
+        os.remove("schedule.yaml")
+    except Exception:  # don't know exception, depends on OS
+        # file may not exist
+        pass
+
 shows = show_tree.ShowTree()
 
 plugin_types = [
@@ -62,20 +75,6 @@ if config.options.plugin:
                     if entry.name == arg:
                         print entry.help_text() + "\n"
 else:
-
-    if config.options.clean:
-        # clean up schedule and show files, start fresh
-        try:
-            os.remove("shows.yaml")
-        except Exception:  # don't know exception, depends on OS
-            # file may not exist
-            pass
-        try:
-            os.remove("schedule.yaml")
-        except Exception:  # don't know exception, depends on OS
-            # file may not exist
-            pass
-
     # start nabbing shows
     renamer.init(shows)
     scheduler.init(shows)
