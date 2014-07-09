@@ -26,6 +26,8 @@ class Libtorrent(Downloader):
             lt.alert.category_t.status_notification
             )
 
+        self._progress_ticker = 0
+
     def download(self, file_):
         handle = self.session.add_torrent({
             'save_path': self.folder,
@@ -33,11 +35,28 @@ class Libtorrent(Downloader):
 
         self.downloads.append(handle)
 
+    def _progress_bar(self, percent):
+        length = 20
+        filled = int(percent * length)
+        unfilled = int(length - filled)
+        return '[%s%s]\t%d%%' % ('=' * filled, ' ' * unfilled, percent * 100.0)
+
     def _watch_thread(self):
         while True:
+            time.sleep(1.0)
+
+            self._progress_ticker += 1
+            if self._progress_ticker >= 10:
+                # print progress
+                progress = [(d.name(), d.status().progress)
+                            for d in self.downloads]
+                info_str = ["%s\t%s" % (self._progress_bar(prog), n)
+                            for n, prog in progress]
+                self.log.info("\n".join(["Progress:"] + info_str))
+                self._progress_ticker = 0
+
             p = self.session.pop_alert()
             if not p:
-                time.sleep(1.0)
                 continue
 
             if (p.what() == "torrent_finished_alert"):
