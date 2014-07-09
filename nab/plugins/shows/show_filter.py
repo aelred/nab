@@ -36,7 +36,8 @@ class Specials(ShowFilter):
         if episode.season.num != 0:
             return True
 
-        if self.exclude == []:
+        # if no exclusion options, exclude everything
+        if not self.exclude:
             return False
 
         if not func(episode, False):
