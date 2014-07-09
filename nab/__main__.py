@@ -8,6 +8,8 @@ from nab import plugins
 from nab import downloader
 from nab import scheduler
 
+import os
+
 shows = show_tree.ShowTree()
 
 plugin_types = [
@@ -60,6 +62,12 @@ if config.options.plugin:
                     if entry.name == arg:
                         print entry.help_text() + "\n"
 else:
+
+    if config.options.clean:
+        # clean up schedule and show files, start fresh
+        os.remove("shows.yaml")
+        os.remove("schedule.yaml")
+
     # start nabbing shows
     renamer.init(shows)
     scheduler.init(shows)

@@ -54,5 +54,6 @@ def _load_options():
     parser = OptionParser()
     parser.add_option("-t", "--test", action="store_true", default=False)
     parser.add_option("-p", "--plugin", action="store_true", default=False)
+    parser.add_option("-c", "--clean", action="store_true", default=False)
     return parser.parse_args()
 options, args = _load_options()
