@@ -82,6 +82,8 @@ def filter_shows(shows):
                 ep.watched = True
                 break
 
+    _log.info("Found %s show(s)" % len(shows))
+
     _log.info("Applying filters")
 
     def filter_entry(entry, filter_funcs, permissive):
@@ -119,6 +121,6 @@ def filter_shows(shows):
     # filter using show filters and strict filtering (must meet all criteria)
     filter_all(ShowFilter.get_all(), False)
 
-    _log.info("Found %s needed episodes" % len(shows.epwanted))
+    _log.info("Found %s needed episode(s)" % len(shows.epwanted))
     for ep in shows.epwanted:
         _log.info(ep)
