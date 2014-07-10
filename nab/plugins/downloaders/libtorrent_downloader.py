@@ -6,6 +6,52 @@ from nab.downloader import Downloader
 from nab.config import config
 
 
+_state_str = {
+    lt.torrent_status.states.queued_for_checking: 'Check Queue',
+    lt.torrent_status.states.checking_files: 'Checking',
+    lt.torrent_status.states.downloading_metadata: 'Metadata',
+    lt.torrent_status.states.downloading: 'Downloading',
+    lt.torrent_status.states.finished: 'Finished',
+    lt.torrent_status.states.seeding: 'Seeding',
+    lt.torrent_status.states.allocating: 'Allocating',
+    lt.torrent_status.states.checking_resume_data: 'Resuming'
+}
+
+
+def _sizeof_fmt(num):
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return "%3.1f %s" % (num, x)
+        num /= 1024.0
+
+
+def _progress_bar(percent):
+    length = 20
+    filled = int(percent * length)
+    unfilled = int(length - filled)
+    return '[%s%s]' % ('=' * filled, ' ' * unfilled)
+
+
+def _torrent_info(handle):
+    s = handle.status()
+    try:
+        i = handle.get_torrent_info()
+    except RuntimeError:
+        # caused if no metadata acquired
+        size = ''
+    else:
+        size = _sizeof_fmt(i.total_size())
+
+    return '\t'.join([
+        _state_str[s.state],
+        size,
+        _progress_bar(s.progress),
+        '%d%%' % (s.progress * 100.0),
+        '%s/s' % _sizeof_fmt(s.download_rate),
+        handle.name()
+    ])
+
+
 class Libtorrent(Downloader):
 
     def __init__(self, ratio=2.0, ports=[6881, 6891]):
@@ -35,12 +81,6 @@ class Libtorrent(Downloader):
 
         self.downloads.append(handle)
 
-    def _progress_bar(self, percent):
-        length = 20
-        filled = int(percent * length)
-        unfilled = int(length - filled)
-        return '[%s%s]\t%d%%' % ('=' * filled, ' ' * unfilled, percent * 100.0)
-
     def _watch_thread(self):
         while True:
             time.sleep(1.0)
@@ -48,10 +88,7 @@ class Libtorrent(Downloader):
             self._progress_ticker += 1
             if self._progress_ticker >= 10:
                 # print progress
-                progress = [(d.name(), d.status().progress)
-                            for d in self.downloads]
-                info_str = ["%s\t%s" % (self._progress_bar(prog), n)
-                            for n, prog in progress]
+                info_str = [_torrent_info(h) for h in self.downloads]
                 self.log.info("\n".join(["Progress:"] + info_str))
                 self._progress_ticker = 0
 
