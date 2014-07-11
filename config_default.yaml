@@ -4,8 +4,9 @@ settings:
   videos:
     - '{user}\videos'
 shows:
-  sources:
+  library:
     - filesystem
+  watching:
     - watchlist
   filters:
     - specials

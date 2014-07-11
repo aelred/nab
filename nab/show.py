@@ -22,7 +22,7 @@ class ShowFilter(register.Entry):
 
 
 class ShowSource(register.Entry):
-    _register = register.Register(config.config["shows"]["sources"])
+    _register = register.Register(config.config["shows"]["library"])
     _type = "show source"
 
     def __init__(self, cache_timeout=60*60):
@@ -60,8 +60,9 @@ class ShowSource(register.Entry):
 def get_shows():
     _log.info("Getting shows")
 
+    # get wanted shows from 'watching' list
     shows = []
-    for source in ShowSource.get_all():
+    for source in ShowSource.get_all(config.config["shows"]["watching"]):
         source.__class__.log.info("Searching show source %s" % source)
         shows += source.get_cached_shows()
 
@@ -72,12 +73,14 @@ def filter_shows(shows):
     _log.info("Filtering shows")
 
     # get owned/watched info for all episodes
+    sources = (ShowSource.get_all(config.config["shows"]["watching"]) +
+               ShowSource.get_all(config.config["shows"]["library"]))
     for ep in shows.episodes:
-        for source in ShowSource.get_all():
+        for source in sources:
             if source.is_owned(ep):
                 ep.owned = True
                 break
-        for source in ShowSource.get_all():
+        for source in sources:
             if source.is_watched(ep):
                 ep.watched = True
                 break
@@ -116,7 +119,7 @@ def filter_shows(shows):
                                  permissive)
 
     # first filter using show sources and permissive filtering
-    filter_all(ShowSource.get_all(), True)
+    filter_all(ShowSource.get_all(config.config["shows"]["watching"]), True)
 
     # filter using show filters and strict filtering (must meet all criteria)
     filter_all(ShowFilter.get_all(), False)
