@@ -5,6 +5,7 @@ from itertools import groupby
 from nab.show import ShowSource
 from nab.database import Database
 from nab.show_tree import Show, Season, Episode
+from nab import config
 
 
 @filecache(60 * 60)
@@ -20,12 +21,14 @@ class Trakt:
 
     def _get(self, url, *args, **kwargs):
         return requests.get(Trakt._url + url,
-                            auth=(self.username, self.password),
+                            auth=(config.accounts['trakt']['username'],
+                                  config.accounts['trakt']['password']),
                             *args, **kwargs)
 
     def _cget(self, url, *args, **kwargs):
         return _cget(Trakt._url + url,
-                     auth=(self.username, self.password),
+                     auth=(config.accounts['trakt']['username'],
+                           config.accounts['trakt']['password']),
                      *args, **kwargs)
 
     def get_data(self, show):
@@ -38,7 +41,8 @@ class Trakt:
         else:
             # search for longest names first (avoid searching for initials)
             for title in reversed(sorted(show.titles, key=len)):
-                r = self._cget("/search/shows.json/%s" % self.api,
+                r = self._cget("/search/shows.json/%s" %
+                               config.accounts['trakt']['api'],
                                params={"query": title, "limit": 1})
                 results = r.json()
                 if results:
@@ -49,31 +53,24 @@ class Trakt:
 
         # get show from trakt
         r = self._cget("/show/summary.json/%s/%s/true"
-                       % (self.api, tvdb_id))
+                       % (config.accounts['trakt']['api'], tvdb_id))
         j = r.json()
         show_data[tvdb_id] = j
         return j
 
-    def __init__(self, username, password, api):
-        ShowSource.__init__(self)
-        self.username = username
-        self.password = password
-        self.api = api
-
 
 class TraktSource(ShowSource, Trakt):
-
-    def __init__(self, username, password, api):
-        Trakt.__init__(self, username, password, api)
 
     def get_shows(self):
         TraktSource.log.debug("Getting library")
         r1 = self._cget("/user/library/shows/all.json/%s/%s/min" %
-                        (self.api, self.username))
+                        (config.accounts['trakt']['api'],
+                         config.accounts['trakt']['username']))
         # watchlist requests are never cached for fast response time
         TraktSource.log.debug("Getting watchlist")
         r2 = self._get("/user/watchlist/shows.json/%s/%s" %
-                       (self.api, self.username))
+                       (config.accounts['trakt']['api'],
+                        config.accounts['trakt']['username']))
         sort = lambda s: s["title"].lower()
         shows_data = sorted(r1.json() + r2.json(), key=sort)
 
@@ -121,9 +118,6 @@ TraktSource.register("trakt")
 
 
 class TraktDB(Database, Trakt):
-
-    def __init__(self, username, password, api):
-        Trakt.__init__(self, username, password, api)
 
     def get_show_titles(self, show):
         return [self.show_data(show)["title"]]

@@ -14,6 +14,7 @@ def _load_config():
         copyfile("config_default.yaml", "config.yaml")
 
     c = yaml.load(file("config.yaml", "r"))
+    a = yaml.load(file("accounts.yaml", "a+"))
 
     # find and create directories in settings
     s = c["settings"]
@@ -30,14 +31,17 @@ def _load_config():
         if not os.path.exists(d):
             os.makedirs(d)
 
-    return c
-config = _load_config()
-tasks["load_config"] = _load_config
+    return c, a
+config, accounts = _load_config()
+
+
+def reload_config():
+    global config, accounts
+    config, accounts = _load_config()
+tasks["load_config"] = reload_config
 
 
 def init():
-    global config
-    config = _load_config()
     handler = ConfigWatcher()
     observer = Observer()
     observer.schedule(handler, ".")
