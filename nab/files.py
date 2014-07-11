@@ -6,7 +6,7 @@ import re
 from nab import register
 from nab import log
 from nab import match
-from nab.config import config
+from nab import config
 from nab import downloader
 from nab.scheduler import scheduler, tasks
 from nab.show_tree import Show, Season, Episode
@@ -16,7 +16,7 @@ _log = log.log.getChild("files")
 
 
 class FileSource(register.Entry):
-    _register = register.Register(config["files"]["sources"])
+    _register = register.Register()
     _type = "file source"
 
     def find(self, show, season=None, episode=None):
@@ -24,7 +24,7 @@ class FileSource(register.Entry):
 
 
 class FileFilter(register.Entry):
-    _register = register.Register(config["files"]["filters"])
+    _register = register.Register()
     _type = "file filter"
 
     def filter(self, f):
@@ -254,7 +254,8 @@ def _schedule_find(entry):
 
 
 def _rank_file(f):
-    return sum(filt.filter(f) for filt in FileFilter.get_all())
+    filters = FileFilter.get_all(config.config["files"]["filters"])
+    return sum(filt.filter(f) for filt in filters)
 
 
 def _best_file(files):
@@ -270,7 +271,7 @@ def _find_all_files(entry):
 
     _log.info("Searching for %s" % entry)
     files = []
-    for source in FileSource.get_all():
+    for source in FileSource.get_all(config.config["files"]["sources"]):
         source.__class__.log.debug("Searching in %s" % source)
         files += source.find(entry)
 

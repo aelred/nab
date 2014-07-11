@@ -7,7 +7,7 @@ _log = log.log.getChild("database")
 
 
 class Database(register.Entry):
-    _register = register.Register(config.config["databases"])
+    _register = register.Register()
     _type = "database"
 
     def get_show_titles(self, show):
@@ -26,6 +26,10 @@ class Database(register.Entry):
         return []
 
 
+def databases():
+    return Database.get_all(config.config["databases"])
+
+
 def get_data(show):
     # reschedule to refresh database data in a week's time
     scheduler.add(60 * 60 * 24 * 7, "get_data", show)
@@ -34,24 +38,24 @@ def get_data(show):
 
     # get all titles for show
     _log.debug("Getting titles")
-    for db in Database.get_all():
+    for db in databases():
         show.titles.update(db.get_show_titles(show))
 
     # get if should use absolute numbering
     _log.debug("Getting absolute numbering")
-    for db in Database.get_all():
+    for db in databases():
         if db.get_show_absolute_numbering(show):
             show.absolute = True
             break
 
     # get ids of show
     _log.debug("Getting ids")
-    for db in Database.get_all():
+    for db in databases():
         show.ids = dict(show.ids.items() + db.get_show_ids(show).items())
 
     # get seasons for show
     _log.debug("Getting seasons and episodes")
-    for db in Database.get_all():
+    for db in databases():
         for season in db.get_seasons(show):
             # get episodes for season
             for episode in db.get_episodes(season):

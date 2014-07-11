@@ -6,7 +6,7 @@ _log = log.log.getChild("download")
 
 
 class Downloader(register.Entry):
-    _register = register.Register(config.config["downloaders"])
+    _register = register.Register()
     _type = "downloader"
 
     def download(self, file_):
@@ -27,5 +27,5 @@ def download(entry, f):
     if config.options.test:
         raise DownloadException("Nab is in test mode, no downloading allowed")
 
-    for downloader in Downloader.get_all():
+    for downloader in Downloader.get_all(config.config["downloaders"]):
         downloader.download(f)

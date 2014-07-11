@@ -6,15 +6,11 @@ from memoized import memoized
 
 class Register:
 
-    def __init__(self, cfg):
+    def __init__(self):
         self.table = {}
-        self.cfg = cfg
 
     @memoized(hashable=False)
-    def load(self, cfg=None):
-        if cfg is None:
-            cfg = self.cfg
-
+    def load(self, cfg):
         plugins.load()
         results = []
 

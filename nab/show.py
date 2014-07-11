@@ -8,7 +8,7 @@ _log = log.log.getChild("show")
 
 
 class ShowFilter(register.Entry):
-    _register = register.Register(config.config["shows"]["filters"])
+    _register = register.Register()
     _type = "show filter"
 
     def filter_show(self, show):
@@ -22,7 +22,7 @@ class ShowFilter(register.Entry):
 
 
 class ShowSource(register.Entry):
-    _register = register.Register(config.config["shows"]["library"])
+    _register = register.Register()
     _type = "show source"
 
     def __init__(self, cache_timeout=60*60):
@@ -122,7 +122,7 @@ def filter_shows(shows):
     filter_all(ShowSource.get_all(config.config["shows"]["watching"]), True)
 
     # filter using show filters and strict filtering (must meet all criteria)
-    filter_all(ShowFilter.get_all(), False)
+    filter_all(ShowFilter.get_all(config.config["shows"]["filters"]), False)
 
     _log.info("Found %s needed episode(s)" % len(shows.epwanted))
     for ep in shows.epwanted:
