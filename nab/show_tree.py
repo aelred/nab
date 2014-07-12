@@ -209,7 +209,8 @@ class Show(ShowParentElem, ShowElem):
         if total and not (f.season is None and f.episode is None):
             return False
 
-        return f.title in map(match.format_title, self.titles)
+        titles = map(match.format_title, self.titles)
+        return match.format_title(f.title) in titles
 
     def __eq__(self, other):
         return ShowElem.__eq__(self, other)
