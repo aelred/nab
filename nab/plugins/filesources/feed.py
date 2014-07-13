@@ -1,9 +1,10 @@
-from files import Searcher, Torrent
 from filecache import filecache
 import feedparser
 from unidecode import unidecode
 import urllib
 import re
+
+from nab.files import Searcher, Torrent
 
 
 @filecache(60 * 60)

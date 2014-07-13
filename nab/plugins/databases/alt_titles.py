@@ -1,4 +1,4 @@
-from database import Database
+from nab.database import Database
 
 
 class AltTitles(Database):

@@ -1,8 +1,55 @@
-from downloader import Downloader
 import libtorrent as lt
-from config import config
 import threading
 import time
+
+from nab.downloader import Downloader
+from nab.config import config
+
+
+_state_str = {
+    lt.torrent_status.states.queued_for_checking: 'Check Queue',
+    lt.torrent_status.states.checking_files: 'Checking',
+    lt.torrent_status.states.downloading_metadata: 'Metadata',
+    lt.torrent_status.states.downloading: 'Downloading',
+    lt.torrent_status.states.finished: 'Finished',
+    lt.torrent_status.states.seeding: 'Seeding',
+    lt.torrent_status.states.allocating: 'Allocating',
+    lt.torrent_status.states.checking_resume_data: 'Resuming'
+}
+
+
+def _sizeof_fmt(num):
+    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
+        if num < 1024.0:
+            return "%3.1f %s" % (num, x)
+        num /= 1024.0
+
+
+def _progress_bar(percent):
+    length = 20
+    filled = int(percent * length)
+    unfilled = int(length - filled)
+    return '[%s%s]' % ('=' * filled, ' ' * unfilled)
+
+
+def _torrent_info(handle):
+    s = handle.status()
+    try:
+        i = handle.get_torrent_info()
+    except RuntimeError:
+        # caused if no metadata acquired
+        size = ''
+    else:
+        size = _sizeof_fmt(i.total_size())
+
+    return '\t'.join([
+        _state_str[s.state],
+        size,
+        _progress_bar(s.progress),
+        '%d%%' % (s.progress * 100.0),
+        '%s/s' % _sizeof_fmt(s.download_rate),
+        handle.name()
+    ])
 
 
 class Libtorrent(Downloader):
@@ -25,6 +72,8 @@ class Libtorrent(Downloader):
             lt.alert.category_t.status_notification
             )
 
+        self._progress_ticker = 0
+
     def download(self, file_):
         handle = self.session.add_torrent({
             'save_path': self.folder,
@@ -34,9 +83,17 @@ class Libtorrent(Downloader):
 
     def _watch_thread(self):
         while True:
+            time.sleep(1.0)
+
+            self._progress_ticker += 1
+            if self._progress_ticker >= 10:
+                # print progress
+                info_str = [_torrent_info(h) for h in self.downloads]
+                self.log.info("\n".join(["Progress:"] + info_str))
+                self._progress_ticker = 0
+
             p = self.session.pop_alert()
             if not p:
-                time.sleep(1.0)
                 continue
 
             if (p.what() == "torrent_finished_alert"):

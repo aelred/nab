@@ -1,25 +1,16 @@
-import log
-import plugins
+from nab import log
+from nab import plugins
 import inspect
+from memoized import memoized
 
 
 class Register:
 
-    def __init__(self, cfg):
+    def __init__(self):
         self.table = {}
-        self.cfg = cfg
-        self._loadcache = None
 
-    def load(self, cfg=None):
-        use_cache = False
-
-        if cfg is None:
-            cfg = self.cfg
-            use_cache = True
-
-        if use_cache and self._loadcache:
-            return self._loadcache
-
+    @memoized(hashable=False)
+    def load(self, cfg):
         plugins.load()
         results = []
 
@@ -63,9 +54,6 @@ class Register:
 
                 plugin = plugin_class(*param_list, **param_dict)
                 results.append(plugin)
-
-        if use_cache:
-            self._loadcache = results
 
         return results
 

@@ -1,4 +1,5 @@
 from distutils.core import setup
+from distutils.dir_util import remove_tree
 import py2exe
 import os
 import shutil
@@ -6,7 +7,7 @@ import shutil
 
 # get all plugins
 plugins = []
-for folder, sub, files in os.walk('plugins'):
+for folder, sub, files in os.walk('nab/plugins'):
     plugins_sub = []
     for f in files:
         path = os.path.join(folder, f)
@@ -14,14 +15,21 @@ for folder, sub, files in os.walk('plugins'):
             plugins_sub.append(path)
     plugins.append((folder, plugins_sub))
 
+# delete previous dist
+try:
+    remove_tree('./dist', False)
+except WindowsError:
+    pass
+
 setup(
     options={'py2exe': {
         'bundle_files': 1,
         'compressed': True,
-        'packages': ['plugins'],
+        'packages': ['nab', 'nab.plugins'],
         'includes':
         ['lxml._elementpath', 'dbhash']}},
-    console=['__main__.py'],
+    console=['nab/__main__.py'],
+    entry_points={'console_scripts': ['nab = nab.__main__:main']},
     data_files=[('.', ['config_default.yaml'])] + plugins,
     )
 

@@ -1,8 +1,9 @@
-from database import Database
-from show_tree import Season, Episode
 from filecache import filecache
 import tvdb_api
 import time
+
+from nab.database import Database
+from nab.show_tree import Season, Episode
 
 _t = tvdb_api.Tvdb()
 

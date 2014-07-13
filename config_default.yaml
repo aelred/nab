@@ -1,16 +1,17 @@
 settings:
-  downloads: .\downloads\in_progress
-  completed: .\downloads\completed
+  downloads: '{user}\downloads\nab\in_progress'
+  completed: '{user}\downloads\nab\completed'
   videos:
-    - .\downloads\videos
+    - '{user}\videos'
 shows:
-  sources:
+  library:
     - filesystem
+  watching:
     - watchlist
   filters:
-    - specials: no
-    - watched: no
-    - owned: no
+    - specials
+    - watched
+    - owned
 databases:
   - tvdb
   - anidb

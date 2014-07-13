@@ -8,11 +8,11 @@ from filecache import filecache
 from pprint import pprint
 from lxml import html
 from itertools import chain, product
-from database import Database
 from munkres import Munkres
 
-from show_tree import Show, Season, Episode
-from match import format_title, comp
+from nab.database import Database
+from nab.show_tree import Show, Season, Episode
+from nab.match import format_title, comp
 
 url = "http://api.anidb.net:9001/httpapi"
 defparams = {

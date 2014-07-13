@@ -1,8 +1,9 @@
 from itertools import chain
 import re
 import yaml
-import match
 import time
+
+from nab import match
 
 
 class ShowElem(object):
@@ -40,6 +41,15 @@ class ShowElem(object):
 
     def format(self):
         pass
+
+    def __eq__(self, other):
+        try:
+            return self.id == other.id
+        except AttributeError:
+            return False
+
+    def __hash__(self):
+        return hash(self.id)
 
 
 class ShowParentElem(dict):
@@ -88,18 +98,52 @@ class ShowParentElem(dict):
         for child in self.itervalues():
             child.format()
 
+    def to_yaml(self):
+        return dict([(k, v.to_yaml()) for k, v in self.iteritems()])
+
+    @staticmethod
+    def from_yaml(yml, child_type, parent):
+        return dict([(k, child_type.from_yaml(v, k, parent))
+                     for k, v in yml.iteritems()])
+
+    def find(self, id_):
+        if self.id != id_[0:len(self.id)]:
+            return None
+        if id_ == self.id:
+            return self
+
+        for child in self.itervalues():
+            f = child.find(id_)
+            if f is not None:
+                return f
+
+        return None
+
 
 class ShowTree(ShowParentElem):
 
     def __init__(self):
         ShowParentElem.__init__(self)
+        try:
+            with file('shows.yaml', 'r') as f:
+                self.update(ShowTree.from_yaml(yaml.load(f), Show, self))
+        except IOError:
+            pass  # no shows.yaml file, doesn't matter!
 
-    def get(self, name):
-        return next(sh for sh in self.itervalues() if name in sh.titles)
+    def find(self, id_):
+        if isinstance(id_, str):
+            id_ = (id_,)
 
-    def refresh(self):
-        self.format()
-        yaml.dump(self, file('shows.yaml', 'w'))
+        for child in self.itervalues():
+            f = child.find(id_)
+            if f is not None:
+                return f
+
+    def save(self):
+        yaml.safe_dump(self.to_yaml(), file('shows.yaml', 'w'))
+
+    def to_yaml(self):
+        return ShowParentElem.to_yaml(self)
 
 
 class Show(ShowParentElem, ShowElem):
@@ -112,6 +156,10 @@ class Show(ShowParentElem, ShowElem):
     @property
     def show(self):
         return self
+
+    @property
+    def id(self):
+        return (self.title,)
 
     def format(self):
         # for all titles, remove bracketed year info
@@ -140,6 +188,20 @@ class Show(ShowParentElem, ShowElem):
         ShowElem.__merge__(self, other)
         self.ids = dict(self.ids.items() + other.ids.items())
 
+    def to_yaml(self):
+        return {
+            "ids": self.ids,
+            "titles": list(self.titles),
+            "absolute": self.absolute,
+            "seasons": ShowParentElem.to_yaml(self)
+        }
+
+    @staticmethod
+    def from_yaml(yml, title, parent):
+        show = Show(title, yml["ids"], yml["absolute"], yml["titles"])
+        show.update(ShowParentElem.from_yaml(yml["seasons"], Season, show))
+        return show
+
     def search_terms(self):
         return set(map(match.format_title, self.titles))
 
@@ -147,13 +209,11 @@ class Show(ShowParentElem, ShowElem):
         if total and not (f.season is None and f.episode is None):
             return False
 
-        return f.title in map(match.format_title, self.titles)
+        titles = map(match.format_title, self.titles)
+        return match.format_title(f.title) in titles
 
     def __eq__(self, other):
-        for title in self.titles:
-            if title in other.titles:
-                return True
-        return False
+        return ShowElem.__eq__(self, other)
 
     def __str__(self):
         return self.title.encode('utf-8')
@@ -172,9 +232,27 @@ class Season(ShowParentElem, ShowElem):
     def season(self):
         return self
 
+    @property
+    def id(self):
+        return self.show.id + (self.num,)
+
     def merge(self, season):
         ShowParentElem.merge(self, season)
         ShowElem.merge(self, season)
+
+    def to_yaml(self):
+        return {
+            "title": self.title,
+            "titles": list(self.titles),
+            "episodes": ShowParentElem.to_yaml(self)
+        }
+
+    @staticmethod
+    def from_yaml(yml, num, show):
+        season = Season(show, num, yml["title"], yml["titles"])
+        season.update(
+            ShowParentElem.from_yaml(yml["episodes"], Episode, season))
+        return season
 
     def names(self, full=False):
         names = []
@@ -217,6 +295,9 @@ class Season(ShowParentElem, ShowElem):
         return ((f.title in map(match.format_title, self.titles)
                  and f.season is None) or
                 (self.show.match(f, False) and f.season == self.num))
+
+    def __eq__(self, other):
+        return ShowElem.__eq__(self, other)
 
     def __str__(self):
         if self.title:
@@ -287,6 +368,17 @@ class Episode(ShowElem):
     def aired_max(self):
         return self.aired
 
+    @property
+    def id(self):
+        return self.season.id + (self.num,)
+
+    @property
+    def epwanted(self):
+        if self.wanted:
+            return [self]
+        else:
+            return []
+
     def has_aired(self):
         if ShowElem.has_aired(self):
             return True
@@ -308,6 +400,30 @@ class Episode(ShowElem):
             self.aired = episode.aired
 
         ShowElem.merge(self, episode)
+
+    def to_yaml(self):
+        return {
+            "title": self.title,
+            "titles": list(self.titles),
+            "aired": self.aired,
+            "owned": self.owned,
+            "watched": self.watched,
+            "wanted": self.wanted
+        }
+
+    @staticmethod
+    def from_yaml(yml, num, season):
+        ep = Episode(season, num, yml["title"], yml["aired"], yml["titles"])
+        ep.owned = yml["owned"]
+        ep.watched = yml["watched"]
+        ep.wanted = yml["wanted"]
+        return ep
+
+    def find(self, id_):
+        if self.id == id_:
+            return self
+        else:
+            return None
 
     def names(self, full=False):
         names = self.season.names(full)
@@ -354,7 +470,7 @@ class Episode(ShowElem):
                       for t in self.show.titles]
             return f.title in titles
 
-        if (self.show.absolute and
+        if (self.show.absolute and f.season is None and
            self.show.match(f, False) and f.episode == self.absolute):
             return True
 

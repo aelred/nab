@@ -1,21 +1,22 @@
-from config import config
-import register
-import log
 import pprint
-import downloader
 import math
 import time
-import match
 import re
-from scheduler import scheduler
-from show_tree import Show, Season, Episode
+
+from nab import register
+from nab import log
+from nab import match
+from nab import config
+from nab import downloader
+from nab.scheduler import scheduler, tasks
+from nab.show_tree import Show, Season, Episode
 
 
 _log = log.log.getChild("files")
 
 
 class FileSource(register.Entry):
-    _register = register.Register(config["files"]["sources"])
+    _register = register.Register()
     _type = "file source"
 
     def find(self, show, season=None, episode=None):
@@ -23,7 +24,7 @@ class FileSource(register.Entry):
 
 
 class FileFilter(register.Entry):
-    _register = register.Register(config["files"]["filters"])
+    _register = register.Register()
     _type = "file filter"
 
     def filter(self, f):
@@ -149,7 +150,8 @@ class File(object):
     @staticmethod
     def _split_numbering(title):
         num_re = (r'(?P<title>.*?)\s+'
-                  's(?P<season>\d+)\s*e(?P<episode>\d+)\s*(?P<eptitle>.*)$')
+                  's?(?P<season>\d+)\s*'
+                  '(ep?|\s+)(?P<episode>\d+)\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -162,7 +164,7 @@ class File(object):
         if match:
             return match.groupdict()
 
-        num_re = r"(?P<title>.*?)\s+e?(?P<episode>\d+)\s*(?P<eptitle>.*)$"
+        num_re = r"(?P<title>.*?)\s+(ep?)?(?P<episode>\d+)\s*(?P<eptitle>.*)$"
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -236,67 +238,79 @@ class Torrent(File):
         self.seeds = seeds
 
 
-def find_file(entry, reschedule=True):
+def _schedule_find(entry):
+    if entry.aired is None:
+        time_since_aired = time.time()
+    else:
+        time_since_aired = time.time() - entry.aired
 
-    def schedule_find():
-        if entry.aired is None:
-            time_since_aired = time.time()
-        else:
-            time_since_aired = time.time() - entry.aired
+    if time_since_aired > 0:
+        delay = time_since_aired * math.log(time_since_aired) / 200
+        delay = min(delay, 30 * 24 * 60 * 60)  # at least once a month
+        delay = max(delay, 60 * 60)  # no more than once an hour
+    else:
+        delay = -time_since_aired  # nab as soon as it airs
 
-        if time_since_aired > 0:
-            delay = time_since_aired * math.log(time_since_aired) / 200
-            delay = min(delay, 30 * 24 * 60 * 60)  # at least once a month
-            delay = max(delay, 60 * 60)  # no more than once an hour
-        else:
-            delay = -time_since_aired  # nab as soon as it airs
+    scheduler.add(delay, "find_file", entry, True)
 
-        scheduler.add(delay, find_file, entry)
 
-    def best_file(files):
-        for f in files:
-            f.rank = sum(filt.filter(f) for filt in FileFilter.get_all())
+def _rank_file(f):
+    filters = FileFilter.get_all(config.config["files"]["filters"])
+    return sum(filt.filter(f) for filt in filters)
 
-        if files:
-            return max(files, key=lambda f: f.rank)
+
+def _best_file(files):
+    if files:
+        return max(files, key=lambda f: _rank_file(f))
+    return None
+
+
+def _find_all_files(entry):
+    # only search for aired shows
+    if not entry.has_aired():
         return None
 
-    def find():
-        # only search for aired shows
-        if not entry.has_aired():
-            return None
+    _log.info("Searching for %s" % entry)
+    files = []
+    for source in FileSource.get_all(config.config["files"]["sources"]):
+        source.__class__.log.debug("Searching in %s" % source)
+        files += source.find(entry)
 
-        _log.info("Searching for %s" % entry)
-        files = []
-        for source in FileSource.get_all():
-            source.__class__.log.debug("Searching in %s" % source)
-            files += source.find(entry)
+    if not files:
+        _log.info("No file found for %s" % entry)
 
-        if not files:
-            _log.info("No file found for %s" % entry)
+    return files
 
-        return best_file(files)
 
+def find_file(entry, reschedule):
     # get entry only if wanted
     if entry.wanted:
-        f = find()
+        f = _best_file(_find_all_files(entry))
         if f:
-            downloader.download(entry, f)
-            return
-        elif reschedule:
-            schedule_find()
+            try:
+                downloader.download(entry, f)
+            except downloader.DownloadException:
+                pass  # reschedule download
+            else:
+                return  # succesful, return
+
+        if reschedule:
+            _schedule_find(entry)
             reschedule = False
 
     try:
         for child in sorted(entry.values(),
                             key=lambda c: c.aired, reverse=True):
-            scheduler.add(0, find_file, child, reschedule)
+            if len(child.epwanted):
+                scheduler.add(0, "find_file", child, reschedule)
     except AttributeError:
         pass
+tasks["find_file"] = find_file
 
 
 def find_files(shows):
     _log.info("Finding files")
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):
-        scheduler.add(0, find_file, sh)
+        if len(sh.epwanted):
+            scheduler.add(0, "find_file", sh, True)

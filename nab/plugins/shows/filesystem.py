@@ -1,9 +1,10 @@
-from show import ShowSource
-from files import File
-from show_tree import Show
-import config
 import os
 import re
+
+from nab.show import ShowSource
+from nab.files import File
+from nab.show_tree import Show
+from nab import config
 
 
 class FileSystem(ShowSource):

@@ -1,7 +1,8 @@
-from show import ShowSource
 from plex.server import Server
 from itertools import chain
-from show_tree import Show
+
+from nab.show import ShowSource
+from nab.show_tree import Show
 
 
 class Plex(ShowSource):
