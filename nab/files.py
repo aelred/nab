@@ -150,7 +150,8 @@ class File(object):
     @staticmethod
     def _split_numbering(title):
         num_re = (r'(?P<title>.*?)\s+'
-                  's(?P<season>\d+)\s*ep?(?P<episode>\d+)\s*(?P<eptitle>.*)$')
+                  's?(?P<season>\d+)\s*'
+                  '(ep?|\s+)(?P<episode>\d+)\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
