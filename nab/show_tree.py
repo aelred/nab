@@ -470,7 +470,7 @@ class Episode(ShowElem):
                       for t in self.show.titles]
             return f.title in titles
 
-        if (self.show.absolute and
+        if (self.show.absolute and f.season is None and
            self.show.match(f, False) and f.episode == self.absolute):
             return True
 
