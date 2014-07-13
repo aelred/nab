@@ -1,7 +1,10 @@
 from flask import Flask, request, make_response
+import yaml
+
+import nab.config
 
 app = Flask('nab')
-app.debug = True
+# app.debug = True
 
 
 def run():
@@ -18,14 +21,8 @@ def log():
 @app.route('/config', methods=['GET', 'POST'])
 def config():
     if request.method == 'POST':
-        with file('config.yaml', 'w') as f:
-            f.write(request.data)
+        nab.config.change_config(yaml.safe_load(request.data))
 
-    with file('config.yaml', 'r') as f:
-        response = make_response(f.read())
-        response.headers['content-type'] = 'text/yaml'
-        return response
-
-
-if __name__ == "__main__":
-    run()
+    response = make_response(yaml.safe_dump(nab.config.config))
+    response.headers['content-type'] = 'text/yaml'
+    return response

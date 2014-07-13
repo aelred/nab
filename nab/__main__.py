@@ -7,6 +7,7 @@ from nab import config
 from nab import plugins
 from nab import downloader
 from nab import scheduler
+from nab import server
 
 import os
 
@@ -82,3 +83,6 @@ else:
     # add command to refresh data
     # if command is already scheduled, this will be ignored
     scheduler.scheduler.add(0, "refresh")
+
+    # start server
+    server.run()
