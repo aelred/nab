@@ -3,6 +3,7 @@ import time
 from nab import config
 from nab import register
 from nab import log
+from nab import exception
 
 _log = log.log.getChild("show")
 
@@ -64,7 +65,12 @@ def get_shows():
     shows = []
     for source in ShowSource.get_all(config.config["shows"]["watching"]):
         source.__class__.log.info("Searching show source %s" % source)
-        shows += source.get_cached_shows()
+        try:
+            shows += source.get_cached_shows()
+        except exception.PluginError:
+            # errors are printed, but keep running
+            # shows will be looked up again in an hour
+            pass
 
     return shows
 
@@ -75,15 +81,26 @@ def filter_shows(shows):
     # get owned/watched info for all episodes
     sources = (ShowSource.get_all(config.config["shows"]["watching"]) +
                ShowSource.get_all(config.config["shows"]["library"]))
-    for ep in shows.episodes:
-        for source in sources:
-            if source.is_owned(ep):
-                ep.owned = True
-                break
-        for source in sources:
-            if source.is_watched(ep):
-                ep.watched = True
-                break
+    try:
+        for ep in shows.episodes:
+            for source in sources:
+                try:
+                    if source.is_owned(ep):
+                        ep.owned = True
+                        break
+                except exception.PluginError:
+                    _log.info("Unknown ")
+            for source in sources:
+                if source.is_watched(ep):
+                    ep.watched = True
+                    break
+    except exception.PluginError:
+        # if shouw source fails, abandon all hope! (try again later)
+        for ep in shows.episodes:
+            # mark all episodes as unwanted
+            # don't accidentally download unwanted things
+            ep.wanted = False
+        return
 
     _log.info("Found %s show(s)" % len(shows))
 

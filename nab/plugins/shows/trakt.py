@@ -6,6 +6,7 @@ from nab.show import ShowSource
 from nab.database import Database
 from nab.show_tree import Show, Season, Episode
 from nab import config
+from nab.exception import PluginError
 
 
 @filecache(60 * 60)
@@ -20,16 +21,22 @@ class Trakt:
     _url = "http://api.trakt.tv"
 
     def _get(self, url, *args, **kwargs):
-        return requests.get(Trakt._url + url,
-                            auth=(config.accounts['trakt']['username'],
-                                  config.accounts['trakt']['password']),
-                            *args, **kwargs)
+        try:
+            return requests.get(Trakt._url + url,
+                                auth=(config.accounts['trakt']['username'],
+                                      config.accounts['trakt']['password']),
+                                *args, **kwargs)
+        except requests.exceptions.ConnectionError:
+            raise PluginError(self, 'Error connecting to trakt')
 
     def _cget(self, url, *args, **kwargs):
-        return _cget(Trakt._url + url,
-                     auth=(config.accounts['trakt']['username'],
-                           config.accounts['trakt']['password']),
-                     *args, **kwargs)
+        try:
+            return _cget(Trakt._url + url,
+                         auth=(config.accounts['trakt']['username'],
+                               config.accounts['trakt']['password']),
+                         *args, **kwargs)
+        except requests.exceptions.ConnectionError:
+            raise PluginError(self, 'Error connecting to trakt')
 
     def get_data(self, show):
         if "tvdb" in show.ids:
