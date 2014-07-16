@@ -61,7 +61,10 @@ class Trakt:
         # get show from trakt
         r = self._cget("/show/summary.json/%s/%s/true"
                        % (config.accounts['trakt']['api'], tvdb_id))
-        j = r.json()
+        try:
+            j = r.json()
+        except ValueError:
+            raise PluginError(self, 'Error decoding trakt data')
         show_data[tvdb_id] = j
         return j
 
