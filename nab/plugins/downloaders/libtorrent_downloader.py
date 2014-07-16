@@ -86,7 +86,13 @@ class Libtorrent(Downloader):
             time.sleep(1.0)
 
             self._progress_ticker += 1
-            if self._progress_ticker >= 10:
+            # get list of active downloads
+            downloads = [h for h in self.downloads
+                         if h.status().state not in
+                         [lt.torrent_status.states.seeding,
+                          lt.torrent_status.states.finished]]
+            # print progress only if active downloads
+            if self._progress_ticker >= 30 and downloads:
                 # print progress
                 info_str = [_torrent_info(h) for h in self.downloads]
                 self.log.info("\n".join(["Progress:"] + info_str))
