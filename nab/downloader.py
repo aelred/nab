@@ -1,6 +1,7 @@
 from nab import config
 from nab import register
 from nab import log
+from nab import exception
 
 _log = log.log.getChild("download")
 
@@ -28,4 +29,11 @@ def download(entry, f):
         raise DownloadException("Nab is in test mode, no downloading allowed")
 
     for downloader in Downloader.get_all(config.config["downloaders"]):
-        downloader.download(f)
+        try:
+            downloader.download(f)
+        except exception.PluginError:
+            # unsuccessful, try the next downloader
+            pass
+        else:
+            # succesful download, return
+            return

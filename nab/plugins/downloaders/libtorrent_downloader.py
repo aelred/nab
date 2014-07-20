@@ -58,7 +58,8 @@ class Libtorrent(Downloader):
         self.session = lt.session()
         self.session.listen_on(*ports)
 
-        self.downloads = []
+        self.downloads = set()
+        self.urls = set()
         self.folder = config["settings"]["downloads"]
         threading.Thread(target=self._watch_thread).start()
 
@@ -75,11 +76,16 @@ class Libtorrent(Downloader):
         self._progress_ticker = 0
 
     def download(self, file_):
+        if file_.url in self.urls:
+            # silently return if already downloading
+            return
+
         handle = self.session.add_torrent({
             'save_path': self.folder,
             'url': file_.url})
 
-        self.downloads.append(handle)
+        self.downloads.add(handle)
+        self.urls.add(file_.url)
 
     def _watch_thread(self):
         while True:
