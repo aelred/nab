@@ -50,7 +50,7 @@ def rename_file(path):
     # must be a video file
     if not f.ext in ["mpg", "mpe", "mpeg", "mp2v", "m2v", "m2s",
                      "avi", "mov", "qt", "asf", "asx", "wmv", "wmx",
-                     "rm", "ram", "rmvb", "mp4", "3gp", "ogm",
+                     "rm", "ram", "rmvb", "mp4", "3gp", "ogm", "flv",
                      "mkv", "srt", "sub", "smi"]:
         Renamer.log.debug("Ignoring non-video file %s" % f)
         return
