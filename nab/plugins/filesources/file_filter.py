@@ -65,6 +65,10 @@ Fansubs.register("fansubs")
 
 class Seeds(FileFilter):
     def filter(self, f):
+        if f.seeds is None:
+            # if seed number is unknown, behave like there are 0.5 seeds
+            # better than no seeds, but not as good as one!
+            return 0.25
         return 1.0 - 1.0 / (f.seeds + 1.0)
 Seeds.register("seeds")
 
