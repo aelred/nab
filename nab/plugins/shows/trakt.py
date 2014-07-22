@@ -51,7 +51,12 @@ class Trakt:
                 r = self._cget("/search/shows.json/%s" %
                                config.accounts['trakt']['api'],
                                params={"query": title, "limit": 1})
-                results = r.json()
+
+                try:
+                    results = r.json()
+                except ValueError:
+                    raise PluginError(self, 'Error decoding trakt data')
+
                 if results:
                     tvdb_id = results[0]["tvdb_id"]
                     break
@@ -82,7 +87,11 @@ class TraktSource(ShowSource, Trakt):
                        (config.accounts['trakt']['api'],
                         config.accounts['trakt']['username']))
         sort = lambda s: s["title"].lower()
-        shows_data = sorted(r1.json() + r2.json(), key=sort)
+
+        try:
+            shows_data = sorted(r1.json() + r2.json(), key=sort)
+        except ValueError:
+            raise PluginError(self, 'Error decoding trakt data')
 
         # remove duplicate shows
         shows_data = [next(v) for k, v in groupby(shows_data, key=sort)]
