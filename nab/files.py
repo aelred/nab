@@ -255,6 +255,12 @@ class Torrent(File):
         self.url = url
         self.seeds = seeds
 
+    def __str__(self):
+        if self.seeds:
+            return "%s (%d seeds)" % (self.filename, self.seeds)
+        else:
+            return self.filename
+
 
 def _schedule_find(entry):
     if entry.aired is None:
