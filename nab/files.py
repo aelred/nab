@@ -226,7 +226,7 @@ class File(object):
     def _split_tags(title):
         tags = []
 
-        bracket_re = r"[\[\{](.*?)[\]\}]"
+        bracket_re = r"[\(\[\{](.*?)[\]\}\)]"
         match = re.findall(bracket_re, title)
         if match:
             title = re.sub(bracket_re, "", title).strip()
