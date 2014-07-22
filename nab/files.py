@@ -147,6 +147,11 @@ class File(object):
         data = {"title": match.format_title(filename)}
 
         data.update(File._split_ext(data["title"]))
+        # try to split numbering before splitting group
+        # fixes bug where e.g. "S02E03" is identified as the group name
+        split = File._split_numbering(data["title"])
+        if len(split) and "eptitle" not in split:
+            data.update(split)
         data.update(File._split_group(data["title"]))
         data.update(File._split_tags(data["title"]))
         data.update(File._split_numbering(data["title"]))
@@ -158,6 +163,15 @@ class File(object):
         num_re = (r'(?P<title>.*?)\s+'
                   's?(?P<season>\d+)\s*'
                   '(ep?|\s+)(?P<episode>\d+)\s*(?P<eptitle>.*)$')
+        match = re.match(num_re, title)
+        if match:
+            d = match.groupdict()
+            if d["eptitle"] == "":
+                del d["eptitle"]
+            return d
+
+        num_re = (r'(?P<title>.*?)\s+(?P<season>\d+)x'
+                  '(?P<episode>\d+)\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
