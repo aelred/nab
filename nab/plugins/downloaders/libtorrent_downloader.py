@@ -12,7 +12,7 @@ _state_str = {
     lt.torrent_status.states.downloading_metadata: 'Metadata',
     lt.torrent_status.states.downloading: 'Downloading',
     lt.torrent_status.states.finished: 'Finished',
-    lt.torrent_status.states.seeding: 'Seeding',
+    lt.torrent_status.states.seeding: 'Seeding ',
     lt.torrent_status.states.allocating: 'Allocating',
     lt.torrent_status.states.checking_resume_data: 'Resuming'
 }
