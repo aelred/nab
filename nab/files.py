@@ -17,7 +17,7 @@ _log = log.log.getChild("files")
 
 video_exts = ['mpg', 'mpe', 'mpeg', 'mp2v', 'm2v', 'm2s', 'avi', 'mov', 'qt',
               'asf', 'asx', 'wmv', 'wmx', 'rm', 'ram', 'rmvb', 'mp4', '3gp',
-              'ogm', 'flv', 'mkv']
+              'ogm', 'flv', 'mkv', 'ts']
 sub_exts = ['srt', 'sub', 'smi']
 
 
