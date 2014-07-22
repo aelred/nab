@@ -7,7 +7,7 @@ import string
 
 from nab import config
 from nab import log
-from nab.files import File
+from nab import files
 from nab.scheduler import scheduler, tasks
 
 path = config.config["settings"]["completed"]
@@ -45,13 +45,10 @@ def rename_file(path):
     if not os.path.isfile(path):
         return
 
-    f = File(os.path.basename(path))
+    f = files.File(os.path.basename(path))
 
     # must be a video file
-    if not f.ext in ["mpg", "mpe", "mpeg", "mp2v", "m2v", "m2s",
-                     "avi", "mov", "qt", "asf", "asx", "wmv", "wmx",
-                     "rm", "ram", "rmvb", "mp4", "3gp", "ogm", "flv",
-                     "mkv", "srt", "sub", "smi"]:
+    if not f.ext in files.video_exts + files.sub_exts:
         Renamer.log.debug("Ignoring non-video file %s" % f)
         return
 
@@ -73,7 +70,7 @@ def rename_file(path):
         parent = nparent
 
         pname = os.path.basename(parent)
-        f = File(" ".join([pname, f.filename]))
+        f = files.File(" ".join([pname, f.filename]))
         episode = _find_episode(f)
 
     if episode is None:

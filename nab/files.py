@@ -15,6 +15,12 @@ from nab.show_tree import Show, Season, Episode
 _log = log.log.getChild("files")
 
 
+video_exts = ['mpg', 'mpe', 'mpeg', 'mp2v', 'm2v', 'm2s', 'avi', 'mov', 'qt',
+              'asf', 'asx', 'wmv', 'wmx', 'rm', 'ram', 'rmvb', 'mp4', '3gp',
+              'ogm', 'flv', 'mkv']
+sub_exts = ['srt', 'sub', 'smi']
+
+
 class FileSource(register.Entry):
     _register = register.Register()
     _type = "file source"
@@ -176,9 +182,7 @@ class File(object):
 
     @staticmethod
     def _split_ext(title):
-        ext_re = r"""(.*?)\s+\.?(mpg|mpe|mpeg|mp2v|m2v|m2s|avi|
-                                 mov|qt|asf|asx|wmv|wmx|rm|ram|
-                                 rmvb|mp4|3gp|ogm|mkv|srt|sub|smi)$"""
+        ext_re = r"(.*?)\s+\.?(%s)$" % '|'.join(video_exts + sub_exts)
         match = re.match(ext_re, title)
         if match:
             return {"title": match.group(1), "ext": match.group(2)}
