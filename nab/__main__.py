@@ -84,5 +84,8 @@ else:
     # if command is already scheduled, this will be ignored
     scheduler.scheduler.add(0, "refresh")
 
+    # add command to check download progress
+    scheduler.scheduler.add(0, "check_downloads")
+
     # start server
     server.run()

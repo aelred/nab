@@ -1,7 +1,5 @@
 import os
 import os.path
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import shutil
 import string
 
@@ -10,27 +8,17 @@ from nab import log
 from nab import files
 from nab.scheduler import scheduler, tasks
 
-path = config.config["settings"]["completed"]
 pattern = config.config["renamer"]["pattern"]
 copy = config.config["renamer"].get("copy", True)
 
 _shows = None
 
+_log = log.log.getChild("renamer")
+
 
 def init(shows):
     global _shows
     _shows = shows
-    renamer = Renamer()
-    observer = Observer()
-    observer.schedule(renamer, path, recursive=True)
-    observer.start()
-
-
-class Renamer(FileSystemEventHandler):
-    log = log.log.getChild("renamer")
-
-    def on_created(self, event):
-        scheduler.add_asap("rename_file", event.src_path)
 
 
 def _find_episode(file_):
@@ -49,14 +37,14 @@ def rename_file(path):
 
     # must be a video file
     if not f.ext in files.video_exts + files.sub_exts:
-        Renamer.log.debug("Ignoring non-video file %s" % f)
+        _log.debug("Ignoring non-video file %s" % f)
         return
 
     if "sample" in f.filename.lower():
-        Renamer.log.debug("Ignoring sample file %s" % f)
+        _log.debug("Ignoring sample file %s" % f)
         return
 
-    Renamer.log.debug("File created %s" % f)
+    _log.debug("File created %s" % f)
 
     # look for a matching episode
     episode = _find_episode(f)
@@ -74,10 +62,13 @@ def rename_file(path):
         episode = _find_episode(f)
 
     if episode is None:
-        Renamer.log.warning("No match found for %s" % f)
+        _log.warning("No match found for %s" % f)
         return
 
-    Renamer.log.debug("%s matches %s" % (f, episode))
+    _log.debug("%s matches %s" % (f, episode))
+
+    # mark episode as owned
+    episode.owned = True
 
     valid_fname = "-_.()[]! %s%s" % (string.ascii_letters, string.digits)
 
@@ -104,19 +95,19 @@ def rename_file(path):
         try:
             os.makedirs(dest_dir)
         except OSError as e:
-            Renamer.log.warning(
+            _log.warning(
                 "Error creating directory %s: %s" % (dest_dir, str(e)))
 
     # copy across
-    Renamer.log.info("Moving %s to %s" % (f, dest))
+    _log.info("Moving %s to %s" % (f, dest))
     try:
         if copy:
             shutil.copyfile(path, dest)
         else:
             shutil.move(path, dest)
     except IOError, e:
-        Renamer.log.error(str(e))
+        _log.error(str(e))
         scheduler.add(5 * 60, "rename_file", path)
     else:
-        Renamer.log.info("Successfully moved %s" % f)
+        _log.info("Successfully moved %s" % f)
 tasks["rename_file"] = rename_file

@@ -261,6 +261,12 @@ class Torrent(File):
         else:
             return self.filename
 
+    def __hash__(self):
+        return hash(self.url)
+
+    def __eq__(self, other):
+        return self.url == other.url
+
 
 def _schedule_find(entry):
     if entry.aired is None:

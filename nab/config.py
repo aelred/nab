@@ -28,10 +28,9 @@ def _load_config():
         return path.format(user=os.getenv('USERPROFILE'),
                            home=os.getenv('HOME'))
     s["downloads"] = format_path(s["downloads"])
-    s["completed"] = format_path(s["completed"])
     s["videos"] = map(format_path, s["videos"])
 
-    dirs = [s["downloads"], s["completed"]] + s["videos"]
+    dirs = [s["downloads"]] + s["videos"]
     for d in dirs:
         if not os.path.exists(d):
             _log.info("Creating directory %s" % d)

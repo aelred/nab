@@ -1,6 +1,5 @@
 settings:
-  downloads: '{user}\downloads\nab\in_progress'
-  completed: '{user}\downloads\nab\completed'
+  downloads: '{user}\downloads\nab'
   videos:
     - '{user}\videos'
 shows:
@@ -61,8 +60,8 @@ files:
       weight: 5.0
       filters:
         - seeds
-downloaders:
-  - libtorrent
+downloader:
+  libtorrent
 renamer:
   pattern: '{videos}\{t}\{st} - S{s:02d}E{e:02d} - {et}'
   copy: yes

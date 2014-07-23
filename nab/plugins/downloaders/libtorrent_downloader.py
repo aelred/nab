@@ -1,6 +1,7 @@
 import libtorrent as lt
 import threading
 import time
+import os.path
 
 from nab.downloader import Downloader
 from nab.config import config
@@ -16,6 +17,9 @@ _state_str = {
     lt.torrent_status.states.allocating: 'Allocating',
     lt.torrent_status.states.checking_resume_data: 'Resuming'
 }
+
+_completed_states = [lt.torrent_status.states.seeding,
+                     lt.torrent_status.states.finished]
 
 
 def _sizeof_fmt(num):
@@ -58,8 +62,9 @@ class Libtorrent(Downloader):
         self.session = lt.session()
         self.session.listen_on(*ports)
 
-        self.downloads = set()
-        self.urls = set()
+        self.downloads = {}
+        self.files = {}
+
         self.folder = config["settings"]["downloads"]
         threading.Thread(target=self._watch_thread).start()
 
@@ -75,17 +80,25 @@ class Libtorrent(Downloader):
 
         self._progress_ticker = 0
 
-    def download(self, file_):
-        if file_.url in self.urls:
+    def download(self, torrent):
+        if torrent in self.files:
             # silently return if already downloading
             return
 
         handle = self.session.add_torrent({
             'save_path': self.folder,
-            'url': file_.url})
+            'url': torrent.url})
 
-        self.downloads.add(handle)
-        self.urls.add(file_.url)
+        self.downloads[handle] = torrent
+        self.files[torrent] = handle
+
+    def is_completed(self, torrent):
+        return self.files[torrent].status().state in _completed_states
+
+    def get_files(self, torrent):
+        handle = self.files[torrent]
+        files = handle.get_torrent_info().files()
+        return [os.path.join(handle.save_path(), f.path) for f in files]
 
     def _watch_thread(self):
         while True:
@@ -94,9 +107,7 @@ class Libtorrent(Downloader):
             self._progress_ticker += 1
             # get list of active downloads
             downloads = [h for h in self.downloads
-                         if h.status().state not in
-                         [lt.torrent_status.states.seeding,
-                          lt.torrent_status.states.finished]]
+                         if h.status().state not in _completed_states]
             # print progress only if active downloads
             if self._progress_ticker >= 30 and downloads:
                 # print progress
@@ -110,9 +121,6 @@ class Libtorrent(Downloader):
 
             if (p.what() == "torrent_finished_alert"):
                 self.log.info(p)
-
-                # move torrent to downloads directory
-                p.handle.move_storage(config["settings"]["completed"])
                 continue
 
             if (p.what() == "torrent_added_alert"):
@@ -132,6 +140,9 @@ class Libtorrent(Downloader):
                 if ratio >= self.ratio and p.handle.status().is_finished:
                     # 1 == delete files
                     p.handle.remove_torrent(1)
+                    file_ = self.downloads[p.handle]
+                    del self.downloads[p.handle]
+                    del self.files[file_]
                 continue
 
             if p.category() == lt.alert.category_t.error_notification:
