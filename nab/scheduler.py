@@ -150,12 +150,26 @@ class Scheduler:
 
     def add(self, delay, action, *argument):
         argument = self._encode_argument(argument)
-
-        if (action, argument) in self.queue_set:
-            return
+        dtime = time.time() + delay
 
         with self._qlock:
-            dtime = time.time() + delay
+
+            if (action, argument) in self.queue_set:
+                # if entry already present, look it up
+                match = None
+                for (d_q, act_q, arg_q) in self.queue:
+                    if (act_q, arg_q) == (action, argument):
+                        match = (d_q, act_q, arg_q)
+                        break
+
+                # if match found and new time is SOONER, replace it
+                # if new time is later, ignore
+                if match is not None and match[0] > dtime:
+                    self.queue.remove(match)
+                    heapq.heapify(self.queue)  # rearrange into heap
+                else:
+                    return
+
             _log.debug("Scheduling %s%s at %s"
                        % (action, tuple(argument), time.ctime(dtime)))
             heapq.heappush(self.queue, (dtime, action, argument))
