@@ -40,6 +40,9 @@ def rename_file(path):
         _log.debug("Ignoring non-video file %s" % f)
         return
 
+    # check if this is a video file (as oppposed to e.g. a subtitle file)
+    is_video = f.ext in files.video_exts
+
     if "sample" in f.filename.lower():
         _log.debug("Ignoring sample file %s" % f)
         return
@@ -68,7 +71,8 @@ def rename_file(path):
     _log.debug("%s matches %s" % (f, episode))
 
     # mark episode as owned
-    episode.owned = True
+    if is_video:
+        episode.owned = True
 
     valid_fname = "-_.()[]! %s%s" % (string.ascii_letters, string.digits)
 
