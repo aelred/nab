@@ -46,7 +46,7 @@ class Searcher(FileSource):
         }
         self.search_by = search_by or ["show", "season", "episode"]
         self.search_by = [_conv[s] for s in self.search_by]
-        self.match_by = match_by or ["season", "episode"]
+        self.match_by = match_by or ["show", "season", "episode"]
         self.match_by = [_conv[m] for m in self.match_by]
 
     def search(self, term=None):

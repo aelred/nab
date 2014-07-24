@@ -86,9 +86,11 @@ class ShowParentElem(dict):
 
     @property
     def wanted(self):
-        if len(self.episodes) == 0:
+        eps = [e for e in self.episodes if e.season.num != 0]
+        wanted = [e for e in self.epwanted if e.season.num != 0]
+        if len(eps) == 0:
             return False
-        return float(len(self.epwanted)) / float(len(self.episodes)) > 0.75
+        return float(len(wanted)) / float(len(eps)) > 0.75
 
     @property
     def episodes(self):
