@@ -1,7 +1,10 @@
 import libtorrent as lt
 import threading
 import time
-import os.path
+import os
+import errno
+import appdirs
+import yaml
 
 from nab.downloader import Downloader
 from nab.config import config
@@ -48,7 +51,7 @@ def _torrent_info(handle):
 
     return '\t'.join([
         _state_str[s.state],
-        size,
+        size, '',  # extra tab to improve formatting
         _progress_bar(s.progress),
         '%d%%' % (s.progress * 100.0),
         '%s/s' % _sizeof_fmt(s.download_rate),
@@ -59,6 +62,7 @@ def _torrent_info(handle):
 class Libtorrent(Downloader):
 
     def __init__(self, ratio=2.0, ports=[6881, 6891]):
+        # create session
         self.session = lt.session()
         self.session.listen_on(*ports)
 
@@ -66,8 +70,10 @@ class Libtorrent(Downloader):
         self.files = {}
 
         self.folder = config["settings"]["downloads"]
+        # begin thread to watch downloads
         threading.Thread(target=self._watch_thread).start()
 
+        # set session options
         self.ratio = ratio
         settings = lt.session_settings()
         settings.share_ratio_limit = ratio
@@ -80,7 +86,40 @@ class Libtorrent(Downloader):
 
         self._progress_ticker = 0
 
+        # reload persistent data
+        data_dir = appdirs.user_data_dir('nab')
+        self.data_file = os.path.join(data_dir, 'libtorrent.yaml')
+        try:
+            os.makedirs(data_dir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                self.log.error("Couldn't create directory %s" % data_dir)
+                return
+        try:
+            with file(self.data_file) as f:
+                for torrent in yaml.load(f):
+                    self._add_torrent(torrent)
+        except IOError:
+            self.log.debug("libtorrent.yaml not found")
+        else:
+            self.log.debug("Loaded from libtorrent.yaml")
+
     def download(self, torrent):
+        self._add_torrent(torrent)
+
+        # write new state to file
+        with file(self.data_file, 'w') as f:
+            yaml.dump(list(self.files.keys()), f)
+
+    def is_completed(self, torrent):
+        return self.files[torrent].status().state in _completed_states
+
+    def get_files(self, torrent):
+        handle = self.files[torrent]
+        files = handle.get_torrent_info().files()
+        return [os.path.join(handle.save_path(), f.path) for f in files]
+
+    def _add_torrent(self, torrent):
         if torrent in self.files:
             # silently return if already downloading
             return
@@ -92,13 +131,12 @@ class Libtorrent(Downloader):
         self.downloads[handle] = torrent
         self.files[torrent] = handle
 
-    def is_completed(self, torrent):
-        return self.files[torrent].status().state in _completed_states
-
-    def get_files(self, torrent):
+    def _remove_torrent(self, torrent):
+        # 1 == delete files
         handle = self.files[torrent]
-        files = handle.get_torrent_info().files()
-        return [os.path.join(handle.save_path(), f.path) for f in files]
+        handle.remove_torrent(1)
+        del self.downloads[handle]
+        del self.files[torrent]
 
     def _watch_thread(self):
         while True:
@@ -138,11 +176,7 @@ class Libtorrent(Downloader):
 
                 # delete files when over ratio and completed
                 if ratio >= self.ratio and p.handle.status().is_finished:
-                    # 1 == delete files
-                    p.handle.remove_torrent(1)
-                    file_ = self.downloads[p.handle]
-                    del self.downloads[p.handle]
-                    del self.files[file_]
+                    self._remove_torrent(self.downloads[p.handle])
                 continue
 
             if p.category() == lt.alert.category_t.error_notification:

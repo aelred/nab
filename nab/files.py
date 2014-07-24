@@ -269,7 +269,10 @@ class Torrent(File):
         return hash(self.url)
 
     def __eq__(self, other):
-        return self.url == other.url
+        try:
+            return self.url == other.url
+        except AttributeError:
+            return False
 
 
 def _schedule_find(entry):
