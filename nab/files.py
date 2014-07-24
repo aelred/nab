@@ -160,9 +160,10 @@ class File(object):
 
     @staticmethod
     def _split_numbering(title):
+        # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
         num_re = (r'(?P<title>.*?)\s+'
-                  's?(?P<season>\d+)\s*'
-                  '(ep?|\s+)(?P<episode>\d+)\s*(?P<eptitle>.*)$')
+                  '(s|season\s+)?(?P<season>\d+)\s*'
+                  '(ep?|(episode)?\s+)(?P<episode>\d+)\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -170,6 +171,7 @@ class File(object):
                 del d["eptitle"]
             return d
 
+        # Match 'Title - 01x01 - Episode name'
         num_re = (r'(?P<title>.*?)\s+(?P<season>\d+)x'
                   '(?P<episode>\d+)\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
@@ -179,11 +181,13 @@ class File(object):
                 del d["eptitle"]
             return d
 
+        # Match 'Title - Season 01'
         num_re = r"(?P<title>.*?)\s+s(eason)?\s*(?P<season>\d+)$"
         match = re.match(num_re, title)
         if match:
             return match.groupdict()
 
+        # Match 'Title - 04'
         num_re = r"(?P<title>.*?)\s+(ep?)?(?P<episode>\d+)\s*(?P<eptitle>.*)$"
         match = re.match(num_re, title)
         if match:
