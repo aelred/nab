@@ -54,9 +54,13 @@ files:
       - 360p
     source:
       - BluRay
-      - TV
-      - DVD
       - Other
+      - DVD
+      - TV
+    encoding:
+      - h264
+      - Other
+      - Xvid
     weighted:
       weight: 5.0
       filters:

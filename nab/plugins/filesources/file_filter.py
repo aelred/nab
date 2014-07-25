@@ -52,6 +52,14 @@ class Source(TagFilter):
 Source.register("source")
 
 
+class Encoding(TagFilter):
+    key_str = {
+        "XviD": ["XviD", "DivX"],
+        "h264": ["h264", "x264", "264"]
+    }
+Encoding.register("encoding")
+
+
 class Groups(KeywordFilter):
     def filter(self, f):
         return self.filter_field([f.group])
