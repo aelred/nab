@@ -5,14 +5,17 @@ import urllib
 from lxml import html
 
 from nab.files import Searcher, Torrent
-from nab import config
+from nab import config, exception
 
 session = requests.session()
 
 
 @filecache(60 * 60)
 def _cget(*args, **kwargs):
-    return session.get(*args, **kwargs)
+    try:
+        return session.get(*args, **kwargs)
+    except requests.ConnectionError:
+        raise exception.PluginError("Error connecting to bakabt")
 
 
 class Bakabt(Searcher):

@@ -51,7 +51,7 @@ def _torrent_info(handle):
 
     return '\t'.join([
         _state_str[s.state],
-        size, '',  # extra tab to improve formatting
+        size.ljust(10),  # pad with spaces to format neatly
         _progress_bar(s.progress),
         '%d%%' % (s.progress * 100.0),
         '%s/s' % _sizeof_fmt(s.download_rate),
@@ -97,19 +97,41 @@ class Libtorrent(Downloader):
                 return
         try:
             with file(self.data_file) as f:
-                for torrent in yaml.load(f):
-                    self._add_torrent(torrent)
+                data = yaml.load(f)
+                for torrent in data['torrents']:
+                    h = self._add_torrent(torrent['torrent'])
+                    h.all_time_upload = torrent['up']
+                    h.all_time_download = torrent['down']
+
+                self.session.load_state(data['state'])
         except IOError:
             self.log.debug("libtorrent.yaml not found")
         else:
             self.log.debug("Loaded from libtorrent.yaml")
 
+        self.session.resume()
+
     def download(self, torrent):
         self._add_torrent(torrent)
+        self.save_state()
 
+    def save_state(self):
         # write new state to file
+        def ratio(h):
+            s = h.status()
+            try:
+                return s.all_time_upload / s.all_time_download
+            except ZeroDivisionError:
+                return 0.0
+        state = {
+            'state': self.session.save_state(0x0ff),
+            'torrents': [{'torrent': f,
+                          'up': h.status().all_time_upload,
+                          'down': h.status().all_time_download}
+                         for f, h in self.files.iteritems()]
+        }
         with file(self.data_file, 'w') as f:
-            yaml.dump(list(self.files.keys()), f)
+            yaml.dump(state, f)
 
     def is_completed(self, torrent):
         return self.files[torrent].status().state in _completed_states
@@ -130,6 +152,7 @@ class Libtorrent(Downloader):
 
         self.downloads[handle] = torrent
         self.files[torrent] = handle
+        return handle
 
     def _remove_torrent(self, torrent):
         # 1 == delete files
@@ -148,6 +171,8 @@ class Libtorrent(Downloader):
                          if h.status().state not in _completed_states]
             # print progress only if active downloads
             if self._progress_ticker >= 30 and downloads:
+                # save current torrent status
+                self.save_state()
                 # print progress
                 info_str = [_torrent_info(h) for h in self.downloads]
                 self.log.info("\n".join(["Progress:"] + info_str))
