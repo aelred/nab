@@ -9,10 +9,15 @@ from pprint import pprint
 from lxml import html
 from itertools import chain, product
 from munkres import Munkres
+import appdirs
+import os
 
 from nab.database import Database
 from nab.show_tree import Show, Season, Episode
 from nab.match import format_title, comp
+
+
+titles_file = os.path.join(appdirs.user_data_dir('nab'), 'anime-titles.xml.gz')
 
 url = "http://api.anidb.net:9001/httpapi"
 defparams = {
@@ -28,7 +33,7 @@ ns = "{http://www.w3.org/XML/1998/namespace}"
 @filecache(7 * 24 * 60 * 60)
 def get_db():
     urllib.urlretrieve("http://anidb.net/api/anime-titles.xml.gz",
-                       "anime-titles.xml.gz")
+                       titles_file)
 get_db()
 
 # populate database of titles
@@ -51,7 +56,7 @@ def load_db():
                   if t.get("%slang" % ns) in langs]
         return list(set(titles))
 
-    with gzip.open("anime-titles.xml.gz") as f:
+    with gzip.open(titles_file) as f:
         root = ET.fromstring(f.read())
         for show in root:
             e = dbe(show.get("aid"), main_title(show), get_titles(show))

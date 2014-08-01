@@ -2,8 +2,13 @@ from itertools import chain
 import re
 import yaml
 import time
+import appdirs
+import os
 
 from nab import match
+
+
+shows_file = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
 
 
 class ShowElem(object):
@@ -127,7 +132,7 @@ class ShowTree(ShowParentElem):
     def __init__(self):
         ShowParentElem.__init__(self)
         try:
-            with file('shows.yaml', 'r') as f:
+            with file(shows_file, 'r') as f:
                 self.update(ShowTree.from_yaml(yaml.load(f), Show, self))
         except IOError:
             pass  # no shows.yaml file, doesn't matter!
@@ -142,7 +147,7 @@ class ShowTree(ShowParentElem):
                 return f
 
     def save(self):
-        yaml.safe_dump(self.to_yaml(), file('shows.yaml', 'w'))
+        yaml.safe_dump(self.to_yaml(), file(shows_file, 'w'))
 
     def to_yaml(self):
         return ShowParentElem.to_yaml(self)

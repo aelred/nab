@@ -4,6 +4,8 @@ import log
 import heapq
 from collections import deque
 import yaml
+import appdirs
+import os
 
 _log = log.log.getChild("scheduler")
 
@@ -12,6 +14,9 @@ _log = log.log.getChild("scheduler")
 tasks = {}
 
 _shows = None
+
+
+schedule_file = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
 
 
 def init(shows):
@@ -52,29 +57,29 @@ class Scheduler:
         return yml
 
     def load(self):
-        with file('schedule.yaml', 'r') as f:
-                yml = yaml.load(f)
-                if not yml:
-                    # yaml file is invalid
-                    raise ValueError("Schedule file is invalid yaml")
+        with file(schedule_file, 'r') as f:
+            yml = yaml.load(f)
+            if not yml:
+                # yaml file is invalid
+                raise ValueError("Schedule file is invalid yaml")
 
-                for entry in yml["queue"]:
-                    dtime = entry["time"]
-                    action = entry["action"]
-                    argument = self._decode_argument(entry["argument"])
-                    argument = self._encode_argument(argument)
-                    # yes I did just encode the decoded argument
-                    # this is to add back in tuples, which are hashable
+            for entry in yml["queue"]:
+                dtime = entry["time"]
+                action = entry["action"]
+                argument = self._decode_argument(entry["argument"])
+                argument = self._encode_argument(argument)
+                # yes I did just encode the decoded argument
+                # this is to add back in tuples, which are hashable
 
-                    if dtime is None:
-                        self.queue_asap.append((action, argument))
-                    else:
-                        heapq.heappush(self.queue, (dtime, action, argument))
+                if dtime is None:
+                    self.queue_asap.append((action, argument))
+                else:
+                    heapq.heappush(self.queue, (dtime, action, argument))
 
-                    self.queue_set.add((action, argument))
+                self.queue_set.add((action, argument))
 
     def save(self):
-        yaml.safe_dump(self.to_yaml(), file('schedule.yaml', 'w'))
+        yaml.safe_dump(self.to_yaml(), file(schedule_file, 'w'))
 
     def _save_decision(self):
         if time.time() - self._last_save > 1.0 and self._save_invalidate:

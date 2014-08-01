@@ -90,12 +90,6 @@ class Libtorrent(Downloader):
         data_dir = appdirs.user_data_dir('nab')
         self.data_file = os.path.join(data_dir, 'libtorrent.yaml')
         try:
-            os.makedirs(data_dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                self.log.error("Couldn't create directory %s" % data_dir)
-                return
-        try:
             with file(self.data_file) as f:
                 data = yaml.load(f)
                 for torrent in data['torrents']:

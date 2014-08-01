@@ -11,15 +11,16 @@ from nab import server
 
 import os
 
+
 if config.options.clean:
     # clean up schedule and show files, start fresh
     try:
-        os.remove("shows.yaml")
+        os.remove(show_tree.shows_file)
     except Exception:  # don't know exception, depends on OS
         # file may not exist
         pass
     try:
-        os.remove("schedule.yaml")
+        os.remove(scheduler.schedule_file)
     except Exception:  # don't know exception, depends on OS
         # file may not exist
         pass

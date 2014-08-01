@@ -2,6 +2,12 @@ from nab.show import ShowSource
 from nab.files import File
 from nab.show_tree import Show
 
+import appdirs
+import os
+
+
+watchlist_file = os.path.join(appdirs.user_config_dir('nab'), 'watchlist.txt')
+
 
 class Watchlist(ShowSource):
 
@@ -11,7 +17,7 @@ class Watchlist(ShowSource):
 
     def entries(self):
         entries = []
-        with file('watchlist.txt', 'a+') as f:
+        with file(watchlist_file, 'a+') as f:
             for line in list(f) + self.config_entries:
                 entry = File(line.rstrip())
                 entries.append(entry)

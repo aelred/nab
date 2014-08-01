@@ -5,6 +5,7 @@ from optparse import OptionParser
 from shutil import copyfile
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import appdirs
 
 from nab.scheduler import scheduler, tasks
 from nab import log
@@ -12,14 +13,18 @@ from nab import log
 _log = log.log.getChild("config")
 
 
+config_file = os.path.join(appdirs.user_config_dir('nab'), 'config.yaml')
+accounts_file = os.path.join(appdirs.user_config_dir('nab'), 'accounts.yaml')
+
+
 def _load_config():
-    if not os.path.exists("config.yaml"):
+    if not os.path.exists(config_file):
         _log.info("Creating default config file")
-        copyfile("config_default.yaml", "config.yaml")
+        copyfile("config_default.yaml", config_file)
 
     _log.info("Loading config and accounts files")
-    c = yaml.load(file("config.yaml", "r"))
-    a = yaml.load(file("accounts.yaml", "a+"))
+    c = yaml.load(file(config_file, "r"))
+    a = yaml.load(file(accounts_file, "a+"))
 
     # find and create directories in settings
     s = c["settings"]
@@ -49,7 +54,7 @@ tasks["load_config"] = reload_config
 
 def change_config(new_config):
     _log.info('Changing config file')
-    yaml.safe_dump(new_config, file('config.yaml', 'w'))
+    yaml.safe_dump(new_config, file(config_file, 'w'))
 
 
 def init():
@@ -61,10 +66,10 @@ def init():
 
 class ConfigWatcher(FileSystemEventHandler):
     def on_modified(self, event):
-        if event.src_path == os.path.join(os.getcwd(), 'config.yaml'):
+        if event.src_path == os.path.join(os.getcwd(), config_file):
             _log.info('Change detected in config.yaml, scheduling reload')
             scheduler.add_asap('load_config')
-        if event.src_path == os.path.join(os.getcwd(), 'accounts.yaml'):
+        if event.src_path == os.path.join(os.getcwd(), accounts_file):
             _log.info('Change detected in accounts.yaml, scheduling reload')
             scheduler.add_asap('load_config')
 
