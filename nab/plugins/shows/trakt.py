@@ -139,21 +139,22 @@ TraktSource.register("trakt")
 class TraktDB(Database, Trakt):
 
     def get_show_titles(self, show):
-        return [self.show_data(show)["title"]]
+        return [self.get_data(show)["title"]]
 
     def get_show_ids(self, show):
-        return {"tvdb": self.show_data(show)["tvdb_id"]}
+        return {"tvdb": self.get_data(show)["tvdb_id"]}
 
     def get_seasons(self, show):
-        return [Season(show, sed["season"]) for sed in self.show_data(show)]
+        return [Season(show, sed["season"])
+                for sed in self.get_data(show)["seasons"]]
 
     def get_episodes(self, season):
-        data = self.show_data(season.show)["seasons"]
+        data = self.get_data(season.show)["seasons"]
         sed = next(se for se in data if se["season"] == season.num)
 
         episodes = []
 
-        for epd in sed:
+        for epd in sed["episodes"]:
             ep = Episode(season, epd["episode"],
                          epd["title"], epd["first_aired_utc"])
             if ep.aired == 0:
