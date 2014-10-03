@@ -8,6 +8,7 @@ from nab import log
 from nab import match
 from nab import config
 from nab import downloader
+from nab import exception
 from nab.scheduler import scheduler, tasks
 from nab.show_tree import Show, Season, Episode
 
@@ -317,9 +318,12 @@ def _find_all_files(entry):
 
     _log.info("Searching for %s" % entry)
     files = []
-    for source in FileSource.get_all(config.config["files"]["sources"]):
-        source.__class__.log.debug("Searching in %s" % source)
-        files += source.find(entry)
+    try:
+        for source in FileSource.get_all(config.config["files"]["sources"]):
+            source.__class__.log.debug("Searching in %s" % source)
+            files += source.find(entry)
+    except exception.PluginError:
+        return None
 
     if not files:
         _log.info("No file found for %s" % entry)
