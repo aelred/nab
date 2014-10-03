@@ -12,10 +12,7 @@ session = requests.session()
 
 @filecache(60 * 60)
 def _cget(*args, **kwargs):
-    try:
-        return session.get(*args, **kwargs)
-    except requests.ConnectionError:
-        raise exception.PluginError("Error connecting to bakabt")
+    return session.get(*args, **kwargs)
 
 
 class Bakabt(Searcher):
@@ -33,16 +30,22 @@ class Bakabt(Searcher):
         session.post("%s/login.php" % Bakabt._url,
                      data=config.accounts['bakabt'])
 
+    def _cget(self, *args, **kwargs):
+        try:
+            return _cget(*args, **kwargs)
+        except requests.ConnectionError:
+            raise exception.PluginError(self, "Error connecting to bakabt")
+
     def search(self, term):
-        r = _cget(Bakabt._surl.substitute({"s": urllib.quote(term)}),
-                  auth=(config.accounts['bakabt']['username'],
-                        config.accounts['bakabt']['password']))
+        r = self._cget(Bakabt._surl.substitute({"s": urllib.quote(term)}),
+                       auth=(config.accounts['bakabt']['username'],
+                             config.accounts['bakabt']['password']))
         tree = html.fromstring(r.text)
         results = tree.xpath('//table[@class="torrents"]/tbody/'
                              'tr/td[@class="name"]/div/a/@href')
         files = []
         for result in results:
-            tree = html.fromstring(_cget(Bakabt._url + result).text)
+            tree = html.fromstring(self._cget(Bakabt._url + result).text)
             title = tree.xpath('//div[@id="description_title"]/h1/text()')[0]
             url = tree.xpath('//div[@class="download_link"]/a/@href')[0]
             tags = tree.xpath('//div[@class="tags"]/a/text()')
