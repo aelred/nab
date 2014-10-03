@@ -30,8 +30,7 @@ def _load_config():
     s = c["settings"]
 
     def format_path(path):
-        return path.format(user=os.getenv('USERPROFILE'),
-                           home=os.getenv('HOME'))
+        return path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
     s["downloads"] = format_path(s["downloads"])
     s["videos"] = map(format_path, s["videos"])
 
