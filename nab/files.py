@@ -160,6 +160,14 @@ class File(object):
 
     @staticmethod
     def _split_numbering(title):
+        # Check if this matches common 'complete series' patterns
+        # e.g. Avatar (Full 3 seasons) or Breaking Bad (Complete series)
+        comp_re = (r'(?P<title>.*)\s+'
+                   '\(?\s*(full|complete)\s+\d*\s*(series|seasons|episodes).*')
+        match = re.match(comp_re, title)
+        if match:
+            return match.groupdict()
+
         # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
         num_re = (r'(?P<title>.*?)\s+'
                   '(s|season\s+)?(?P<season>\d+)\s*'
