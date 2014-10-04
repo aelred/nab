@@ -193,7 +193,9 @@ class File(object):
             return d
 
         # Match 'Title - Season 01'
-        num_re = r"(?P<title>.*?)\s+s(eason)?\s*(?P<season>\d+)$"
+        num_re = (r'(?P<title>.*?)\s+'
+                  '((complete|full)\s+)?s(eason)?\s*(?P<season>\d+)'
+                  '(\s+(complete|full))?$')
         match = re.match(num_re, title)
         if match:
             return match.groupdict()
@@ -250,7 +252,7 @@ class File(object):
 
         tag_re = (r'(.*?)\s+'
                   '((?:bd|hdtv|proper|web-dl|x264|dd5.1|hdrip|dvdrip|xvid|'
-                  'cd[0-9]|dvdscr|brrip|divx|complete|batch|internal|'
+                  'cd[0-9]|dvdscr|brrip|divx|batch|internal|'
                   '\d{3,4}x\d{3,4}|\d{3,4}p).*?)$')
         match = re.match(tag_re, title)
         if match:
