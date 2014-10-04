@@ -48,6 +48,9 @@ def download(entry, torrent):
     else:
         # successful, record downloaded file
         _downloads[torrent] = entry
+        # mark this entry's episodes as no longer wanted
+        for episode in entry.epwanted:
+            episode.wanted = False
 
 
 def check_downloads():
