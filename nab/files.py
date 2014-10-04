@@ -114,10 +114,10 @@ class Searcher(FileSource):
 
 class File(object):
 
-    def __init__(self, filename):
+    def __init__(self, filename, format_title=True):
         self.filename = filename
 
-        data = File._split_filename(filename)
+        data = File._split_filename(filename, format_title)
 
         self.ext = None
         if 'ext' in data:
@@ -144,8 +144,10 @@ class File(object):
         self.tags = data['tags']
 
     @staticmethod
-    def _split_filename(filename):
-        data = {"title": match.format_title(filename)}
+    def _split_filename(filename, format_title):
+        if format_title:
+            filename = match.format_title(filename)
+        data = {"title": filename}
 
         data.update(File._split_ext(data["title"]))
         # try to split numbering before splitting group

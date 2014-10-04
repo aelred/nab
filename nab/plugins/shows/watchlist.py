@@ -19,7 +19,7 @@ class Watchlist(ShowSource):
         entries = []
         with file(watchlist_file, 'a+', 0o664) as f:
             for line in list(f) + self.config_entries:
-                entry = File(line.rstrip())
+                entry = File(line.rstrip(), False)
                 entries.append(entry)
         return entries
 
