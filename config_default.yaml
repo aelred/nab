@@ -1,7 +1,7 @@
 settings:
-  downloads: '{user}\downloads\nab'
+  downloads: '{user}/Downloads/nab'
   videos:
-    - '{user}\videos'
+    - '{user}/Videos'
 shows:
   library:
     - filesystem
@@ -68,5 +68,5 @@ files:
 downloader:
   libtorrent
 renamer:
-  pattern: '{videos}\{t}\{st} - S{s:02d}E{e:02d} - {et}'
+  pattern: '{videos}/{t}/{st} - S{s:02d}E{e:02d} - {et}'
   copy: yes
