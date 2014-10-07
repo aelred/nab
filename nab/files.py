@@ -128,6 +128,8 @@ class File(object):
             self.group = data['group']
 
         self.title = data['title']
+        if format_title:
+            self.title = match.format_title(self.title)
 
         self.season = None
         if 'season' in data:
@@ -150,12 +152,13 @@ class File(object):
         data = {"title": filename}
 
         data.update(File._split_ext(data["title"]))
-        # try to split numbering before splitting group
-        # fixes bug where e.g. "S02E03" is identified as the group name
-        split = File._split_numbering(data["title"])
-        if len(split) and "eptitle" not in split:
-            data.update(split)
-        data.update(File._split_group(data["title"]))
+
+        # check for group data at beginning or end
+        group = File._split_group_end(data["title"])
+        if not group:
+            group = File._split_group_begin(data["title"])
+        data.update(group)
+
         data.update(File._split_tags(data["title"]))
         data.update(File._split_numbering(data["title"]))
 
@@ -221,7 +224,22 @@ class File(object):
         return {}
 
     @staticmethod
-    def _split_group(title):
+    def _split_group_begin(title):
+        group_begin_re = r"[\[\(\{](?P<group>.*?)[\]\)\}](?P<title>.*)$"
+        match = re.match(group_begin_re, title)
+        if match:
+            return match.groupdict()
+
+        return {}
+
+    @staticmethod
+    def _split_group_end(title):
+        # if this title ends with a valid episode/season numbering
+        # then do not treat this as a group title
+        # e.g. avoid identifying groups called "Season 1", "04x08" etc.
+        if File._split_numbering(title):
+            return {}
+
         group_end_re = (r'(?P<title>.*?)'
                         '(-\s*(?P<group>[^\s]+?))\s*'
                         '(?P<title2>(?:\[.*)?)$')
@@ -232,11 +250,6 @@ class File(object):
             del d["title2"]
             return d
 
-        group_begin_re = r"[\[\(\{](?P<group>.*?)[\]\)\}](?P<title>.*)$"
-        match = re.match(group_begin_re, title)
-        if match:
-            return match.groupdict()
-
         return {}
 
     @staticmethod
@@ -244,11 +257,12 @@ class File(object):
         tags = []
 
         bracket_re = r"[\(\[\{](.*?)[\]\}\)]"
+        split_re = r"[-_\s]+"
         match = re.findall(bracket_re, title)
         if match:
             title = re.sub(bracket_re, "", title).strip()
             for m in match:
-                tags += m.split()
+                tags += re.split(split_re, m)
 
         tag_re = (r'(.*?)\s+'
                   '((?:bd|hdtv|proper|web-dl|x264|dd5.1|hdrip|dvdrip|xvid|'
@@ -257,7 +271,7 @@ class File(object):
         match = re.match(tag_re, title)
         if match:
             title = match.group(1).strip()
-            tags += match.group(2).split()
+            tags += re.split(split_re, match.group(2))
 
         return {"title": title, "tags": tags}
 
