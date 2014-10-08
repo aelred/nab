@@ -167,9 +167,13 @@ class File(object):
     @staticmethod
     def _split_numbering(title):
         # Check if this matches common 'complete series' patterns
-        # e.g. Avatar (Full 3 seasons) or Breaking Bad (Complete series)
-        comp_re = (r'(?P<title>.*)\s+'
-                   '\(?\s*(full|complete)\s+\d*\s*(series|seasons|episodes).*')
+        # e.g. Avatar (Full 3 seasons), Breaking Bad (Complete series)
+        #      FLCL 1-6 Complete series
+        comp_re = (r'(?P<title>.*)\s+'   # title
+                   '\(?\s*(\d+-\d+)?'    # optional episode range e.g. 01-12
+                   '\s+(full|complete)'  # complete
+                   '(\s+\d+)?(\s+(series|seasons|episodes)|$)')
+                                         # 'n seasons' or just 'series'
         match = re.match(comp_re, title)
         if match:
             return match.groupdict()
@@ -177,7 +181,8 @@ class File(object):
         # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
         num_re = (r'(?P<title>.*?)\s+'
                   '(s|season\s+)?(?P<season>\d+)\s*'
-                  '(ep?|(episode)?\s+)(?P<episode>\d+)\s*(?P<eptitle>.*)$')
+                  '(ep?|(episode)?\s+)(?P<episode>\d+)(v\d+)?'
+                  '\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -187,7 +192,7 @@ class File(object):
 
         # Match 'Title - 01x01 - Episode name'
         num_re = (r'(?P<title>.*?)\s+(?P<season>\d+)x'
-                  '(?P<episode>\d+)\s*(?P<eptitle>.*)$')
+                  '(?P<episode>\d+)(v\d+)?\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -204,7 +209,8 @@ class File(object):
             return match.groupdict()
 
         # Match 'Title - 04'
-        num_re = r"(?P<title>.*?)\s+(ep?)?(?P<episode>\d+)\s*(?P<eptitle>.*)$"
+        num_re = (r"(?P<title>.*?)\s+(ep?)?(?P<episode>\d+)(v\d+)?"
+                  "\s*(?P<eptitle>.*)$")
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
