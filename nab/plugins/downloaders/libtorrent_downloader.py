@@ -24,6 +24,8 @@ _state_str = {
 _completed_states = [lt.torrent_status.states.seeding,
                      lt.torrent_status.states.finished]
 
+libtorrent_file = os.path.join(appdirs.user_data_dir('nab'), 'libtorrent.yaml')
+
 
 def _sizeof_fmt(num):
     for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
@@ -87,10 +89,8 @@ class Libtorrent(Downloader):
         self._progress_ticker = 0
 
         # reload persistent data
-        data_dir = appdirs.user_data_dir('nab')
-        self.data_file = os.path.join(data_dir, 'libtorrent.yaml')
         try:
-            with file(self.data_file) as f:
+            with file(libtorrent_file) as f:
                 data = yaml.load(f)
                 for torrent in data['torrents']:
                     h = self._add_torrent(torrent['torrent'])
@@ -111,20 +111,14 @@ class Libtorrent(Downloader):
 
     def save_state(self):
         # write new state to file
-        def ratio(h):
-            s = h.status()
-            try:
-                return s.all_time_upload / s.all_time_download
-            except ZeroDivisionError:
-                return 0.0
         state = {
             'state': self.session.save_state(0x0ff),
             'torrents': [{'torrent': f,
-                          'up': h.status().all_time_upload,
-                          'down': h.status().all_time_download}
+                          'up': self._get_upload_total(f),
+                          'down': self._get_download_total(f)}
                          for f, h in self.files.iteritems()]
         }
-        with file(self.data_file, 'w') as f:
+        with file(libtorrent_file, 'w') as f:
             yaml.dump(state, f)
 
     def is_completed(self, torrent):
