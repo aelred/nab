@@ -8,7 +8,7 @@ from nab import plugins
 from nab import downloader
 from nab import scheduler
 from nab import server
-from nab.plugins.downloaders import libtorrent
+from nab.plugins.downloaders import libtorrent_downloader
 
 import os
 
