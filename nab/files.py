@@ -262,7 +262,8 @@ class File(object):
     def _split_tags(title):
         tags = []
 
-        bracket_re = r"[\(\[\{](.*?)[\]\}\)]"
+        # match tags in brackets, unless it is a year, e.g. Archer (2009)
+        bracket_re = r"[\(\[\{]((?!\d{4}[\]\}\)]).*?)[\]\}\)]"
         split_re = r"[-_\s]+"
         match = re.findall(bracket_re, title)
         if match:
