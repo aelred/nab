@@ -139,8 +139,22 @@ class File(object):
         if 'episode' in data:
             self.episode = int(data['episode'])
 
+        if 'eprange' in data and data['eprange'] is not None:
+            self.eprange = int(data['eprange'])
+        else:
+            self.eprange = self.episode
+
+        n_eps = None
+        try:
+            n_eps = self.eprange - self.episode
+        except TypeError:
+            pass
+
         self.eptitle = None
-        if 'eptitle' in data:
+        # if this file contains three episodes or more,
+        # it is likely a season or batch of episodes and
+        # has no episode title
+        if 'eptitle' in data and n_eps is not None and n_eps < 3:
             self.eptitle = data['eptitle']
 
         self.tags = data['tags']
@@ -181,7 +195,8 @@ class File(object):
         # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
         num_re = (r'(?P<title>.*?)\s+'
                   '(s|season\s+)?(?P<season>\d+)\s*'
-                  '(ep?|(episode)?\s+)(?P<episode>\d+)(v\d+)?'
+                  '(ep?|(episode)?\s+)(?P<episode>\d+)'
+                  '(-(?P<eprange>\d+))?(v\d+)?'
                   '\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
@@ -192,7 +207,8 @@ class File(object):
 
         # Match 'Title - 01x01 - Episode name'
         num_re = (r'(?P<title>.*?)\s+(?P<season>\d+)x'
-                  '(?P<episode>\d+)(v\d+)?\s*(?P<eptitle>.*)$')
+                  '(?P<episode>\d+)(-(?P<eprange>\d+))?'
+                  '(v\d+)?\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -209,8 +225,8 @@ class File(object):
             return match.groupdict()
 
         # Match 'Title - 04'
-        num_re = (r"(?P<title>.*?)\s+(ep?)?(?P<episode>\d+)(v\d+)?"
-                  "\s*(?P<eptitle>.*)$")
+        num_re = (r'(?P<title>.*?)\s+(ep?)?(?P<episode>\d+)'
+                  '(-(?P<eprange>\d+))?(v\d+)?\s*(?P<eptitle>.*)$')
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
