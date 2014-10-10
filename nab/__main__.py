@@ -25,7 +25,7 @@ if config.options.clean:
     except Exception:
         pass
     try:
-        os.remove(libtorrent.libtorrent_file)
+        os.remove(libtorrent_downloader.libtorrent_file)
     except Exception:
         pass
 
