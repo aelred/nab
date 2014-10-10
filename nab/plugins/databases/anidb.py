@@ -74,10 +74,18 @@ _get_interval = 3.0
 @filecache(7 * 24 * 60 * 60)
 def get(*args, **kwargs):
     global _last_get
-    while time.clock() < _last_get + _get_interval:
-        time.sleep(_last_get + _get_interval - time.clock())
+
+    t = time.clock()
+    if t < _last_get + _get_interval:
+        Anidb.log.debug("Sleeping between anidb requests")
+        time.sleep(_last_get + _get_interval - t)
+        t = time.clock()
+        Anidb.log.debug("Done sleeping")
+
+    Anidb.log.debug("Getting anidb page")
+    r = requests.get(*args, **kwargs)
     _last_get = time.clock()
-    return requests.get(*args, **kwargs)
+    return r
 
 
 def entries(title):
@@ -85,8 +93,10 @@ def entries(title):
 
 
 def info(entry):
+    Anidb.log.debug("Getting info for %s" % entry.title)
     params = dict(defparams, **{"request": "anime", "aid": entry.id})
     r = get(url, params=params)
+    Anidb.log.debug("Found info for %s" % entry.title)
     return html.fromstring(r.text.encode("ascii", "ignore"))
 
 
@@ -123,6 +133,8 @@ def airdate(episode):
 
 
 def related(entry, types=None, incl_type=False):
+    Anidb.log.debug("Finding shows related to %s" % entry.title)
+
     if types:
         type_str = "[" + " or ".join(['@type="%s"' % t for t in types]) + "]"
     else:
@@ -130,24 +142,37 @@ def related(entry, types=None, incl_type=False):
     rel = info(entry).xpath("//relatedanime/anime%s" % type_str)
     result = []
     for r in rel:
-        entry = dbi[r.xpath("@id")[0]]
+        try:
+            entry = dbi[r.xpath("@id")[0]]
+        except KeyError:
+            # entry not in database, skip over it
+            # (database is likely not up-to-date)
+            continue
         if incl_type:
             result.append((entry, r.xpath("@type")[0]))
         else:
             result.append(entry)
+
+    Anidb.log.debug("Found related shows %s" % [e.title for e, t in result])
     return result
 
 
 def family(entries, criteria=lambda e: True, types=None):
+    Anidb.log.debug("Getting family of %s" % [e.title for e in entries])
+
     relations = []
     rids = set()
     queue = list(reversed([(e, None) for e in entries]))
     while queue:
         (entry, rel_type) = queue.pop()
+        Anidb.log.debug("Checking %s" % entry.title)
         if entry.id not in rids and criteria(entry, rel_type):
+            Anidb.log.debug("Adding %s" % entry.title)
             relations.append(entry)
             rids.add(entry.id)
             queue += related(entry, types, True)
+
+    Anidb.log.debug("Family found for %s" % [e.title for e in entries])
     return relations
 
 
@@ -158,6 +183,8 @@ def episodes(entry):
 
 @filecache(7 * 24 * 60 * 60)
 def find_seasons(entry):
+    Anidb.log.debug("Getting seasons for %s" % entry.title)
+
     def is_season(e, rel_type):
         if e == entry:
             return True
@@ -173,6 +200,9 @@ def find_seasons(entry):
 
     # eliminate entries earlier than requested season
     entry_index = seasons.index(entry)
+
+    Anidb.log.debug("Seasons found for %s" % entry.title)
+
     return seasons[entry_index:]
 
 
@@ -247,6 +277,7 @@ class Anidb(Database):
 
     def show_get(self, show):
         # add data about other titles for this show
+        Anidb.log.debug("Getting data for %s" % show)
         try:
             return entries(show.title)[0]
         except IndexError:
