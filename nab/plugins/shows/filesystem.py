@@ -60,7 +60,7 @@ class FileSystem(ShowSource):
         """
         dirs = []
         for p, d in self.dirs:
-            if show.match(File(d)):
+            if show.match(File(d), False):
                 dirs.append(d)
         return dirs
 
