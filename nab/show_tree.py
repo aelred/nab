@@ -213,6 +213,13 @@ class Show(ShowParentElem, ShowElem):
         return set(map(match.format_title, self.titles))
 
     def match(self, f, total=True):
+        # filename must not match any season
+        # e.g. Season 1 of a show has the same name as the show itself.
+        #      Season 2 has a different name, then any torrent that matches
+        #      the show name may just contain season 1, so we reject it.
+        if total and any(s.match(f, True) for s in self.values()):
+            return False
+
         if total and not (f.season is None and f.episode is None):
             return False
 
