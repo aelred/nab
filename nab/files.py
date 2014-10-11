@@ -56,6 +56,8 @@ class Searcher(FileSource):
     def _search_all(self, s_terms, entry):
 
         def valid_file(f):
+            self.__class__.log.debug('Checking file %s' % f.filename)
+
             # title must not contain bad words!
             badwords = ["raw", "internal"]
             for tag in f.tags:
@@ -69,6 +71,7 @@ class Searcher(FileSource):
             if f.seeds is not None and f.seeds == 0:
                 return False
 
+            self.__class__.log.debug('Valid file!')
             return entry.match(f)
 
         # search under every title
