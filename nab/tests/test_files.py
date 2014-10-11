@@ -39,6 +39,11 @@ file_tests = [
      {'ext': None, 'group': 'noobsubs',
       'tags': ['720p', '8bit', 'aac', 'mp4'],
       'episode': 1, 'eprange': 13, 'season': 1,
+      'title': 'fate zero', 'eptitle': None}),
+
+    ('[UTW] Fate Zero - 14-25 + Specials [BD][h264-1080p_FLAC]',
+     {'ext': None, 'group': 'utw', 'tags': ['bd', 'h264', '1080p', 'flac'],
+      'episode': 14, 'eprange': 25, 'season': None,
       'title': 'fate zero', 'eptitle': None})
 ]
 
