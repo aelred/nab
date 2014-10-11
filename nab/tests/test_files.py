@@ -7,33 +7,39 @@ from nab.files import File
 
 file_tests = [
     ('[gg]_C_The_Money_of_Soul_and_Possibility_Control_-_01_[7B880013].mkv',
-     {'ext': 'mkv', 'group': 'gg', 'episode': 1, 'season': None,
+     {'ext': 'mkv', 'group': 'gg', 'episode': 1, 'eprange': 1, 'season': None,
       'title': 'c money of soul and possibility control', 'eptitle': None}),
 
     ('The Legend of Korra - The Complete Season 1 [720p-HDTV]',
      {'ext': None, 'group': None, 'tags': ['720p', 'hdtv'],
-      'episode': None, 'season': 1,
+      'episode': None, 'eprange': None, 'season': 1,
       'title': 'legend of korra', 'eptitle': None}),
 
     ('[Furi] Avatar - The Last Airbender [720p] (Full 3 Seasons + Extras)',
      {'ext': None, 'group': 'furi', 'tags': ['720p'],
-      'episode': None, 'season': None,
+      'episode': None, 'eprange': None, 'season': None,
       'title': 'avatar last airbender', 'eptitle': None}),
 
     ('[UTW]_Angel_Beats!_-_04v2_[BD][h264-1080p_FLAC][0C19DD1C].mkv',
      {'ext': 'mkv', 'group': 'utw', 'tags': ['bd', '1080p', 'flac'],
-      'episode': 4, 'season': None,
+      'episode': 4, 'eprange': 4, 'season': None,
       'title': 'angel beats', 'eptitle': None}),
 
     ('The.Legend.of.Korra.S02E14.Light.in.the.Dark.WEB-DL.x264.AAC.mp4',
      {'ext': 'mp4', 'group': None, 'tags': ['x264', 'aac'],
-      'episode': 14, 'season': 2,
+      'episode': 14, 'eprange': 14, 'season': 2,
       'title': 'legend of korra', 'eptitle': 'light in the dark'}),
 
     ('[uguu~] AIR 01-12 Complete Batch (BD-1080p)',
      {'ext': None, 'group': 'uguu', 'tags': ['bd', '1080p'],
-      'episode': None, 'season': None,
-      'title': 'air', 'eptitle': None})
+      'episode': None, 'eprange': None, 'season': None,
+      'title': 'air', 'eptitle': None}),
+
+    ('[NoobSubs] Fate Zero S1 01-13 + SP01-03 (720p Blu-ray 8bit AAC MP4)',
+     {'ext': None, 'group': 'noobsubs',
+      'tags': ['720p', '8bit', 'aac', 'mp4'],
+      'episode': 1, 'eprange': 13, 'season': 1,
+      'title': 'fate 0', 'eptitle': None})
 ]
 
 
