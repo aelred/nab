@@ -70,10 +70,6 @@ def rename_file(path):
 
     _log.debug("%s matches %s" % (f, episode))
 
-    # mark episode as owned
-    if is_video:
-        episode.owned = True
-
     valid_fname = "-_.()[]! %s%s" % (string.ascii_letters, string.digits)
 
     def format_fname(name):
@@ -114,4 +110,8 @@ def rename_file(path):
         scheduler.add(5 * 60, "rename_file", path)
     else:
         _log.info("Successfully moved %s" % f)
+
+    # mark episode as owned
+    if is_video:
+        episode.owned = True
 tasks["rename_file"] = rename_file
