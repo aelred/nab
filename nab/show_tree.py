@@ -303,7 +303,10 @@ class Season(ShowParentElem, ShowElem):
         return terms
 
     def match(self, f, total=True):
-        if total and f.episode is not None:
+        # if this is a total match, there must be no episode number
+        # OR the episode range must completely cover the season
+        if (total and f.episode is not None
+                and (f.episode != 1 or f.eprange != len(self))):
             return False
 
         return ((f.title in map(match.format_title, self.titles)
@@ -479,16 +482,21 @@ class Episode(ShowElem):
         return terms
 
     def match(self, f):
+        # match by title if a special
         if self.season.num == 0:
             titles = [" ".join([match.format_title(t), self.title])
                       for t in self.show.titles]
             return f.title in titles
 
-        if (self.show.absolute and f.season is None and
-           self.show.match(f, False) and f.episode == self.absolute):
+        # match by absolute number if using absolute numbering or season 1
+        if ((self.show.absolute or self.season.num == 1) and f.season is None
+           and self.show.match(f, False)
+           and self.absolute >= f.episode and self.absolute <= f.eprange):
             return True
 
-        return self.season.match(f, False) and f.episode == self.num
+        # match if season matches and episode matches
+        return (self.season.match(f, False)
+                and self.num >= f.episode and self.num <= f.eprange)
 
     def __str__(self):
         if self.season.num == 0:
