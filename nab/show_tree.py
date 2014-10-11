@@ -213,7 +213,7 @@ class Show(ShowParentElem, ShowElem):
         return set(map(match.format_title, self.titles))
 
     def match(self, f, total=True):
-        # filename must not match any season
+        # filename must not match any season name
         # e.g. Season 1 of a show has the same name as the show itself.
         #      Season 2 has a different name, then any torrent that matches
         #      the show name may just contain season 1, so we reject it.
@@ -304,10 +304,22 @@ class Season(ShowParentElem, ShowElem):
 
     def match(self, f, total=True):
         # if this is a total match, there must be no episode number
-        # OR the episode range must completely cover the season
-        if (total and f.episode is not None
-                and (f.episode != 1 or f.eprange != len(self))):
-            return False
+        if total and f.episode is not None:
+            # if using absolute numbering, see if this file matches
+            # this season's absolute episode numbers
+            # must match against SHOW not season in this case
+            try:
+                start = self.episodes[0].absolute
+            except IndexError:
+                pass  # there are no episodes in this season
+            else:
+                if (self.show.absolute and self.show.match(f, False) and
+                   f.episode == start and f.eprange == start + len(self) - 1):
+                    return True
+
+            # ...or episode range must match episodes in season
+            if f.episode != 1 or f.eprange != len(self):
+                return False
 
         return ((f.title in map(match.format_title, self.titles)
                  and f.season is None) or
@@ -451,6 +463,12 @@ class Episode(ShowElem):
 
         # absolute numbering
         if self.season.show.absolute and self.season.num != 0:
+            # using season title
+            absnames = self.season.names(full)
+            for n in absnames:
+                n["epnum"] = self.absolute
+            names += absnames
+            # using show title
             names.append({
                 "titles": titles,
                 "epnum": self.absolute
