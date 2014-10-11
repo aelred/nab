@@ -39,7 +39,7 @@ file_tests = [
      {'ext': None, 'group': 'noobsubs',
       'tags': ['720p', '8bit', 'aac', 'mp4'],
       'episode': 1, 'eprange': 13, 'season': 1,
-      'title': 'fate 0', 'eptitle': None})
+      'title': 'fate zero', 'eptitle': None})
 ]
 
 
