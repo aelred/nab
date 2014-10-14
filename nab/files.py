@@ -259,21 +259,17 @@ class File(object):
 
     @staticmethod
     def _split_group_end(title):
-        # if this title ends with a valid episode/season numbering
-        # then do not treat this as a group title
-        # e.g. avoid identifying groups called "Season 1", "04x08" etc.
-        if File._split_numbering(title):
+        # if this title does not contain any tags then do not treat this as a
+        # group title, this avoids issues when the title includes a hyphen
+        # e.g. Psycho-Pass
+        if not File._split_tags(title)['tags']:
             return {}
 
         group_end_re = (r'(?P<title>.*?)'
-                        '(-\s*(?P<group>[^\s]+?))\s*'
-                        '(?P<title2>(?:\[.*)?)$')
+                        '(-\s*(?P<group>\w+))$')
         match = re.match(group_end_re, title)
         if match:
-            d = match.groupdict()
-            d["title"] += d["title2"]
-            del d["title2"]
-            return d
+            return match.groupdict()
 
         return {}
 

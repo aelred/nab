@@ -44,7 +44,16 @@ file_tests = [
     ('[UTW] Fate Zero - 14-25 + Specials [BD][h264-1080p_FLAC]',
      {'ext': None, 'group': 'utw', 'tags': ['bd', 'h264', '1080p', 'flac'],
       'episode': 14, 'eprange': 25, 'season': None,
-      'title': 'fate zero', 'eptitle': None})
+      'title': 'fate zero', 'eptitle': None}),
+
+    ('Psycho-Pass',
+     {'ext': None, 'group': None, 'tags': [],
+      'episode': None, 'eprange': None, 'season': None,
+      'title': 'psycho-pass', 'eptitle': None}),
+
+    ('Game of Thrones S04E06 720p HDTV x264-DIMENSION',
+     {'ext': None, 'group': 'dimension', 'tags': ['720p', 'hdtv', 'x264'],
+      'title': 'game of thrones', 'eptitle': None})
 ]
 
 
