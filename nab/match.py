@@ -18,18 +18,16 @@ charswap = {
     ",": " ",
     "!": "",
     ":": "",
-    " - ": " ",
-    " -": "",
     "/": " "
 }
 charswap_p = re.compile('|'.join(map(re.escape, charswap)),
                         re.IGNORECASE)
 
 
-def format_title(title):
-    formatted = title
+def format_filename(fname):
+    formatted = fname
     if isinstance(formatted, unicode):
-        formatted = unidecode.unidecode(title)  # remove accented characters
+        formatted = unidecode.unidecode(fname)  # remove accented characters
     # perform any replacements from conversion dictionary
     formatted = wordswap_p.sub(
         lambda x: " " + wordswap[x.group(2).lower()] + " ",
@@ -39,6 +37,13 @@ def format_title(title):
     formatted = re.sub(' +', ' ', formatted)  # squash repeated spaces
     formatted = formatted.lower().strip()  # title case and strip whitespace
     return formatted
+
+
+def format_title(title):
+    formatted = re.sub(' -', '', title)  # remove hyphens from titles
+    formatted = format_filename(formatted)
+    return formatted
+
 
 junk = ":-[]@~., \t"
 
