@@ -117,10 +117,10 @@ class Searcher(FileSource):
 
 class File(object):
 
-    def __init__(self, filename, format_title=True):
+    def __init__(self, filename, format_filename=True):
         self.filename = filename
 
-        data = File._split_filename(filename, format_title)
+        data = File._split_filename(filename, format_filename)
 
         self.ext = None
         if 'ext' in data:
@@ -131,7 +131,7 @@ class File(object):
             self.group = data['group']
 
         self.title = data['title']
-        if format_title:
+        if format_filename:
             self.title = match.format_title(self.title)
 
         self.season = None
@@ -163,9 +163,9 @@ class File(object):
         self.tags = data['tags']
 
     @staticmethod
-    def _split_filename(filename, format_title):
-        if format_title:
-            filename = match.format_title(filename)
+    def _split_filename(filename, format_filename):
+        if format_filename:
+            filename = match.format_filename(filename)
         data = {"title": filename}
 
         data.update(File._split_ext(data["title"]))
@@ -183,24 +183,28 @@ class File(object):
 
     @staticmethod
     def _split_numbering(title):
+        mapping = {
+            'div': r'[\s-]+'
+        }
+
         # Check if this matches common 'complete series' patterns
         # e.g. Avatar (Full 3 seasons), Breaking Bad (Complete series)
         #      FLCL 1-6 Complete series
-        comp_re = (r'(?P<title>.*)\s+'   # title
-                   '\(?\s*(\d+-\d+)?'    # optional episode range e.g. 01-12
-                   '\s+(full|complete)'  # complete
-                   '(\s+\d+)?(\s+(series|seasons|episodes)|$)')
+        comp_re = (r'(?P<title>.*){div}'   # title
+                   '\(?\s*(\d+-\d+){div}'  # optional episode range e.g. 01-12
+                   '(full|complete)(\s+\d+)?'  # complete
+                   '(\s+(series|seasons|episodes)|$)'.format(**mapping))
                                          # 'n seasons' or just 'series'
         match = re.match(comp_re, title)
         if match:
             return match.groupdict()
 
         # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
-        num_re = (r'(?P<title>.*?)\s+'
+        num_re = (r'(?P<title>.*?){div}'
                   '(s|season\s+)?(?P<season>\d+)\s*'
                   '(ep?|(episode)?\s+)(?P<episode>\d+)'
                   '(-(?P<eprange>\d+))?(v\d+)?'
-                  '\s*(?P<eptitle>.*)$')
+                  '({div}(?P<eptitle>.*))?$'.format(**mapping))
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -209,9 +213,9 @@ class File(object):
             return d
 
         # Match 'Title - 01x01 - Episode name'
-        num_re = (r'(?P<title>.*?)\s+(?P<season>\d+)x'
+        num_re = (r'(?P<title>.*?){div}(?P<season>\d+)x'
                   '(?P<episode>\d+)(-(?P<eprange>\d+))?'
-                  '(v\d+)?\s*(?P<eptitle>.*)$')
+                  '(v\d+)?({div}(?P<eptitle>.*))$'.format(**mapping))
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
@@ -220,16 +224,17 @@ class File(object):
             return d
 
         # Match 'Title - Season 01'
-        num_re = (r'(?P<title>.*?)\s+'
+        num_re = (r'(?P<title>.*?){div}'
                   '((complete|full)\s+)?s(eason)?\s*(?P<season>\d+)'
-                  '(\s+(complete|full))?$')
+                  '(\s+(complete|full))?$'.format(**mapping))
         match = re.match(num_re, title)
         if match:
             return match.groupdict()
 
         # Match 'Title - 04'
-        num_re = (r'(?P<title>.*?)\s+(ep?)?(?P<episode>\d+)'
-                  '(-(?P<eprange>\d+))?(v\d+)?\s*(?P<eptitle>.*)$')
+        num_re = (r'(?P<title>.*?){div}(ep?)?(?P<episode>\d+)'
+                  '(-(?P<eprange>\d+))?(v\d+)?'
+                  '({div}(?P<eptitle>.*))?$'.format(**mapping))
         match = re.match(num_re, title)
         if match:
             d = match.groupdict()
