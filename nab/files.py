@@ -71,8 +71,10 @@ class Searcher(FileSource):
             if f.seeds is not None and f.seeds == 0:
                 return False
 
-            self.__class__.log.debug('Valid file!')
-            return entry.match(f)
+            match = entry.match(f)
+            if match:
+                self.__class__.log.debug('Valid file!')
+            return match
 
         # search under every title
         files = []
@@ -347,12 +349,19 @@ def _schedule_find(entry):
 
 def _rank_file(f):
     filters = FileFilter.get_all(config.config["files"]["filters"])
-    return sum(filt.filter(f) for filt in filters)
+    _log.debug(f.filename)
+    rank = sum(filt.filter(f) for filt in filters)
+    _log.debug(rank)
+    return rank
 
 
 def _best_file(files):
     if files:
-        return max(files, key=lambda f: _rank_file(f))
+        _log.debug("Finding best file:")
+        best = max(files, key=lambda f: _rank_file(f))
+        _log.debug("Best file found:")
+        _log.debug(best.filename)
+        return best
     return None
 
 
