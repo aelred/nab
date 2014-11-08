@@ -53,7 +53,12 @@ file_tests = [
 
     ('Game of Thrones S04E06 720p HDTV x264-DIMENSION',
      {'ext': None, 'group': 'dimension', 'tags': ['720p', 'hdtv', 'x264'],
-      'title': 'game of thrones', 'eptitle': None})
+      'title': 'game of thrones', 'eptitle': None}),
+
+    ('[HorribleSubs] Monogatari Series Second Season - 04 [720p].mkv',
+     {'ext': 'mkv', 'group': 'horriblesubs', 'tags': ['720p'],
+      'episode': 4, 'eprange': 4, 'season': None,
+      'title': 'monogatari series second season', 'eptitle': None})
 ]
 
 
