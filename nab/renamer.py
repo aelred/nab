@@ -75,6 +75,12 @@ def rename_file(path):
     def format_fname(name):
         return "".join(c for c in name if c in valid_fname)
 
+    # check if file is a range of episodes (e.g. a two-parter)
+    if f.episode is not None and f.episode == f.eprange:
+        epnum = episode.num
+    else:
+        epnum = "%d-%d" % (f.episode, f.eprange)
+
     # move episode to destination
     mapping = {
         "videos": config.config["settings"]["videos"][0],
@@ -82,7 +88,7 @@ def rename_file(path):
         "st": format_fname(episode.show.title),
         "et": format_fname(episode.title),
         "s": episode.season.num,
-        "e": episode.num
+        "e": epnum
     }
     if episode.season.title:
         mapping["st"] = format_fname(episode.season.title)
