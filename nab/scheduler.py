@@ -121,6 +121,9 @@ class Scheduler:
             action, argument = self._wait_next()
             self.queue_set.remove((action, argument))
 
+            _log.debug("Executing scheduled task %s%s"
+                       % (action, tuple(argument)))
+
             tasks[action](*self._decode_argument(argument))
             self._save_invalidate = True
             self._save_decision()
