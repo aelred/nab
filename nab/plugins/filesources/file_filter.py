@@ -77,7 +77,7 @@ class Seeds(FileFilter):
             # if seed number is unknown, behave like there are 0.5 seeds
             # better than no seeds, but not as good as one!
             return 0.25
-        return 1.0 - 1.0 / (f.seeds + 1.0)
+        return 1.0 - 10.0 / (f.seeds + 10.0)
 Seeds.register("seeds")
 
 
