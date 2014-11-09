@@ -300,6 +300,12 @@ class Season(ShowParentElem, ShowElem):
                     terms.append("%s Season %d" % (t, n["senum"]))
                 else:
                     terms.append(t)
+        # if absolute numbered, add episode range as search term
+        if self.show.absolute:
+            for t in self.show.titles:
+                terms.append("%s %d-%d" % (t,
+                                           self.episodes[0].absolute,
+                                           self.episodes[-1].absolute))
         return terms
 
     def match(self, f, total=True):
