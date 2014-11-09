@@ -36,7 +36,7 @@ class Quality(TagFilter):
     key_str = {
         "360p": ["360p", "x360"],
         "480p": ["480p", "x480"],
-        "720p": ["720p", "x720"],
+        "720p": ["720p", "x720", "HDTV"],
         "1080p": ["1080p", "x1080", "BRRip", "BDRip"],
     }
 Quality.register("quality")
