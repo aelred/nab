@@ -51,25 +51,40 @@ def _torrent_info(handle):
     else:
         size = _sizeof_fmt(i.total_size())
 
-    return '\t'.join([
+    return handle.name() + '\n' + '\t'.join([
         _state_str[s.state],
         size.ljust(10),  # pad with spaces to format neatly
         _progress_bar(s.progress),
         '%d%%' % (s.progress * 100.0),
         '%s/s' % _sizeof_fmt(s.download_rate),
-        handle.name()
+        '%d/%d' % (s.num_seeds, s.num_peers)
     ])
 
 
 class Libtorrent(Downloader):
 
+    _instance = None
+
+    # make this a singleton
+    # by jojo on StackOverflow
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(Libtorrent, cls).__new__(
+                cls, *args, **kwargs)
+        return cls._instance
+
     def __init__(self, ratio=2.0, ports=[6881, 6891]):
         # create session
         self.session = lt.session()
+        self.session.start_dht()
         self.session.listen_on(*ports)
+        self.session.start_upnp()
+        self.session.start_natpmp()
 
         self.downloads = {}
         self.files = {}
+        self.upload_total = {}
+        self.download_total = {}
 
         self.folder = config["settings"]["downloads"]
         # begin thread to watch downloads
@@ -93,9 +108,9 @@ class Libtorrent(Downloader):
             with file(libtorrent_file) as f:
                 data = yaml.load(f)
                 for torrent in data['torrents']:
-                    h = self._add_torrent(torrent['torrent'])
-                    h.all_time_upload = torrent['up']
-                    h.all_time_download = torrent['down']
+                    self._add_torrent(torrent['torrent'])
+                    self.upload_total[torrent['torrent']] = torrent['up']
+                    self.download_total[torrent['torrent']] = torrent['down']
 
                 self.session.load_state(data['state'])
         except IOError:
@@ -129,6 +144,21 @@ class Libtorrent(Downloader):
         files = handle.get_torrent_info().files()
         return [os.path.join(handle.save_path(), f.path) for f in files]
 
+    def _get_ratio(self, torrent):
+        try:
+            return (float(self._get_upload_total(torrent)) /
+                    float(self._get_download_total(torrent)))
+        except ZeroDivisionError:
+            return 0.0
+
+    def _get_upload_total(self, torrent):
+        return (self.upload_total[torrent] +
+                self.files[torrent].status().all_time_upload)
+
+    def _get_download_total(self, torrent):
+        return (self.download_total[torrent] +
+                self.files[torrent].status().all_time_download)
+
     def _add_torrent(self, torrent):
         if torrent in self.files:
             # silently return if already downloading
@@ -140,14 +170,17 @@ class Libtorrent(Downloader):
 
         self.downloads[handle] = torrent
         self.files[torrent] = handle
-        return handle
+        self.upload_total[torrent] = 0
+        self.download_total[torrent] = 0
 
     def _remove_torrent(self, torrent):
-        # 1 == delete files
         handle = self.files[torrent]
-        handle.remove_torrent(1)
+        # 1 == delete files
+        self.session.remove_torrent(handle, 1)
         del self.downloads[handle]
         del self.files[torrent]
+        del self.upload_total[torrent]
+        del self.download_total[torrent]
 
     def _watch_thread(self):
         while True:
@@ -155,16 +188,30 @@ class Libtorrent(Downloader):
 
             self._progress_ticker += 1
             # get list of active downloads
-            downloads = [h for h in self.downloads
+            downloads = [h for h in list(self.downloads)
                          if h.status().state not in _completed_states]
             # print progress only if active downloads
             if self._progress_ticker >= 30 and downloads:
                 # save current torrent status
                 self.save_state()
                 # print progress
-                info_str = [_torrent_info(h) for h in self.downloads]
-                self.log.info("\n".join(["Progress:"] + info_str))
+                info_str = [_torrent_info(h) for h in list(self.downloads)]
+                print "\n".join(["Progress:"] + info_str)
                 self._progress_ticker = 0
+
+            # check torrent ratios
+            for h in list(self.downloads):
+                try:
+                    ratio = self._get_ratio(self.downloads[h])
+                except KeyError:
+                    # if torrent handle not in downloads
+                    continue
+
+                # delete files when over ratio and completed
+                if ratio >= self.ratio and h.status().is_finished:
+                    self._remove_torrent(self.downloads[h])
+                    self.log.debug(
+                        "%s reached seed ratio, deleting." % h.name())
 
             p = self.session.pop_alert()
             if not p:
@@ -180,17 +227,6 @@ class Libtorrent(Downloader):
 
             if p.what() == "state_changed_alert":
                 self.log.debug(p)
-
-                status = p.handle.status()
-                try:
-                    ratio = status.all_time_upload / status.all_time_download
-                except ZeroDivisionError:
-                    ratio = 0.0
-
-                # delete files when over ratio and completed
-                if ratio >= self.ratio and p.handle.status().is_finished:
-                    self._remove_torrent(self.downloads[p.handle])
-                continue
 
             if p.category() == lt.alert.category_t.error_notification:
                 self.log.debug(p)
