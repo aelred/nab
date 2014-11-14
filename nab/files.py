@@ -189,7 +189,7 @@ class File(object):
             'div': r'[\s-]+',
             # we do not match episode numbers greater than 999
             # because they usually indicate a year.
-            'ep': r'(?P<episode>\d+)(-(?P<eprange>\d+))?'
+            'ep': r'(?P<episode>\d{1,3})(-(?P<eprange>\d{1,3}))?'
         }
 
         # Check if this matches common 'complete series' patterns
