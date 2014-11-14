@@ -32,7 +32,7 @@ file_tests = [
 
     ('[uguu~] AIR 01-12 Complete Batch (BD-1080p)',
      {'ext': None, 'group': 'uguu', 'tags': ['bd', '1080p'],
-      'episode': None, 'eprange': None, 'season': None,
+      'episode': 1, 'eprange': 12, 'season': None,
       'title': 'air', 'eptitle': None}),
 
     ('[NoobSubs] Fate Zero S1 01-13 + SP01-03 (720p Blu-ray 8bit AAC MP4)',
@@ -58,7 +58,13 @@ file_tests = [
     ('[HorribleSubs] Monogatari Series Second Season - 04 [720p].mkv',
      {'ext': 'mkv', 'group': 'horriblesubs', 'tags': ['720p'],
       'episode': 4, 'eprange': 4, 'season': None,
-      'title': 'monogatari series second season', 'eptitle': None})
+      'title': 'monogatari series second season', 'eptitle': None}),
+
+    ('Battlestar Galactica Complete Series '
+     '2003-2009 720p XvidHD - RePack PsiClone',
+     {'ext': None, 'tags': ['720p', 'xvidhd'],
+      'episode': None, 'eprange': None, 'season': None,
+      'title': 'battlestar galactica', 'eptitle': None})
 ]
 
 
