@@ -186,7 +186,10 @@ class File(object):
     @staticmethod
     def _split_numbering(title):
         mapping = {
-            'div': r'[\s-]+'
+            'div': r'[\s-]+',
+            # we do not match episode numbers greater than 999
+            # because they usually indicate a year.
+            'ep': r'(?P<episode>\d+)(-(?P<eprange>\d+))?'
         }
 
         # Check if this matches common 'complete series' patterns
@@ -204,8 +207,7 @@ class File(object):
         # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
         num_re = (r'(?P<title>.*?){div}'
                   '(s|season\s+)?(?P<season>\d+)\s*'
-                  '(ep?|(episode)?\s+)(?P<episode>\d+)'
-                  '(-(?P<eprange>\d+))?(v\d+)?'
+                  '(ep?|(episode)?\s+){ep}(v\d+)?'
                   '({div}(?P<eptitle>.*))?$'.format(**mapping))
         match = re.match(num_re, title)
         if match:
@@ -215,8 +217,7 @@ class File(object):
             return d
 
         # Match 'Title - 01x01 - Episode name'
-        num_re = (r'(?P<title>.*?){div}(?P<season>\d+)x'
-                  '(?P<episode>\d+)(-(?P<eprange>\d+))?'
+        num_re = (r'(?P<title>.*?){div}(?P<season>\d+)x{ep}'
                   '(v\d+)?({div}(?P<eptitle>.*))$'.format(**mapping))
         match = re.match(num_re, title)
         if match:
@@ -234,8 +235,7 @@ class File(object):
             return match.groupdict()
 
         # Match 'Title - 04'
-        num_re = (r'(?P<title>.*?){div}(ep?)?(?P<episode>\d+)'
-                  '(-(?P<eprange>\d+))?(v\d+)?'
+        num_re = (r'(?P<title>.*?){div}(ep?)?{ep}(v\d+)?'
                   '({div}(?P<eptitle>.*))?$'.format(**mapping))
         match = re.match(num_re, title)
         if match:
