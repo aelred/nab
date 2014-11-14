@@ -140,6 +140,11 @@ class File(object):
         if 'season' in data:
             self.season = int(data['season'])
 
+        if 'serange' in data and data['serange'] is not None:
+            self.serange = int(data['serange'])
+        else:
+            self.serange = self.season
+
         self.episode = None
         if 'episode' in data and data['episode'] is not None:
             self.episode = int(data['episode'])
@@ -189,10 +194,10 @@ class File(object):
             'div': r'[\s-]+',
             # we do not match episode numbers greater than 999
             # because they usually indicate a year.
-            'eptxt': r'(ep?|(episode)? )',
+            'eptxt': r'(ep?|(episodes?)? )',
             'ep': r'(?P<episode>\d{1,3})(-(?P<eprange>\d{1,3}))?(v\d+)?',
-            'setxt': r'(s|season )',
-            'se': r'(?P<season>\d+)',
+            'setxt': r'(s|seasons? )',
+            'se': r'(?P<season>\d{1,3})(-(?P<serange>\d{1,3}))?',
             'year': r'\d{4}(-\d{4})?',
             'title': r'(?P<title>.*?)',
             'full': r'(full|complete)'
@@ -208,7 +213,11 @@ class File(object):
                    .format(**mapping))
         match = re.match(comp_re, title)
         if match:
-            return match.groupdict()
+            d = match.groupdict()
+            # ignore any given episode ranges
+            del d['episode']
+            del d['eprange']
+            return d
 
         # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
         num_re = (r'{title}{div}'
@@ -300,7 +309,7 @@ class File(object):
 
         tag_re = (r'(.*?)\s+'
                   '((?:bd|hdtv|proper|web-dl|x264|dd5.1|hdrip|dvdrip|xvid|'
-                  'cd[0-9]|dvdscr|brrip|divx|batch|internal|'
+                  'cd[0-9]|dvdscr|brrip|divx|batch|internal|specials|'
                   '\d{3,4}x\d{3,4}|\d{3,4}p).*?)$')
         match = re.match(tag_re, title)
         if match:

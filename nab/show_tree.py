@@ -213,15 +213,23 @@ class Show(ShowParentElem, ShowElem):
         return set(map(match.format_title, self.titles))
 
     def match(self, f, total=True):
-        # filename must not match any season name
-        # e.g. Season 1 of a show has the same name as the show itself.
-        #      Season 2 has a different name, then any torrent that matches
-        #      the show name may just contain season 1, so we reject it.
-        if total and any(s.match(f, True) for s in self.values()):
-            return False
+        if total:
+            # filename must not match any season name (if seasons > 1)
+            # e.g. Season 1 of a show has the same name as the show itself.
+            #      Season 2 has a different name, then any torrent that matches
+            #      the show name may just contain season 1, so we reject it.
+            semax = max(self.keys())
+            if any(se.match(f, True) for se in self.values()) and semax > 1:
+                return False
 
-        if total and not (f.season is None and f.episode is None):
-            return False
+            # there must be no episode number
+            if f.episode is not None:
+                return False
+
+            # there must be no episode or season number
+            # or the file must give the full range of seasons (e.g. 1-4)
+            if f.season is not None and (f.season != 1 or f.serange != semax):
+                return False
 
         titles = map(match.format_title, self.titles)
         return match.format_title(f.title) in titles
@@ -327,9 +335,11 @@ class Season(ShowParentElem, ShowElem):
             if f.episode != 1 or f.eprange != len(self):
                 return False
 
-        return ((f.title in map(match.format_title, self.titles)
-                 and f.season is None) or
-                (self.show.match(f, False) and f.season == self.num))
+        titles = map(match.format_title, self.titles)
+
+        return ((f.title in titles and f.season is None) or
+                (self.show.match(f, False) and
+                 f.season == self.num and f.serange == self.num))
 
     def __eq__(self, other):
         return ShowElem.__eq__(self, other)

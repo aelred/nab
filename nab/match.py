@@ -18,7 +18,8 @@ charswap = {
     ",": " ",
     "!": "",
     ":": "",
-    "/": " "
+    "/": " ",
+    "+": ""
 }
 charswap_p = re.compile('|'.join(map(re.escape, charswap)),
                         re.IGNORECASE)
