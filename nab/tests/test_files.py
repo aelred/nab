@@ -86,7 +86,13 @@ file_tests = [
      {'entry': ('Blackadder', ),
       'ext': None,
       'episode': None, 'eprange': None, 'season': 1, 'serange': 4,
-      'title': 'blackadder', 'eptitle': None})
+      'title': 'blackadder', 'eptitle': None}),
+
+    ('Breaking Bad Season 5 Complete 720p.BRrip.Sujaidr',
+     {'entry': ('Breaking Bad', 5),
+      'ext': None, 'ext': None, 'tags': ['720p', 'brrip'],
+      'episode': None, 'eprange': None, 'season': 5, 'serange': 5,
+      'title': 'breaking bad', 'eptitle': None})
 ]
 
 

@@ -196,28 +196,13 @@ class File(object):
             # because they usually indicate a year.
             'eptxt': r'(ep?|(episodes?)? )',
             'ep': r'(?P<episode>\d{1,3})(-(?P<eprange>\d{1,3}))?(v\d+)?',
+            'eprange': r'(?P<episode>\d{1,3})-(?P<eprange>\d{1,3})(v\d+)?',
             'setxt': r'(s|seasons? )',
             'se': r'(?P<season>\d{1,3})(-(?P<serange>\d{1,3}))?',
             'year': r'\d{4}(-\d{4})?',
             'title': r'(?P<title>.*?)',
             'full': r'(full|complete)'
         }
-
-        # Check if this matches common 'complete series' patterns
-        # e.g. Avatar (Full 3 seasons), Breaking Bad (Complete series)
-        #      FLCL 1-6 Complete series
-        comp_re = (r'{title}{div}'       # title
-                   '\(?\s*({ep}{div})?'   # optional episode range
-                   '{full}( \d+)?'  # complete (n) series
-                   '( ((series|seasons|episodes)( {year})?)|$)'
-                   .format(**mapping))
-        match = re.match(comp_re, title)
-        if match:
-            d = match.groupdict()
-            # ignore any given episode ranges
-            del d['episode']
-            del d['eprange']
-            return d
 
         # Match 'Title - S01 E01 - Episode name', 'Title Season 01 Episode 01'
         num_re = (r'{title}{div}'
@@ -256,6 +241,21 @@ class File(object):
             d = match.groupdict()
             if d["eptitle"] == "":
                 del d["eptitle"]
+            return d
+
+        # Check if this matches common 'complete series' patterns
+        # e.g. Avatar (Full 3 seasons), Breaking Bad (Complete series)
+        #      FLCL 1-6 Complete series
+        comp_re = (r'{title}{div}'            # title
+                   '\(?\s*({eprange}{div})?'  # optional episode range
+                   '{full}( ((\d+ )?(series|seasons|episodes)( {year})?)|$)'
+                   .format(**mapping))
+        match = re.match(comp_re, title)
+        if match:
+            d = match.groupdict()
+            # ignore any given episode ranges
+            del d['episode']
+            del d['eprange']
             return d
 
         return {}
