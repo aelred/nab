@@ -37,8 +37,14 @@ class FileSystem(ShowSource):
                 for f in ff:
                     files[d].add(os.path.splitext(f)[0])
 
-        # find all recognised episodes in show directories
+        # Find all recognised episodes in show directories.
+        # We do not use the file.File object used elsewhere in nab
+        # because in this case we already know the show title from
+        # the parent folder. We can be more lenient, only searching
+        # for typical season/episode naming patterns.
         r = r'(?:\W|^)S?(\d+)[Ex](\d+)(?:\W|$)'
+
+        # episodes are a tuple of (dir, season num, episode num)
         episodes = set()
         for d in files:
             del_files = set()
