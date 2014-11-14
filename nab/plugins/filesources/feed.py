@@ -10,10 +10,10 @@ from nab.files import Searcher, Torrent
 @filecache(60 * 60)
 def _get_feed(url):
     feed = feedparser.parse(url)
-    if feed["entries"]:
-        return feed["entries"]
+    if feed['entries']:
+        return feed['entries']
     else:
-        return []
+        raise IOError("No results found")
 
 
 def get_seeds(f):
@@ -31,7 +31,7 @@ def get_seeds(f):
 
 class Feed(Searcher):
     def __init__(self, url, name=None,
-                 search_by=None, match_by=None, num_pages=3):
+                 search_by=None, match_by=None, num_pages=1):
         Searcher.__init__(self, search_by, match_by)
         self.url = url
         self.name = name or url
@@ -41,8 +41,22 @@ class Feed(Searcher):
 
     def _get_feed(self, url):
         Feed.log.debug("Parsing feed at %s" % url)
-        feed = _get_feed(url)
-        Feed.log.debug("Feed parsed")
+
+        # retry three times
+        feed = []
+        for retry in range(3):
+            try:
+                feed = _get_feed(url)
+            except IOError:
+                continue
+            else:
+                break
+
+        if feed:
+            Feed.log.debug("Feed parsed")
+        else:
+            Feed.log.debug("No results found")
+
         return feed
 
     def search(self, term):
@@ -52,16 +66,18 @@ class Feed(Searcher):
             term = unidecode(term)
         term = urllib.quote(term)
 
-        p1_results = self._get_feed(self.url.format(s=term, p=1))
-        p1_links = set([f["link"] for f in p1_results])
-
         files = []
         # only search first few pages for files
-        for page in range(1, self.num_pages):
+        for page in range(1, self.num_pages + 1):
             results = self._get_feed(self.url.format(s=term, p=page))
 
-            # break when no results or results are the same as page 1
+            # remember page 1 links so we can tell if the
+            # site is giving us the same page again
             links = set([f["link"] for f in results])
+            if page == 1:
+                p1_links = set(links)
+
+            # break when no results or results are the same as page 1
             if not results or (page != 1 and p1_links == links):
                 break
 
