@@ -189,17 +189,18 @@ class File(object):
             'div': r'[\s-]+',
             # we do not match episode numbers greater than 999
             # because they usually indicate a year.
-            'ep': r'(?P<episode>\d{1,3})(-(?P<eprange>\d{1,3}))?'
+            'ep': r'(?P<episode>\d{1,3})(-(?P<eprange>\d{1,3}))?',
+            'year': r'\d{4}(-\d{4})?'
         }
 
         # Check if this matches common 'complete series' patterns
         # e.g. Avatar (Full 3 seasons), Breaking Bad (Complete series)
         #      FLCL 1-6 Complete series
-        comp_re = (r'(?P<title>.*){div}'   # title
-                   '\(?\s*(\d+-\d+){div}'  # optional episode range e.g. 01-12
-                   '(full|complete)(\s+\d+)?'  # complete
-                   '(\s+(series|seasons|episodes)|$)'.format(**mapping))
-                                         # 'n seasons' or just 'series'
+        comp_re = (r'(?P<title>.*?){div}'       # title
+                   '\(?\s*((\d+-\d+){div})?'   # optional episode range
+                   '(full|complete)(\s+\d+)?'  # complete (n) series
+                   '(\s+((series|seasons|episodes)(\s+{year})?)|$)'
+                   .format(**mapping))
         match = re.match(comp_re, title)
         if match:
             return match.groupdict()
