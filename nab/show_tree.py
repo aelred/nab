@@ -219,14 +219,18 @@ class Show(ShowParentElem, ShowElem):
             #      Season 2 has a different name, then any torrent that matches
             #      the show name may just contain season 1, so we reject it.
             semax = max(self.keys())
-            if any(se.match(f, True) for se in self.values()) and semax > 1:
+            if (any(se.match(f, True) for se in self.values()) and semax > 1
+               and f.season is None and f.episode is None):
                 return False
 
             # there must be no episode number
-            if f.episode is not None:
+            # or the file must give the full range of episodes
+            epmax = len([ep for ep in self.episodes if ep.season.num != 0])
+            if (f.episode is not None and
+               (not self.absolute or f.episode != 1 or f.eprange != epmax)):
                 return False
 
-            # there must be no episode or season number
+            # there must be no season number
             # or the file must give the full range of seasons (e.g. 1-4)
             if f.season is not None and (f.season != 1 or f.serange != semax):
                 return False
@@ -515,7 +519,7 @@ class Episode(ShowElem):
                               for et in n["eptitles"] if et != ""]
         return terms
 
-    def match(self, f):
+    def match(self, f, total=True):
         # match by title if a special
         if self.season.num == 0:
             titles = [" ".join([match.format_title(t), self.title])

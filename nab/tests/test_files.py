@@ -90,9 +90,14 @@ file_tests = [
 
     ('Breaking Bad Season 5 Complete 720p.BRrip.Sujaidr',
      {'entry': ('Breaking Bad', 5),
-      'ext': None, 'ext': None, 'tags': ['720p', 'brrip'],
+      'ext': None, 'tags': ['720p', 'brrip'],
       'episode': None, 'eprange': None, 'season': 5, 'serange': 5,
-      'title': 'breaking bad', 'eptitle': None})
+      'title': 'breaking bad', 'eptitle': None}),
+
+    ('[VIP]Black Lagoon - 1-24[BDrip,912x512,x264,AAC]',
+     {'ext': None, 'group': 'vip', 'tags': ['bdrip', 'x264', 'aac'],
+      'episode': 1, 'eprange': 24, 'season': None, 'serange': None,
+      'title': 'black lagoon', 'eptitle': None})
 ]
 
 
