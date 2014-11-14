@@ -208,7 +208,7 @@ class File(object):
         num_re = (r'{title}{div}'
                   '{setxt}?{se} ?{eptxt}{ep}'
                   '({div}(?P<eptitle>.*))?$'.format(**mapping))
-        match = re.match(num_re, title)
+        match = re.match(num_re, title, re.I)
         if match:
             d = match.groupdict()
             if d["eptitle"] == "":
@@ -218,7 +218,7 @@ class File(object):
         # Match 'Title - 01x01 - Episode name'
         num_re = (r'{title}{div}{se}x{ep}'
                   '({div}(?P<eptitle>.*))$'.format(**mapping))
-        match = re.match(num_re, title)
+        match = re.match(num_re, title, re.I)
         if match:
             d = match.groupdict()
             if d["eptitle"] == "":
@@ -229,14 +229,14 @@ class File(object):
         num_re = (r'{title}{div}'
                   '({full} )?{setxt}{se}'
                   '( {full})?$'.format(**mapping))
-        match = re.match(num_re, title)
+        match = re.match(num_re, title, re.I)
         if match:
             return match.groupdict()
 
         # Match 'Title - 04'
         num_re = (r'{title}{div}{eptxt}{ep}'
                   '({div}(?P<eptitle>.*))?$'.format(**mapping))
-        match = re.match(num_re, title)
+        match = re.match(num_re, title, re.I)
         if match:
             d = match.groupdict()
             if d["eptitle"] == "":
@@ -250,7 +250,7 @@ class File(object):
                    '\(?\s*({eprange}{div})?'  # optional episode range
                    '{full}( ((\d+ )?(series|seasons|episodes)( {year})?)|$)'
                    .format(**mapping))
-        match = re.match(comp_re, title)
+        match = re.match(comp_re, title, re.I)
         if match:
             d = match.groupdict()
             # ignore any given episode ranges
@@ -263,7 +263,7 @@ class File(object):
     @staticmethod
     def _split_ext(title):
         ext_re = r"(.*?)\s+\.?(%s)$" % '|'.join(video_exts + sub_exts)
-        match = re.match(ext_re, title)
+        match = re.match(ext_re, title, re.I)
         if match:
             return {"title": match.group(1), "ext": match.group(2)}
 
@@ -272,7 +272,7 @@ class File(object):
     @staticmethod
     def _split_group_begin(title):
         group_begin_re = r"[\[\(\{](?P<group>.*?)[\]\)\}](?P<title>.*)$"
-        match = re.match(group_begin_re, title)
+        match = re.match(group_begin_re, title, re.I)
         if match:
             return match.groupdict()
 
@@ -288,7 +288,7 @@ class File(object):
 
         group_end_re = (r'(?P<title>.*?)'
                         '(-\s*(?P<group>\w+))$')
-        match = re.match(group_end_re, title)
+        match = re.match(group_end_re, title, re.I)
         if match:
             return match.groupdict()
 
@@ -301,20 +301,20 @@ class File(object):
         # match tags in brackets, unless it is a year, e.g. Archer (2009)
         bracket_re = r"[\(\[\{]((?!\d{4}[\]\}\)]).*?)[\]\}\)]"
         split_re = r"[-_\s]+"
-        match = re.findall(bracket_re, title)
+        match = re.findall(bracket_re, title, re.I)
         if match:
-            title = re.sub(bracket_re, "", title).strip()
+            title = re.sub(bracket_re, "", title, re.I).strip()
             for m in match:
-                tags += re.split(split_re, m)
+                tags += re.split(split_re, m, re.I)
 
         tag_re = (r'(.*?)\s+'
                   '((?:bd|hdtv|proper|web-dl|x264|dd5.1|hdrip|dvdrip|xvid|'
                   'cd[0-9]|dvdscr|brrip|divx|batch|internal|specials|'
                   '\d{3,4}x\d{3,4}|\d{3,4}p).*?)$')
-        match = re.match(tag_re, title)
+        match = re.match(tag_re, title, re.I)
         if match:
             title = match.group(1).strip()
-            tags += re.split(split_re, match.group(2))
+            tags += re.split(split_re, match.group(2), re.I)
 
         return {"title": title, "tags": tags}
 
