@@ -31,12 +31,19 @@ def get_seeds(f):
 
 class Feed(Searcher):
     def __init__(self, url, name=None,
-                 search_by=None, match_by=None):
+                 search_by=None, match_by=None, num_pages=3):
         Searcher.__init__(self, search_by, match_by)
         self.url = url
         self.name = name or url
+        self.num_pages = num_pages
 
         self.multipage = "{p}" in self.url
+
+    def _get_feed(self, url):
+        Feed.log.debug("Parsing feed at %s" % url)
+        feed = _get_feed(url)
+        Feed.log.debug("Feed parsed")
+        return feed
 
     def search(self, term):
         files = []
@@ -45,13 +52,13 @@ class Feed(Searcher):
             term = unidecode(term)
         term = urllib.quote(term)
 
-        p1_results = _get_feed(self.url.format(s=term, p=1))
+        p1_results = self._get_feed(self.url.format(s=term, p=1))
         p1_links = set([f["link"] for f in p1_results])
 
         files = []
-        # only search first 3 pages for files
-        for page in range(1, 3):
-            results = _get_feed(self.url.format(s=term, p=page))
+        # only search first few pages for files
+        for page in range(1, self.num_pages):
+            results = self._get_feed(self.url.format(s=term, p=page))
 
             # break when no results or results are the same as page 1
             links = set([f["link"] for f in results])
