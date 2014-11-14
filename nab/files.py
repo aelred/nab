@@ -303,9 +303,9 @@ class File(object):
         split_re = r"[-_\s]+"
         match = re.findall(bracket_re, title, re.I)
         if match:
-            title = re.sub(bracket_re, "", title, re.I).strip()
+            title = re.sub(bracket_re, "", title, flags=re.I).strip()
             for m in match:
-                tags += re.split(split_re, m, re.I)
+                tags += re.split(split_re, m, flags=re.I)
 
         tag_re = (r'(.*?)\s+'
                   '((?:bd|hdtv|proper|web-dl|x264|dd5.1|hdrip|dvdrip|xvid|'
@@ -314,7 +314,7 @@ class File(object):
         match = re.match(tag_re, title, re.I)
         if match:
             title = match.group(1).strip()
-            tags += re.split(split_re, match.group(2), re.I)
+            tags += re.split(split_re, match.group(2), flags=re.I)
 
         return {"title": title, "tags": tags}
 
