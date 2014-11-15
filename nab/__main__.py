@@ -64,7 +64,6 @@ def update_shows():
     shows.update_data()
 
 scheduler.tasks["update_shows"] = update_shows
-scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
 config.init()
 
@@ -93,6 +92,9 @@ else:
     # add command to refresh data
     # if command is already scheduled, this will be ignored
     scheduler.scheduler.add(0, "refresh")
+
+    # schedule first refresh of show data a week from now
+    scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
     # add command to check download progress
     scheduler.scheduler.add(0, "check_downloads")
