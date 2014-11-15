@@ -5,7 +5,7 @@ import time
 import appdirs
 import os
 
-from nab import match
+from nab import match, database, scheduler
 
 
 shows_file = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
@@ -152,6 +152,11 @@ class ShowTree(ShowParentElem):
     def to_yaml(self):
         return ShowParentElem.to_yaml(self)
 
+    def update_data(self):
+        # update all show data from databases
+        for show in self.values():
+            show.update_data()
+
 
 class Show(ShowParentElem, ShowElem):
     def __init__(self, title, ids=None, absolute=False, titles=None):
@@ -159,6 +164,9 @@ class Show(ShowParentElem, ShowElem):
         ShowElem.__init__(self, None, title, titles)
         self.ids = ids or {}
         self.absolute = absolute
+
+        # automatically get show data from database
+        self.update_data()
 
     @property
     def show(self):
@@ -194,6 +202,10 @@ class Show(ShowParentElem, ShowElem):
         ShowParentElem.__merge__(self, other)
         ShowElem.__merge__(self, other)
         self.ids = dict(self.ids.items() + other.ids.items())
+
+    def update_data(self):
+        # get new data from database for this show
+        database.get_data(self)
 
     def to_yaml(self):
         return {
