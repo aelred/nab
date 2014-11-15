@@ -2,7 +2,7 @@ from plex.server import Server
 from itertools import chain
 
 from nab.show_manager import ShowSource
-from nab.show_tree import Show
+from nab.show import Show
 
 
 class Plex(ShowSource):

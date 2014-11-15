@@ -1,11 +1,17 @@
 import time
+import yaml
+import os
+import appdirs
 
 from nab import config
 from nab import register
 from nab import log
 from nab import exception
+from nab import show_elem
+from nab import show
 
 _log = log.log.getChild("show")
+shows_file = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
 
 
 class ShowFilter(register.Entry):
@@ -56,6 +62,37 @@ class ShowSource(register.Entry):
 
     def filter_episode(self, episode):
         return episode.show in self.get_cached_shows()
+
+
+class ShowTree(show_elem.ShowParentElem):
+
+    def __init__(self):
+        show_elem.ShowParentElem.__init__(self)
+        try:
+            with file(shows_file, 'r') as f:
+                self.update(ShowTree.from_yaml(yaml.load(f), show.Show, self))
+        except IOError:
+            pass  # no shows.yaml file, doesn't matter!
+
+    def find(self, id_):
+        if isinstance(id_, str):
+            id_ = (id_,)
+
+        for child in self.itervalues():
+            f = child.find(id_)
+            if f is not None:
+                return f
+
+    def save(self):
+        yaml.safe_dump(self.to_yaml(), file(shows_file, 'w'))
+
+    def to_yaml(self):
+        return show_elem.ShowParentElem.to_yaml(self)
+
+    def update_data(self):
+        # update all show data from databases
+        for show in self.values():
+            show.update_data()
 
 
 def get_shows():
