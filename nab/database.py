@@ -1,7 +1,6 @@
 from nab import config
 from nab import register
 from nab import log
-from nab.scheduler import scheduler, tasks
 
 _log = log.log.getChild("database")
 
@@ -31,9 +30,6 @@ def databases():
 
 
 def get_data(show):
-    # reschedule to refresh database data in a week's time
-    scheduler.add(60 * 60 * 24 * 7, "get_data", show)
-
     _log.debug("Searching for %s" % show)
 
     # get all titles for show
@@ -70,4 +66,3 @@ def get_data(show):
                 show[season.num] = season
 
     show.format()
-tasks["get_data"] = get_data

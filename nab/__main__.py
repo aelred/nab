@@ -45,13 +45,9 @@ def refresh():
     # reschedule to get data every hour
     scheduler.scheduler.add(60 * 60, "refresh")
 
-    new_shows = show.get_shows()
-
-    for sh in new_shows:
-        if not sh.title in shows:
-            # get database info and add to shows
-            database.get_data(sh)
-            shows[sh.title] = sh
+    # add all shows
+    for sh in show.get_shows():
+        shows[sh.title] = sh
 
     show.filter_shows(shows)
     files.find_files(shows)
@@ -60,6 +56,15 @@ def refresh():
     shows.save()
 
 scheduler.tasks["refresh"] = refresh
+
+
+def update_shows():
+    # reschedule to refresh show data in a week's time
+    scheduler.add(60 * 60 * 24 * 7, "update_shows")
+    shows.update_data()
+
+scheduler.tasks["update_shows"] = update_shows
+scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
 config.init()
 
