@@ -1,4 +1,4 @@
-from nab.show import ShowSource
+from nab.show_manager import ShowSource
 from nab.files import File
 from nab.show_tree import Show
 
