@@ -5,7 +5,7 @@ import time
 import appdirs
 import os
 
-from nab import match, database, scheduler
+from nab import match, database
 
 
 shows_file = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
