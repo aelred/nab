@@ -64,6 +64,7 @@ def update_shows():
     shows.update_data()
 
 scheduler.tasks["update_shows"] = update_shows
+scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
 config.init()
 
