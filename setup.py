@@ -1,6 +1,12 @@
 from distutils.core import setup
 from distutils.dir_util import remove_tree
-import py2exe
+
+# if py2exe is not installed, then we can still install normally
+try:
+    import py2exe
+except ImportError:
+    pass
+
 import os
 import shutil
 
@@ -18,7 +24,7 @@ for folder, sub, files in os.walk('nab/plugins'):
 # delete previous dist
 try:
     remove_tree('./dist', False)
-except WindowsError:
+except OSError:
     pass
 
 setup(
