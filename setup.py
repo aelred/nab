@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 from distutils.dir_util import remove_tree
 
 # if py2exe is not installed, then we can still install normally
@@ -35,8 +35,8 @@ setup(
     packages=['nab', 'nab.plugins', 'nab.plugins.databases',
               'nab.plugins.downloaders', 'nab.plugins.filesources',
               'nab.plugins.shows'],
-    requires=['appdirs', 'requests', 'tvdb_api', 'filecache', 'plex',
-              'watchdog', 'flask'],
+    install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache', 'plex',
+                      'watchdog', 'flask'],
 
     options={'py2exe': {
         'bundle_files': 1,
