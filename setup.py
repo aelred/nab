@@ -40,7 +40,7 @@ setup(
     packages=['nab', 'nab.plugins', 'nab.plugins.databases',
               'nab.plugins.downloaders', 'nab.plugins.filesources',
               'nab.plugins.shows'],
-    install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache', 'plex',
+    install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache', 'py-plex',
                       'watchdog', 'flask', 'pyyaml', 'memoized', 'unidecode'],
 
     options={'py2exe': {
