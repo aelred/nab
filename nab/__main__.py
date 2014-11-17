@@ -60,7 +60,7 @@ scheduler.tasks["refresh"] = refresh
 
 def update_shows():
     # reschedule to refresh show data in a week's time
-    scheduler.add(60 * 60 * 24 * 7, "update_shows")
+    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
     shows.update_data()
 
 scheduler.tasks["update_shows"] = update_shows
@@ -94,7 +94,7 @@ else:
     scheduler.scheduler.add(0, "refresh")
 
     # schedule first refresh of show data a week from now
-    scheduler.add(60 * 60 * 24 * 7, "update_shows")
+    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
     # add command to check download progress
     scheduler.scheduler.add(0, "check_downloads")
