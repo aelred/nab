@@ -45,6 +45,9 @@ setup(
                       'unidecode', 'python-libtorrent', 'munkres',
                       'feedparser', 'py-utorrent'],
 
+    dependency_links=[
+        'https://github.com/ftao/py-utorrent/tarball/master#egg=py-utorrent'],
+
     options={'py2exe': {
         'bundle_files': 1,
         'compressed': True,
