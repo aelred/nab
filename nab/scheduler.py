@@ -36,6 +36,7 @@ class Scheduler:
     def __init__(self):
         self.queue = []
         self.queue_asap = deque()
+        self.queue_lazy = deque()
         self.queue_set = set()
         self._qlock = threading.Condition()
 
@@ -45,15 +46,24 @@ class Scheduler:
     def to_yaml(self):
         yml = {"queue": []}
 
+        def time_str(dtime):
+            try:
+                return time.ctime(dtime)
+            except TypeError:
+                return dtime
+
         def yaml_entry(dtime, action, argument):
-            return {"time": dtime, "tstr": time.ctime(dtime),
+            return {"time": dtime, "tstr": time_str(dtime),
                     "action": action, "argument": argument}
 
         for dtime, action, argument in sorted(self.queue, key=lambda e: e[0]):
             yml["queue"].append(yaml_entry(dtime, action, argument))
 
         for action, argument in self.queue_asap:
-            yml["queue"].append(yaml_entry(None, action, argument))
+            yml["queue"].append(yaml_entry('asap', action, argument))
+
+        for action, argument in self.queue_lazy:
+            yml["queue"].append(yaml_entry('lazy', action, argument))
 
         return yml
 
@@ -72,8 +82,10 @@ class Scheduler:
                 # yes I did just encode the decoded argument
                 # this is to add back in tuples, which are hashable
 
-                if dtime is None:
+                if dtime == 'asap':
                     self.queue_asap.append((action, argument))
+                elif dtime == 'lazy':
+                    self.queue_lazy.append((action, argument))
                 else:
                     heapq.heappush(self.queue, (dtime, action, argument))
 
@@ -95,7 +107,8 @@ class Scheduler:
         while True:
             # acquire queue lock
             with self._qlock:
-                if len(self.queue) + len(self.queue_asap) == 0:
+                if (len(self.queue) + len(self.queue_asap) +
+                   len(self.queue_lazy)) == 0:
                     # save whenever queue is empty
                     self.save()
                     # wait for item to be added
@@ -112,6 +125,10 @@ class Scheduler:
                 if time.time() >= action_time:
                     heapq.heappop(self.queue)
                     return action, argument
+
+                # finally consider the lazy queue
+                if self.queue_lazy:
+                    return self.queue_lazy.popleft()
 
             # test once every second
             time.sleep(1.0)
@@ -197,6 +214,21 @@ class Scheduler:
         with self._qlock:
             _log.debug("Scheduling %s%s ASAP" % (action, tuple(argument)))
             self.queue_asap.append((action, argument))
+            self.queue_set.add((action, argument))
+
+            self._save_invalidate = True
+            self._save_decision()
+            self._qlock.notify()
+
+    def add_lazy(self, action, *argument):
+        argument = self._encode_argument(argument)
+
+        if (action, argument) in self.queue_set:
+            return
+
+        with self._qlock:
+            _log.debug("Scheduling %s%s lazy" % (action, tuple(argument)))
+            self.queue_lazy.append((action, argument))
             self.queue_set.add((action, argument))
 
             self._save_invalidate = True
