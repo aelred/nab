@@ -91,13 +91,13 @@ else:
 
     # add command to refresh data
     # if command is already scheduled, this will be ignored
-    scheduler.scheduler.add(0, "refresh")
+    scheduler.scheduler.add_asap("refresh")
 
     # schedule first refresh of show data a week from now
     scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
     # add command to check download progress
-    scheduler.scheduler.add(0, "check_downloads")
+    scheduler.scheduler.add_asap("check_downloads")
 
     # start server
     server.run()

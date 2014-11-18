@@ -419,7 +419,7 @@ def find_file(entry, reschedule):
         for child in sorted(entry.values(),
                             key=lambda c: c.aired, reverse=True):
             if len(child.epwanted):
-                scheduler.add(0, "find_file", child, reschedule)
+                scheduler.add_lazy("find_file", child, reschedule)
     except AttributeError:
         pass
 tasks["find_file"] = find_file
@@ -430,4 +430,4 @@ def find_files(shows):
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):
         if len(sh.epwanted):
-            scheduler.add(0, "find_file", sh, True)
+            scheduler.add_lazy("find_file", sh, True)
