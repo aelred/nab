@@ -46,9 +46,10 @@ class Scheduler:
         yml = {"queue": []}
 
         def yaml_entry(dtime, action, argument):
-            return {"time": dtime, "action": action, "argument": argument}
+            return {"time": dtime, "tstr": time.ctime(dtime),
+                    "action": action, "argument": argument}
 
-        for dtime, action, argument in self.queue:
+        for dtime, action, argument in sorted(self.queue, key=lambda e: e[0]):
             yml["queue"].append(yaml_entry(dtime, action, argument))
 
         for action, argument in self.queue_asap:
