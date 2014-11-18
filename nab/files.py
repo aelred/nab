@@ -10,7 +10,9 @@ from nab import config
 from nab import downloader
 from nab import exception
 from nab.scheduler import scheduler, tasks
-from nab.show_tree import Show, Season, Episode
+from nab.show import Show
+from nab.season import Season
+from nab.episode import Episode
 
 
 _log = log.log.getChild("files")

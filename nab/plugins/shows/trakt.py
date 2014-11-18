@@ -2,9 +2,11 @@ import requests
 from filecache import filecache
 from itertools import groupby
 
-from nab.show import ShowSource
+from nab.show_manager import ShowSource
 from nab.database import Database
-from nab.show_tree import Show, Season, Episode
+from nab.show import Show
+from nab.season import Season
+from nab.episode import Episode
 from nab import config
 from nab.exception import PluginError
 

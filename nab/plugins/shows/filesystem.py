@@ -1,9 +1,9 @@
 import os
 import re
 
-from nab.show import ShowSource
+from nab.show_manager import ShowSource
 from nab.files import File
-from nab.show_tree import Show
+from nab.show import Show
 from nab import config
 
 

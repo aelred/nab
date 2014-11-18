@@ -1,4 +1,4 @@
-from nab import show
+from nab import show_manager
 from nab import database
 from nab import files
 from nab import renamer
@@ -32,9 +32,9 @@ if config.options.clean:
 shows = show_tree.ShowTree()
 
 plugin_types = [
-    show.ShowSource,
+    show_manager.ShowSource,
     database.Database,
-    show.ShowFilter,
+    show_manager.ShowFilter,
     files.FileSource,
     files.FileFilter,
     downloader.Downloader
@@ -46,10 +46,10 @@ def refresh():
     scheduler.scheduler.add(60 * 60, "refresh")
 
     # add all shows
-    for sh in show.get_shows():
+    for sh in show_manager.get_shows():
         shows[sh.title] = sh
 
-    show.filter_shows(shows)
+    show_manager.filter_shows(shows)
     files.find_files(shows)
 
     # write data to file for backup purposes

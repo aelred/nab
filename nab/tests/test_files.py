@@ -1,6 +1,6 @@
 import unittest
 from nab.files import File
-from nab.show_tree import Show
+from nab.show import Show
 
 # fields: ext, group, tags
 #         episode, season

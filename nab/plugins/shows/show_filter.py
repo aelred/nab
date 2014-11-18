@@ -1,4 +1,4 @@
-from nab.show import ShowFilter
+from nab.show_manager import ShowFilter
 from nab import match
 
 
