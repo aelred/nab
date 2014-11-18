@@ -42,7 +42,8 @@ setup(
               'nab.plugins.shows'],
     install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache',
                       'py-plex', 'watchdog', 'flask', 'pyyaml', 'memoized',
-                      'unidecode', 'python-libtorrent', 'munkres'],
+                      'unidecode', 'python-libtorrent', 'munkres',
+                      'feedparser'],
 
     options={'py2exe': {
         'bundle_files': 1,
