@@ -43,7 +43,7 @@ setup(
     install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache',
                       'py-plex', 'watchdog', 'flask', 'pyyaml', 'memoized',
                       'unidecode', 'python-libtorrent', 'munkres',
-                      'feedparser', 'utorrent.py'],
+                      'feedparser', 'py-utorrent'],
 
     options={'py2exe': {
         'bundle_files': 1,
