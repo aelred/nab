@@ -58,7 +58,7 @@ def check_downloads():
     downloader = Downloader.get_all(config.config["downloader"])[0]
     for d in list(_downloads):
         if downloader.is_completed(d):
-            for path in downloader.get_files(d):
+            for path in sorted(downloader.get_files(d)):
                 scheduler.scheduler.add_asap("rename_file", path)
             del _downloads[d]
 scheduler.tasks["check_downloads"] = check_downloads
