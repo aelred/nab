@@ -91,6 +91,7 @@ else:
         # start nabbing shows
         renamer.init(shows)
         scheduler.init(shows)
+        server.init(shows)
 
         # add command to refresh data
         # if command is already scheduled, this will be ignored

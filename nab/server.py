@@ -1,6 +1,5 @@
 from flask import Flask, request, make_response, abort
 import yaml
-import json
 import copy
 
 from nab import config
@@ -124,7 +123,11 @@ def downloads():
 
 @app.route('/show/<path:path>', methods=['GET'])
 def show(path):
-    entry = _shows.find(tuple(path))
+    search = path.split('/')
+    # everything after the show name is an integer (season/ep number)
+    search[1:] = [int(s) for s in search[1:]]
+
+    entry = _shows.find(tuple(search))
 
     if not entry:
         abort(204)
