@@ -1,8 +1,11 @@
 from flask import Flask, request, make_response, abort
 import yaml
+import json
 import copy
 
-import nab.config
+from nab import config
+from nab import downloader
+from nab import log
 
 app = Flask('nab')
 
@@ -19,27 +22,27 @@ def run():
 
 
 @app.route('/log')
-def log():
-    response = make_response(file('log.txt').read())
+def log_():
+    response = make_response(file(log.log_file).read())
     response.headers['content-type'] = 'text/plain'
     return response
 
 
 @app.route('/config', methods=['GET', 'POST'])
 def config_all():
-    return config([])
+    return get_config([])
 
 
 @app.route('/config/<path:path>', methods=['GET', 'POST'])
 def config_path(path=''):
-    return config(path.split('/'))
+    return get_config(path.split('/'))
 
 
 @app.route('/remove/<path:path>', methods=['POST'])
 def remove(path):
     path = path.split('/')
     plugin = request.values['plugin']
-    conf_copy = copy.deepcopy(nab.config.config)
+    conf_copy = copy.deepcopy(config.config)
     conf_sub = access_config_path(conf_copy, path)
 
     try:
@@ -63,21 +66,21 @@ def remove(path):
 
     # delete plugin from config file
     del conf_sub[index]
-    nab.config.change_config(conf_copy)
+    config.change_config(conf_copy)
 
     return config_response(conf_copy)
 
 
-def config(path):
+def get_config(path):
     # navigate provided path along config file
-    conf_copy = copy.deepcopy(nab.config.config)
+    conf_copy = copy.deepcopy(config.config)
     conf_sub = access_config_path(conf_copy, path)
 
     if request.method == 'POST':
         # replace config path with given data
         access_config_path(conf_copy, path, yaml.safe_load(request.data))
         # update config
-        nab.config.change_config(conf_copy)
+        config.change_config(conf_copy)
 
     return config_response(conf_sub)
 
