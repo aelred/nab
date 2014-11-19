@@ -37,7 +37,11 @@ class Scheduler:
         self.queue = []
         self.queue_asap = deque()
         self.queue_lazy = deque()
+
         self.queue_set = set()
+        self.queue_set_asap = set()
+        self.queue_set_lazy = set()
+
         self._qlock = threading.Condition()
 
         self._last_save = 0.0
@@ -84,12 +88,13 @@ class Scheduler:
 
                 if dtime == 'asap':
                     self.queue_asap.append((action, argument))
+                    self.queue_set_asap.add((action, argument))
                 elif dtime == 'lazy':
                     self.queue_lazy.append((action, argument))
+                    self.queue_set_lazy.add((action, argument))
                 else:
                     heapq.heappush(self.queue, (dtime, action, argument))
-
-                self.queue_set.add((action, argument))
+                    self.queue_set.add((action, argument))
 
     def save(self):
         yaml.safe_dump(self.to_yaml(), file(schedule_file, 'w'))
@@ -116,7 +121,9 @@ class Scheduler:
 
                 # check if anything in asap queue
                 if self.queue_asap:
-                    return self.queue_asap.popleft()
+                    task = self.queue_asap.popleft()
+                    self.queue_set_asap.remove(task)
+                    return task
 
                 # get information about next item
                 action_time, action, argument = self.queue[0]
@@ -124,11 +131,14 @@ class Scheduler:
                 # if time for next item, remove and return it
                 if time.time() >= action_time:
                     heapq.heappop(self.queue)
+                    self.queue_set.remove((action, argument))
                     return action, argument
 
                 # finally consider the lazy queue
                 if self.queue_lazy:
-                    return self.queue_lazy.popleft()
+                    task = self.queue_lazy.popleft()
+                    self.queue_set_lazy.remove(task)
+                    return task
 
             # test once every second
             time.sleep(1.0)
@@ -137,7 +147,6 @@ class Scheduler:
     def _run(self):
         while True:
             action, argument = self._wait_next()
-            self.queue_set.remove((action, argument))
 
             _log.debug("Executing scheduled task %s%s"
                        % (action, tuple(argument)))
@@ -208,13 +217,13 @@ class Scheduler:
     def add_asap(self, action, *argument):
         argument = self._encode_argument(argument)
 
-        if (action, argument) in self.queue_set:
+        if (action, argument) in self.queue_set_asap:
             return
 
         with self._qlock:
             _log.debug("Scheduling %s%s ASAP" % (action, tuple(argument)))
             self.queue_asap.append((action, argument))
-            self.queue_set.add((action, argument))
+            self.queue_set_asap.add((action, argument))
 
             self._save_invalidate = True
             self._save_decision()
@@ -223,13 +232,13 @@ class Scheduler:
     def add_lazy(self, action, *argument):
         argument = self._encode_argument(argument)
 
-        if (action, argument) in self.queue_set:
+        if (action, argument) in self.queue_set_lazy:
             return
 
         with self._qlock:
             _log.debug("Scheduling %s%s lazy" % (action, tuple(argument)))
             self.queue_lazy.append((action, argument))
-            self.queue_set.add((action, argument))
+            self.queue_set_lazy.add((action, argument))
 
             self._save_invalidate = True
             self._save_decision()
