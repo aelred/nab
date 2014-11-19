@@ -31,24 +31,14 @@ def init(shows):
     scheduler.start()
 
 
-class Scheduler:
+class _SchedQueue:
 
-    def __init__(self):
-        self.queue = []
-        self.queue_asap = deque()
-        self.queue_lazy = deque()
+    def __init__(self, name):
+        self._set = set()
+        self._queue = deque()
+        self.name = name
 
-        self.queue_set = set()
-        self.queue_set_asap = set()
-        self.queue_set_lazy = set()
-
-        self._qlock = threading.Condition()
-
-        self._last_save = 0.0
-        self._save_invalidate = False
-
-    def to_yaml(self):
-        yml = {"queue": []}
+    def _yaml_entry(self, dtime, action, argument):
 
         def time_str(dtime):
             try:
@@ -56,20 +46,105 @@ class Scheduler:
             except TypeError:
                 return dtime
 
-        def yaml_entry(dtime, action, argument):
-            return {"time": dtime, "tstr": time_str(dtime),
-                    "action": action, "argument": argument}
+        return {"time": dtime, "tstr": time_str(dtime),
+                "action": action, "argument": argument}
 
-        for action, argument in self.queue_asap:
-            yml["queue"].append(yaml_entry('asap', action, argument))
-
-        for dtime, action, argument in sorted(self.queue, key=lambda e: e[0]):
-            yml["queue"].append(yaml_entry(dtime, action, argument))
-
-        for action, argument in self.queue_lazy:
-            yml["queue"].append(yaml_entry('lazy', action, argument))
-
+    def to_yaml(self):
+        yml = []
+        for action, argument in self._queue:
+            yml.append(self._yaml_entry(self.name, action, argument))
         return yml
+
+    def push(self, dtime, action, argument):
+        if (action, argument) in self._set:
+            return False
+
+        self._queue.append((action, argument))
+        self._set.add((action, argument))
+        return True
+
+    def has_next(self):
+        return len(self._queue) > 0
+
+    def pop(self):
+        if not self.has_next():
+            return None
+
+        task = self._queue.popleft()
+        self._set.remove(task)
+        return task
+
+
+class _SchedQueueTimed(_SchedQueue):
+
+    def __init__(self, name):
+        self._set = set()
+        self._queue = []
+        self.name = name
+
+    def to_yaml(self):
+        yml = []
+        # sort by time
+        for dtime, action, argument in sorted(self._queue, key=lambda e: e[0]):
+            yml.append(self._yaml_entry(dtime, action, argument))
+        return yml
+
+    def push(self, dtime, action, argument):
+        if (action, argument) in self._set:
+            # if entry already present, look it up
+            match = None
+            for (d_q, act_q, arg_q) in self._queue:
+                if (act_q, arg_q) == (action, argument):
+                    match = (d_q, act_q, arg_q)
+                    break
+
+            # if match found and new time is SOONER, replace it
+            # if new time is later, ignore
+            if match is not None and match[0] > dtime:
+                self.queue.remove(match)
+                heapq.heapify(self.queue)  # rearrange into heap
+            else:
+                return False
+
+        heapq.heappush(self._queue, (dtime, action, argument))
+        self._set.add((action, argument))
+        return True
+
+    def has_next(self):
+        if self._queue:
+            # get information about next item
+            action_time, action, argument = self._queue[0]
+
+            # if time for next item, return true
+            if time.time() >= action_time:
+                return True
+
+        return False
+
+    def pop(self):
+        action_time, action, argument = heapq.heappop(self._queue)
+        self._set.remove((action, argument))
+        return action, argument
+
+
+class Scheduler:
+
+    def __init__(self):
+        self.queue = _SchedQueueTimed('timed')
+        self.queue_asap = _SchedQueue('asap')
+        self.queue_lazy = _SchedQueue('lazy')
+
+        self._qlock = threading.Condition()
+
+        self._last_save = 0.0
+        self._save_invalidate = False
+
+    def to_yaml(self):
+        return {
+            "queue": (self.queue_asap.to_yaml() +
+                      self.queue_lazy.to_yaml() +
+                      self.queue.to_yaml())
+            }
 
     def load(self):
         with file(schedule_file, 'r') as f:
@@ -87,14 +162,11 @@ class Scheduler:
                 # this is to add back in tuples, which are hashable
 
                 if dtime == 'asap':
-                    self.queue_asap.append((action, argument))
-                    self.queue_set_asap.add((action, argument))
+                    self.queue_asap.push((action, argument))
                 elif dtime == 'lazy':
-                    self.queue_lazy.append((action, argument))
-                    self.queue_set_lazy.add((action, argument))
+                    self.queue_lazy.push((action, argument))
                 else:
-                    heapq.heappush(self.queue, (dtime, action, argument))
-                    self.queue_set.add((action, argument))
+                    self.queue.push((dtime, action, argument))
 
     def save(self):
         yaml.safe_dump(self.to_yaml(), file(schedule_file, 'w'))
@@ -112,33 +184,18 @@ class Scheduler:
         while True:
             # acquire queue lock
             with self._qlock:
-                if (len(self.queue) + len(self.queue_asap) +
-                   len(self.queue_lazy)) == 0:
-                    # save whenever queue is empty
+
+                # if queues are empty, save and wait
+                if (not self.queue.has_next()
+                   and not self.queue_asap.has_next()
+                   and not self.queue_lazy.has_next()):
                     self.save()
-                    # wait for item to be added
                     self._qlock.wait()
 
-                # check if anything in asap queue
-                if self.queue_asap:
-                    task = self.queue_asap.popleft()
-                    self.queue_set_asap.remove(task)
-                    return task
-
-                # get information about next item
-                action_time, action, argument = self.queue[0]
-
-                # if time for next item, remove and return it
-                if time.time() >= action_time:
-                    heapq.heappop(self.queue)
-                    self.queue_set.remove((action, argument))
-                    return action, argument
-
-                # finally consider the lazy queue
-                if self.queue_lazy:
-                    task = self.queue_lazy.popleft()
-                    self.queue_set_lazy.remove(task)
-                    return task
+                # check all queues in order of priority
+                for q in [self.queue_asap, self.queue, self.queue_lazy]:
+                    if q.has_next():
+                        return q.pop()
 
             # test once every second
             time.sleep(1.0)
@@ -183,66 +240,32 @@ class Scheduler:
             new_arguments.append(arg)
         return tuple(new_arguments)
 
-    def add(self, delay, action, *argument):
+    def _add(self, queue, delay, action, argument):
         argument = self._encode_argument(argument)
-        dtime = time.time() + delay
+
+        if delay is None:
+            dtime = None
+            tstr = ""
+        else:
+            dtime = time.time() + delay
+            tstr = " at %s" % time.ctime(dtime)
 
         with self._qlock:
-
-            if (action, argument) in self.queue_set:
-                # if entry already present, look it up
-                match = None
-                for (d_q, act_q, arg_q) in self.queue:
-                    if (act_q, arg_q) == (action, argument):
-                        match = (d_q, act_q, arg_q)
-                        break
-
-                # if match found and new time is SOONER, replace it
-                # if new time is later, ignore
-                if match is not None and match[0] > dtime:
-                    self.queue.remove(match)
-                    heapq.heapify(self.queue)  # rearrange into heap
-                else:
-                    return
-
-            _log.debug("Scheduling %s%s at %s"
-                       % (action, tuple(argument), time.ctime(dtime)))
-            heapq.heappush(self.queue, (dtime, action, argument))
-            self.queue_set.add((action, argument))
-
-            self._save_invalidate = True
-            self._save_decision()
+            if queue.push(dtime, action, argument):
+                _log.debug("Scheduling %s%s on %s%s"
+                           % (action, tuple(argument), queue.name, tstr))
+                self._save_invalidate = True
+                self._save_decision()
             self._qlock.notify()
+
+    def add(self, delay, action, *argument):
+        self._add(self.queue, delay, action, argument)
 
     def add_asap(self, action, *argument):
-        argument = self._encode_argument(argument)
-
-        if (action, argument) in self.queue_set_asap:
-            return
-
-        with self._qlock:
-            _log.debug("Scheduling %s%s ASAP" % (action, tuple(argument)))
-            self.queue_asap.append((action, argument))
-            self.queue_set_asap.add((action, argument))
-
-            self._save_invalidate = True
-            self._save_decision()
-            self._qlock.notify()
+        self._add(self.queue_asap, None, action, argument)
 
     def add_lazy(self, action, *argument):
-        argument = self._encode_argument(argument)
-
-        if (action, argument) in self.queue_set_lazy:
-            return
-
-        with self._qlock:
-            _log.debug("Scheduling %s%s lazy" % (action, tuple(argument)))
-            self.queue_lazy.append((action, argument))
-            self.queue_set_lazy.add((action, argument))
-
-            self._save_invalidate = True
-            self._save_decision()
-            self._qlock.notify()
+        self._add(self.queue_lazy, None, action, argument)
 
 
 scheduler = Scheduler()
