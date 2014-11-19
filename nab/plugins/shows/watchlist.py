@@ -59,8 +59,14 @@ class WatchlistFileHandler(FileSystemEventHandler):
         except:
             pass
 
-    def on_modified(self, event):
-        # refresh shows when file is changed
-        self.watchlist.trigger_refresh()
+    def on_any_event(self, event):
+        try:
+            dest = event.dest_path
+        except AttributeError:
+            dest = None
+
+        if event.src_path == watchlist_file or dest == watchlist_file:
+            # refresh shows when file is changed
+            self.watchlist.trigger_refresh()
 
 Watchlist.register("watchlist")

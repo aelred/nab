@@ -13,8 +13,9 @@ from nab import log
 _log = log.log.getChild("config")
 
 
-config_file = os.path.join(appdirs.user_config_dir('nab'), 'config.yaml')
-accounts_file = os.path.join(appdirs.user_config_dir('nab'), 'accounts.yaml')
+config_dir = appdirs.user_config_dir('nab')
+config_file = os.path.join(config_dir, 'config.yaml')
+accounts_file = os.path.join(config_dir, 'accounts.yaml')
 
 
 def _load_config():
@@ -62,7 +63,7 @@ def init():
     handler = ConfigWatcher()
     global _observer
     _observer = Observer()
-    _observer.schedule(handler, ".")
+    _observer.schedule(handler, config_dir)
     _observer.start()
 
 
@@ -74,11 +75,16 @@ def stop():
 
 
 class ConfigWatcher(FileSystemEventHandler):
-    def on_modified(self, event):
-        if event.src_path == os.path.join(os.getcwd(), config_file):
+    def on_any_event(self, event):
+        try:
+            dest = event.dest_path
+        except AttributeError:
+            dest = None
+
+        if event.src_path == config_file or dest == config_file:
             _log.info('Change detected in config.yaml, scheduling reload')
             scheduler.add_asap('load_config')
-        if event.src_path == os.path.join(os.getcwd(), accounts_file):
+        if event.src_path == accounts_file or dest == accounts_file:
             _log.info('Change detected in accounts.yaml, scheduling reload')
             scheduler.add_asap('load_config')
 
