@@ -1,146 +1,105 @@
-import time
-
-from nab import config
-from nab import register
-from nab import log
-from nab import exception
-
-_log = log.log.getChild("show")
+import re
+from nab import show_elem, match, database, season
 
 
-class ShowFilter(register.Entry):
-    _register = register.Register()
-    _type = "show filter"
+class Show(show_elem.ShowParentElem, show_elem.ShowElem):
+    def __init__(self, title, ids=None, absolute=False, titles=None):
+        show_elem.ShowParentElem.__init__(self)
+        show_elem.ShowElem.__init__(self, None, title, titles)
+        self.ids = ids or {}
+        self.absolute = absolute
 
-    def filter_show(self, show):
-        return True
+        # automatically get show data from database
+        self.update_data()
 
-    def filter_season(self, season):
-        return True
+    @property
+    def show(self):
+        return self
 
-    def filter_episode(self, episode):
-        return True
+    @property
+    def id(self):
+        return (self.title,)
 
+    def format(self):
+        # for all titles, remove bracketed year info
+        # e.g. Archer (2009) -> Archer, Archer 2009, Archer (2009)
+        newtitles = set()
+        for t in set(self.titles):
+            yearmatch = re.match(r"^(.*) \((\d+)\)$", t)
+            if yearmatch:
+                newtitles.add("%s %s" % yearmatch.group(1, 2))
+                newtitles.add("%s" % yearmatch.group(1))
+        self.titles.update(newtitles)
 
-class ShowSource(register.Entry):
-    _register = register.Register()
-    _type = "show source"
+        show_elem.ShowParentElem.format(self)
 
-    def __init__(self, cache_timeout=60*60):
-        self._cached_shows = None
-        self._cached_time = 0
-        self.cache_timeout = 60 * 60
-
-    def get_shows(self):
-        raise NotImplemented()
-
-    def get_cached_shows(self):
-        elapsed = time.time() - self._cached_time
-        if self._cached_shows is None or elapsed > self.cache_timeout:
-            self._cached_time = time.time()
-            self._cached_shows = self.get_shows()
-
-        return self._cached_shows
-
-    def is_watched(self, episode):
-        return False
-
-    def is_owned(self, episode):
-        return NotImplemented()
-
-    def filter_show(self, show):
-        return show in self.get_cached_shows()
-
-    def filter_season(self, season):
-        return season.show in self.get_cached_shows()
-
-    def filter_episode(self, episode):
-        return episode.show in self.get_cached_shows()
-
-
-def get_shows():
-    _log.info("Getting shows")
-
-    # get wanted shows from 'watching' list
-    shows = []
-    for source in ShowSource.get_all(config.config["shows"]["watching"]):
-        source.__class__.log.info("Searching show source %s" % source)
-        try:
-            shows += source.get_cached_shows()
-        except exception.PluginError:
-            # errors are printed, but keep running
-            # shows will be looked up again in an hour
-            pass
-
-    return shows
-
-
-def filter_shows(shows):
-    _log.info("Filtering shows")
-
-    # get owned/watched info for all episodes
-    sources = (ShowSource.get_all(config.config["shows"]["watching"]) +
-               ShowSource.get_all(config.config["shows"]["library"]))
-    try:
-        for ep in shows.episodes:
-            for source in sources:
-                try:
-                    if source.is_owned(ep):
-                        ep.owned = True
-                        break
-                except exception.PluginError:
-                    _log.info("Unknown ")
-            for source in sources:
-                if source.is_watched(ep):
-                    ep.watched = True
-                    break
-    except exception.PluginError:
-        # if shouw source fails, abandon all hope! (try again later)
-        for ep in shows.episodes:
-            # mark all episodes as unwanted
-            # don't accidentally download unwanted things
-            ep.wanted = False
-        return
-
-    _log.info("Found %s show(s)" % len(shows))
-
-    _log.info("Applying filters")
-
-    def filter_entry(entry, filter_funcs, permissive):
-        # permissive = False means must be accepted by ALL filters
-
-        wanted = not permissive
-        for f in filter_funcs:
-            if f(entry) == permissive:
-                wanted = permissive  # change wanted status from default
-                break
-
-        if not wanted:
-            for ep in entry.episodes:
-                ep.wanted = False
-        return wanted
-
-    def filter_all(filters, permissive):
-        for sh in shows.itervalues():
-            if not filter_entry(sh, [f.filter_show for f in filters],
-                                permissive):
+        # remove any titles that conflict with season titles past season 1
+        for se in self:
+            if se == 1:
                 continue
+            for t in set(self.titles):
+                ft = match.format_title(t)
+                if ft in map(match.format_title, self[se].titles):
+                    self.titles.remove(t)
 
-            for se in sh.itervalues():
-                if not filter_entry(se, [f.filter_season for f in filters],
-                                    permissive):
-                    continue
+    def merge(self, other):
+        show_elem.ShowParentElem.__merge__(self, other)
+        show_elem.ShowElem.__merge__(self, other)
+        self.ids = dict(self.ids.items() + other.ids.items())
 
-                for ep in se.itervalues():
-                    filter_entry(ep, [f.filter_episode for f in filters],
-                                 permissive)
+    def update_data(self):
+        # get new data from database for this show
+        database.get_data(self)
 
-    # first filter using show sources and permissive filtering
-    filter_all(ShowSource.get_all(config.config["shows"]["watching"]), True)
+    def to_yaml(self):
+        return {
+            "ids": self.ids,
+            "titles": list(self.titles),
+            "absolute": self.absolute,
+            "seasons": show_elem.ShowParentElem.to_yaml(self)
+        }
 
-    # filter using show filters and strict filtering (must meet all criteria)
-    filter_all(ShowFilter.get_all(config.config["shows"]["filters"]), False)
+    @staticmethod
+    def from_yaml(yml, title, parent):
+        show = Show(title, yml["ids"], yml["absolute"], yml["titles"])
+        show.update(show_elem.ShowParentElem.from_yaml(
+            yml["seasons"], season.Season, show))
+        return show
 
-    _log.info("Found %s needed episode(s)" % len(shows.epwanted))
-    for ep in shows.epwanted:
-        _log.info(ep)
+    def search_terms(self):
+        return set(map(match.format_title, self.titles))
+
+    def match(self, f, total=True):
+        if total:
+            # filename must not match any season name (if seasons > 1)
+            # e.g. Season 1 of a show has the same name as the show itself.
+            #      Season 2 has a different name, then any torrent that matches
+            #      the show name may just contain season 1, so we reject it.
+            semax = max(self.keys())
+            if (any(se.match(f, True) for se in self.values()) and semax > 1
+               and f.season is None and f.episode is None):
+                return False
+
+            # there must be no episode number
+            # or the file must give the full range of episodes
+            epmax = len([ep for ep in self.episodes if ep.season.num != 0])
+            if (f.episode is not None and
+               (not self.absolute or f.episode != 1 or f.eprange != epmax)):
+                return False
+
+            # there must be no season number
+            # or the file must give the full range of seasons (e.g. 1-4)
+            if f.season is not None and (f.season != 1 or f.serange != semax):
+                return False
+
+        titles = map(match.format_title, self.titles)
+        return match.format_title(f.title) in titles
+
+    def __eq__(self, other):
+        return show_elem.ShowElem.__eq__(self, other)
+
+    def __str__(self):
+        return self.title.encode('utf-8')
+
+    def __repr__(self):
+        return "<Show (%s)>" % str(self)

@@ -13,7 +13,7 @@ import appdirs
 import os
 
 from nab.database import Database
-from nab.show_tree import Show, Season, Episode
+from nab.season import Season
 from nab.match import format_title, comp
 
 

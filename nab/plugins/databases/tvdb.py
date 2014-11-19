@@ -3,7 +3,8 @@ import tvdb_api
 import time
 
 from nab.database import Database
-from nab.show_tree import Season, Episode
+from nab.season import Season
+from nab.episode import Episode
 
 _t = tvdb_api.Tvdb()
 

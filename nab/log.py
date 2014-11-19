@@ -3,8 +3,8 @@ import logging.handlers
 import appdirs
 import os
 
-log_file = os.path.join(appdirs.user_log_dir('nab'), 'log.txt')
-
+log_dir = appdirs.user_log_dir('nab')
+log_file = os.path.join(log_dir, 'log.txt')
 
 def _init():
     log = logging.getLogger("nab")
@@ -12,6 +12,12 @@ def _init():
     log.propagate = False
     formatter = logging.Formatter('%(asctime)s: %(levelname)s:\t'
                                   '%(name)s:\t%(message)s')
+
+    # create log directory
+    try:
+        os.makedirs(log_dir)
+    except OSError:
+        pass
 
     file_handler = logging.handlers.RotatingFileHandler(
         log_file, maxBytes=1024*1024, backupCount=5)

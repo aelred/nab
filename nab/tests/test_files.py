@@ -1,7 +1,6 @@
 import unittest
 from nab.files import File
-from nab.show_tree import Show
-from nab.database import get_data
+from nab.show import Show
 
 # fields: ext, group, tags
 #         episode, season
@@ -121,7 +120,6 @@ class TestFile(unittest.TestCase):
                     # and find out if it's a match
                     title = value[0]
                     show = Show(title)
-                    get_data(show)
 
                     entry = show
                     # iterate to individual seasons/episodes

@@ -1,4 +1,4 @@
-from nab import show
+from nab import show_manager
 from nab import database
 from nab import files
 from nab import renamer
@@ -32,9 +32,9 @@ if config.options.clean:
 shows = show_tree.ShowTree()
 
 plugin_types = [
-    show.ShowSource,
+    show_manager.ShowSource,
     database.Database,
-    show.ShowFilter,
+    show_manager.ShowFilter,
     files.FileSource,
     files.FileFilter,
     downloader.Downloader
@@ -45,21 +45,25 @@ def refresh():
     # reschedule to get data every hour
     scheduler.scheduler.add(60 * 60, "refresh")
 
-    new_shows = show.get_shows()
+    # add all shows
+    for sh in show_manager.get_shows():
+        shows[sh.title] = sh
 
-    for sh in new_shows:
-        if not sh.title in shows:
-            # get database info and add to shows
-            database.get_data(sh)
-            shows[sh.title] = sh
-
-    show.filter_shows(shows)
+    show_manager.filter_shows(shows)
     files.find_files(shows)
 
     # write data to file for backup purposes
     shows.save()
 
 scheduler.tasks["refresh"] = refresh
+
+
+def update_shows():
+    # reschedule to refresh show data in a week's time
+    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+    shows.update_data()
+
+scheduler.tasks["update_shows"] = update_shows
 
 config.init()
 
@@ -87,10 +91,13 @@ else:
 
     # add command to refresh data
     # if command is already scheduled, this will be ignored
-    scheduler.scheduler.add(0, "refresh")
+    scheduler.scheduler.add_asap("refresh")
+
+    # schedule first refresh of show data a week from now
+    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
     # add command to check download progress
-    scheduler.scheduler.add(0, "check_downloads")
+    scheduler.scheduler.add_asap("check_downloads")
 
     # start server
     server.run()

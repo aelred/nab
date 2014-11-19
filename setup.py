@@ -1,6 +1,17 @@
-from distutils.core import setup
+# use setuptools if available, else use distutils
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
+
 from distutils.dir_util import remove_tree
-import py2exe
+
+# if py2exe is not installed, then we can still install normally
+try:
+    import py2exe
+except ImportError:
+    pass
+
 import os
 import shutil
 
@@ -18,10 +29,25 @@ for folder, sub, files in os.walk('nab/plugins'):
 # delete previous dist
 try:
     remove_tree('./dist', False)
-except WindowsError:
+except OSError:
     pass
 
 setup(
+    name='nab',
+    version='0.1',
+    description='Automatic TV show download tool',
+    author='Felix Chapman',
+    packages=['nab', 'nab.plugins', 'nab.plugins.databases',
+              'nab.plugins.downloaders', 'nab.plugins.filesources',
+              'nab.plugins.shows'],
+    install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache',
+                      'py-plex', 'watchdog', 'flask', 'pyyaml', 'memoized',
+                      'unidecode', 'python-libtorrent', 'munkres',
+                      'feedparser', 'py-utorrent'],
+
+    dependency_links=[
+        'https://github.com/ftao/py-utorrent/tarball/master#egg=py-utorrent'],
+
     options={'py2exe': {
         'bundle_files': 1,
         'compressed': True,
@@ -34,5 +60,9 @@ setup(
     )
 
 # rename main file to ensemble.exe
-shutil.move(os.path.join('dist', '__main__.exe'),
-            os.path.join('dist', 'nab.exe'))
+try:
+    shutil.move(os.path.join('dist', '__main__.exe'),
+                os.path.join('dist', 'nab.exe'))
+except IOError:
+    # if not an executable, skip
+    pass
