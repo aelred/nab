@@ -2,7 +2,7 @@ from nab import show_manager
 from nab import database
 from nab import files
 from nab import renamer
-from nab import show_tree
+from nab import show_manager
 from nab import config
 from nab import plugins
 from nab import downloader
@@ -18,7 +18,7 @@ import threading
 if config.options.clean:
     # clean up schedule, show and libtorrent files, start fresh
     try:
-        os.remove(show_tree.shows_file)
+        os.remove(show_manager.shows_file)
     except Exception:  # don't know exception, depends on OS
         # file may not exist
         pass
@@ -31,7 +31,7 @@ if config.options.clean:
     except Exception:
         pass
 
-shows = show_tree.ShowTree()
+shows = show_manager.ShowTree()
 
 plugin_types = [
     show_manager.ShowSource,

@@ -6,6 +6,13 @@ import nab.config
 
 app = Flask('nab')
 
+_shows = None
+
+
+def init(shows):
+    global _shows
+    _shows = shows
+
 
 def run():
     app.run(debug=True, use_reloader=False)
@@ -89,4 +96,40 @@ def access_config_path(config_data, path, config_set=None):
 
     if config_set is not None:
         conf_sub[path[-1]] = config_set
+<<<<<<< Updated upstream
     return conf_sub[path[-1]]
+=======
+
+    if path:
+        return conf_sub[path[-1]]
+    else:
+        return config_data
+
+
+@app.route('/downloads', methods=['GET'])
+def downloads():
+    download_data = []
+
+    for (download, entry) in downloader.get_downloads().iteritems():
+        download_data.append({
+            'filename': download.filename,
+            'url': download.url,
+            'entry': entry.id
+            })
+
+    response = make_response(yaml.safe_dump(download_data))
+    response.headers['content-type'] = 'text/yaml'
+    return response
+
+
+@app.route('/show/<path:path>', methods=['GET'])
+def show(path):
+    entry = _shows.find(tuple(path))
+
+    if not entry:
+        abort(204)
+
+    response = make_response(yaml.safe_dump(entry.to_yaml()))
+    response.headers['content-type'] = 'text/yaml'
+    return response
+>>>>>>> Stashed changes

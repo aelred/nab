@@ -18,7 +18,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
     @property
     def id(self):
-        return (self.title,)
+        return (re.sub(r'\W+', '', self.title),)
 
     def format(self):
         # for all titles, remove bracketed year info
