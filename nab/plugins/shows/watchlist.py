@@ -48,10 +48,16 @@ class Watchlist(ShowSource):
 
 class WatchlistFileHandler(FileSystemEventHandler):
     def __init__(self, watchlist):
-        observer = Observer()
-        observer.schedule(self, os.path.dirname(watchlist_file))
-        observer.start()
+        self._observer = Observer()
+        self._observer.schedule(self, os.path.dirname(watchlist_file))
+        self._observer.start()
         self.watchlist = watchlist
+
+    def __del__(self):
+        try:
+            self._observer.stop()
+        except:
+            pass
 
     def on_modified(self, event):
         # refresh shows when file is changed

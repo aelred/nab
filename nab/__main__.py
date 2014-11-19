@@ -11,6 +11,8 @@ from nab import server
 from nab.plugins.downloaders import libtorrent_downloader
 
 import os
+import time
+import threading
 
 
 if config.options.clean:
@@ -85,19 +87,26 @@ if config.options.plugin:
                     if entry.name == arg:
                         print entry.help_text() + "\n"
 else:
-    # start nabbing shows
-    renamer.init(shows)
-    scheduler.init(shows)
+    try:
+        # start nabbing shows
+        renamer.init(shows)
+        scheduler.init(shows)
 
-    # add command to refresh data
-    # if command is already scheduled, this will be ignored
-    scheduler.scheduler.add_asap("refresh")
+        # add command to refresh data
+        # if command is already scheduled, this will be ignored
+        scheduler.scheduler.add_asap("refresh")
 
-    # schedule first refresh of show data a week from now
-    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+        # schedule first refresh of show data a week from now
+        scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
-    # add command to check download progress
-    scheduler.scheduler.add_asap("check_downloads")
+        # add command to check download progress
+        scheduler.scheduler.add_asap("check_downloads")
 
-    # start server
-    server.run()
+        # start server
+        server.run()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # stop other running threads on interrupt
+        scheduler.scheduler.stop()
+        config.stop()

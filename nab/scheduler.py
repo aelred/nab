@@ -139,6 +139,8 @@ class Scheduler:
         self._last_save = 0.0
         self._save_invalidate = False
 
+        self._stop_flag = True
+
     def to_yaml(self):
         return {
             "queue": (self.queue_asap.to_yaml() +
@@ -178,20 +180,19 @@ class Scheduler:
             self._last_save = time.time()
 
     def start(self):
-        threading.Thread(target=self._run).start()
+        if self._stop_flag:
+            _log.debug("Starting")
+            self._stop_flag = False
+            threading.Thread(target=self._run).start()
+
+    def stop(self):
+        _log.debug("Setting stop flag")
+        self._stop_flag = True
 
     def _wait_next(self):
-        while True:
+        while not self._stop_flag:
             # acquire queue lock
             with self._qlock:
-
-                # if queues are empty, save and wait
-                if (not self.queue.has_next()
-                   and not self.queue_asap.has_next()
-                   and not self.queue_lazy.has_next()):
-                    self.save()
-                    self._qlock.wait()
-
                 # check all queues in order of priority
                 for q in [self.queue_asap, self.queue, self.queue_lazy]:
                     if q.has_next():
@@ -201,9 +202,17 @@ class Scheduler:
             time.sleep(1.0)
             self._save_decision()
 
+        return None
+
     def _run(self):
-        while True:
-            action, argument = self._wait_next()
+        while not self._stop_flag:
+            task = self._wait_next()
+
+            # stop flag has been set, so waiting has stopped
+            if task is None:
+                continue
+
+            action, argument = task
 
             _log.debug("Executing scheduled task %s%s"
                        % (action, tuple(argument)))
@@ -211,6 +220,11 @@ class Scheduler:
             tasks[action](*self._decode_argument(argument))
             self._save_invalidate = True
             self._save_decision()
+
+        # save state when stopping scheduler
+        self.save()
+
+        _log.debug("Stopping")
 
     def _encode_argument(self, argument):
         new_arguments = []

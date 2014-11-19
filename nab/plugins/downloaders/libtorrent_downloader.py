@@ -88,7 +88,9 @@ class Libtorrent(Downloader):
 
         self.folder = config["settings"]["downloads"]
         # begin thread to watch downloads
-        threading.Thread(target=self._watch_thread).start()
+        thread = threading.Thread(target=self._watch_thread)
+        thread.daemon = True
+        thread.start()
 
         # set session options
         self.ratio = ratio

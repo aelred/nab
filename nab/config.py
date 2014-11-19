@@ -55,12 +55,22 @@ def change_config(new_config):
     _log.info('Changing config file')
     yaml.safe_dump(new_config, file(config_file, 'w'))
 
+_observer = None
+
 
 def init():
     handler = ConfigWatcher()
-    observer = Observer()
-    observer.schedule(handler, ".")
-    observer.start()
+    global _observer
+    _observer = Observer()
+    _observer.schedule(handler, ".")
+    _observer.start()
+
+
+def stop():
+    try:
+        _observer.stop()
+    except:
+        pass
 
 
 class ConfigWatcher(FileSystemEventHandler):
