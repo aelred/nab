@@ -101,8 +101,8 @@ class _SchedQueueTimed(_SchedQueue):
             # if match found and new time is SOONER, replace it
             # if new time is later, ignore
             if match is not None and match[0] > dtime:
-                self.queue.remove(match)
-                heapq.heapify(self.queue)  # rearrange into heap
+                self._queue.remove(match)
+                heapq.heapify(self._queue)  # rearrange into heap
             else:
                 return False
 
