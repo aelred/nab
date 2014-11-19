@@ -4,6 +4,8 @@ from nab.show import Show
 
 import appdirs
 import os
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 
 watchlist_file = os.path.join(appdirs.user_config_dir('nab'), 'watchlist.txt')
@@ -14,6 +16,9 @@ class Watchlist(ShowSource):
     def __init__(self, *shows):
         ShowSource.__init__(self)
         self.config_entries = list(shows)
+
+        # create a handler that watches the watchlist file
+        WatchlistFileHandler(self)
 
     def entries(self):
         entries = []
@@ -39,4 +44,17 @@ class Watchlist(ShowSource):
                ep.show.match(entry)):
                 return True
         return False
+
+
+class WatchlistFileHandler(FileSystemEventHandler):
+    def __init__(self, watchlist):
+        observer = Observer()
+        observer.schedule(self, os.path.dirname(watchlist_file))
+        observer.start()
+        self.watchlist = watchlist
+
+    def on_modified(self, event):
+        # refresh shows when file is changed
+        self.watchlist.trigger_refresh()
+
 Watchlist.register("watchlist")

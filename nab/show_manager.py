@@ -9,6 +9,7 @@ from nab import log
 from nab import exception
 from nab import show_elem
 from nab import show
+from nab import scheduler
 
 _log = log.log.getChild("show")
 shows_file = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
@@ -62,6 +63,13 @@ class ShowSource(register.Entry):
 
     def filter_episode(self, episode):
         return episode.show in self.get_cached_shows()
+
+    def trigger_refresh(self):
+        self._cached_shows = None
+
+        # tell nab to refresh and look up data again
+        self.log.info("Refresh triggered")
+        scheduler.scheduler.add_lazy("refresh")
 
 
 class ShowTree(show_elem.ShowParentElem):
