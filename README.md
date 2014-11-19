@@ -29,7 +29,7 @@ Located in the same folder as `watchlist.txt` is `config.yaml`, which is used to
 
 The general layout of `config.yaml` is:
 
-```
+```yaml
 settings:
   downloads: <download folder>
   videos: <video folders>
@@ -65,7 +65,7 @@ Parts in curly braces `{ }` are substituted when the files are renamed:
 An example is given below:
 
 
-```
+```yaml
 renamer:
   pattern: '{videos}/{t}/s{s:02d}/e{e:02d} {et}'
 ```
