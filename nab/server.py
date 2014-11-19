@@ -96,9 +96,6 @@ def access_config_path(config_data, path, config_set=None):
 
     if config_set is not None:
         conf_sub[path[-1]] = config_set
-<<<<<<< Updated upstream
-    return conf_sub[path[-1]]
-=======
 
     if path:
         return conf_sub[path[-1]]
@@ -132,4 +129,3 @@ def show(path):
     response = make_response(yaml.safe_dump(entry.to_yaml()))
     response.headers['content-type'] = 'text/yaml'
     return response
->>>>>>> Stashed changes
