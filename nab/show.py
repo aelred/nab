@@ -8,6 +8,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         show_elem.ShowElem.__init__(self, None, title, titles)
         self.ids = ids or {}
         self.absolute = absolute
+        self.banner = None
 
         # automatically get show data from database
         self.update_data()

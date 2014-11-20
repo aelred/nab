@@ -18,6 +18,9 @@ class Database(register.Entry):
     def get_show_ids(self, show):
         return {}
 
+    def get_banner(self, show):
+        return None
+
     def get_seasons(self, show):
         return []
 
@@ -48,6 +51,13 @@ def get_data(show):
     _log.debug("Getting ids")
     for db in databases():
         show.ids = dict(show.ids.items() + db.get_show_ids(show).items())
+
+    # get banner for show
+    _log.debug("Getting banner")
+    for db in databases():
+        show.banner = db.get_banner(show)
+        if show.banner:
+            break
 
     # get seasons for show
     _log.debug("Getting seasons and episodes")
