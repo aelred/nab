@@ -164,11 +164,11 @@ class Scheduler:
                 # this is to add back in tuples, which are hashable
 
                 if dtime == 'asap':
-                    self.queue_asap.push((action, argument))
+                    self.queue_asap.push(None, action, argument)
                 elif dtime == 'lazy':
-                    self.queue_lazy.push((action, argument))
+                    self.queue_lazy.push(None, action, argument)
                 else:
-                    self.queue.push((dtime, action, argument))
+                    self.queue.push(dtime, action, argument)
 
     def save(self):
         yaml.safe_dump(self.to_yaml(), file(schedule_file, 'w'))
