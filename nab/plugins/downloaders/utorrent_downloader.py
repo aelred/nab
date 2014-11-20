@@ -27,6 +27,12 @@ class uTorrent(client.UTorrentClient, Downloader):
     def download(self, torrent):
         self.addurl(torrent.url)
 
+    def get_progress(self, torrent):
+        d = self.lookup(torrent)
+        if d is None:
+            return 0.0
+        return float(d['percent progress']) / 1000.0
+
     def is_completed(self, torrent):
         d = self.lookup(torrent)
         if d is None:

@@ -15,6 +15,9 @@ class Downloader(register.Entry):
     def download(self, torrent):
         raise NotImplemented()
 
+    def get_progress(self, torrent):
+        raise NotImplemented()
+
     def is_completed(self, torrent):
         raise NotImplemented()
 

@@ -126,6 +126,9 @@ class Libtorrent(Downloader):
         self._add_torrent(torrent)
         self.save_state()
 
+    def get_progress(self, torrent):
+        return self.files[torrent].status().progress
+
     def save_state(self):
         # write new state to file
         state = {
