@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, render_template, make_response
 from flask.ext.holster.main import init_holster
 import yaml
 import copy
@@ -22,9 +22,16 @@ def run():
     app.run(debug=True, use_reloader=False)
 
 
-@app.holster('/log')
+@app.route('/')
+def index():
+    return render_template('index.html', name='Felix')
+
+
+@app.route('/log')
 def log_():
-    return file(log.log_file).read()
+    response = make_response(file(log.log_file).read())
+    response.headers['content-type'] = 'text/plain'
+    return response
 
 
 @app.holster('/config', methods=['GET', 'POST'])

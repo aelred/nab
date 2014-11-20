@@ -3,12 +3,13 @@ from nab import show_elem, match, database, season
 
 
 class Show(show_elem.ShowParentElem, show_elem.ShowElem):
-    def __init__(self, title, ids=None, absolute=False, titles=None):
+    def __init__(self, title, ids=None, absolute=False, titles=None,
+                 banner=None):
         show_elem.ShowParentElem.__init__(self)
         show_elem.ShowElem.__init__(self, None, title, titles)
         self.ids = ids or {}
         self.absolute = absolute
-        self.banner = None
+        self.banner = banner
 
         # automatically get show data from database
         self.update_data()
@@ -57,12 +58,14 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
             "ids": self.ids,
             "titles": list(self.titles),
             "absolute": self.absolute,
-            "seasons": show_elem.ShowParentElem.to_yaml(self)
+            "seasons": show_elem.ShowParentElem.to_yaml(self),
+            "banner": self.banner
         }
 
     @staticmethod
     def from_yaml(yml, title, parent):
-        show = Show(title, yml["ids"], yml["absolute"], yml["titles"])
+        show = Show(title, yml["ids"], yml["absolute"], yml["titles"],
+                    yml["banner"])
         show.update(show_elem.ShowParentElem.from_yaml(
             yml["seasons"], season.Season, show))
         return show
