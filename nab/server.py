@@ -1,4 +1,5 @@
-from flask import Flask, request, make_response, abort
+from flask import Flask, request, abort
+from flask.ext.holster.main import init_holster
 import yaml
 import copy
 
@@ -7,6 +8,7 @@ from nab import downloader
 from nab import log
 
 app = Flask('nab')
+init_holster(app)
 
 _shows = None
 
@@ -20,24 +22,22 @@ def run():
     app.run(debug=True, use_reloader=False)
 
 
-@app.route('/log')
+@app.holster('/log')
 def log_():
-    response = make_response(file(log.log_file).read())
-    response.headers['content-type'] = 'text/plain'
-    return response
+    return file(log.log_file).read()
 
 
-@app.route('/config', methods=['GET', 'POST'])
+@app.holster('/config', methods=['GET', 'POST'])
 def config_all():
     return get_config([])
 
 
-@app.route('/config/<path:path>', methods=['GET', 'POST'])
+@app.holster('/config/<path:path>', methods=['GET', 'POST'])
 def config_path(path=''):
     return get_config(path.split('/'))
 
 
-@app.route('/remove/<path:path>', methods=['POST'])
+@app.holster('/remove/<path:path>', methods=['POST'])
 def remove(path):
     path = path.split('/')
     plugin = request.values['plugin']
@@ -67,7 +67,7 @@ def remove(path):
     del conf_sub[index]
     config.change_config(conf_copy)
 
-    return config_response(conf_copy)
+    return conf_copy
 
 
 def get_config(path):
@@ -81,13 +81,7 @@ def get_config(path):
         # update config
         config.change_config(conf_copy)
 
-    return config_response(conf_sub)
-
-
-def config_response(config_data):
-    response = make_response(yaml.safe_dump(config_data))
-    response.headers['content-type'] = 'text/yaml'
-    return response
+    return conf_sub
 
 
 def access_config_path(config_data, path, config_set=None):
@@ -105,7 +99,7 @@ def access_config_path(config_data, path, config_set=None):
         return config_data
 
 
-@app.route('/downloads', methods=['GET'])
+@app.holster('/downloads', methods=['GET'])
 def downloads():
     download_data = []
 
@@ -116,12 +110,10 @@ def downloads():
             'entry': entry.id
             })
 
-    response = make_response(yaml.safe_dump(download_data))
-    response.headers['content-type'] = 'text/yaml'
-    return response
+    return download_data
 
 
-@app.route('/show/<path:path>', methods=['GET'])
+@app.holster('/show/<path:path>', methods=['GET'])
 def show(path):
     search = path.split('/')
     # everything after the show name is an integer (season/ep number)
@@ -132,6 +124,4 @@ def show(path):
     if not entry:
         abort(204)
 
-    response = make_response(yaml.safe_dump(entry.to_yaml()))
-    response.headers['content-type'] = 'text/yaml'
-    return response
+    return entry.to_yaml()

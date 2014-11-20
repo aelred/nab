@@ -43,7 +43,7 @@ setup(
     install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache',
                       'py-plex', 'watchdog', 'flask', 'pyyaml', 'memoized',
                       'unidecode', 'munkres', 'feedparser', 'py-utorrent',
-                      'lxml'],
+                      'lxml', 'flask-holster'],
 
     dependency_links=[
         'https://github.com/ftao/py-utorrent/tarball/master#egg=py-utorrent'],
