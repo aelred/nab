@@ -17,6 +17,7 @@ $(document).ready(function(){
                 var show_id = download['entry'][0];
                 get_banner(show_id, function (banner) {
                     $('#downloads').append('<img src=' + banner + ' />');
+                    $('#downloads').append('<p>'+download['progress']+'</p>');
                 });
             });
         });

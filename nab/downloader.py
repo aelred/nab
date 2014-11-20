@@ -46,6 +46,10 @@ class DownloadException(Exception):
         Exception.__init__(self, msg)
 
 
+def _downloader():
+    return Downloader.get_all(config.config["downloader"])[0]
+
+
 def download(entry, torrent):
     if not torrent:
         return
@@ -57,7 +61,7 @@ def download(entry, torrent):
     if config.options.test:
         raise DownloadException("Nab is in test mode, no downloading allowed")
 
-    downloader = Downloader.get_all(config.config["downloader"])[0]
+    downloader = _downloader()
     try:
         downloader.download(torrent)
     except exception.PluginError:
@@ -73,7 +77,7 @@ def download(entry, torrent):
 
 def check_downloads():
     scheduler.scheduler.add(15, "check_downloads")
-    downloader = Downloader.get_all(config.config["downloader"])[0]
+    downloader = _downloader()
     for d in list(_downloads):
         if downloader.is_completed(d):
             for path in sorted(downloader.get_files(d)):

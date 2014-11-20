@@ -113,6 +113,7 @@ def downloads():
     for (download, entry) in downloader.get_downloads().iteritems():
         download_data.append({
             'filename': download.filename,
+            'progress': downloader.get_progress(download),
             'url': download.url,
             'entry': entry.id
             })
