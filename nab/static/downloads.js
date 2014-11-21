@@ -15,9 +15,12 @@ $(document).ready(function(){
             $.each(data, function(index, download) {
                 // Add banner for this download
                 var show_id = download['entry'][0];
-                get_banner(show_id, function (banner) {
-                    $('#downloads').append('<img src=' + banner + ' />');
-                    $('#downloads').append('<p>'+download['progress']+'</p>');
+                get_banner(show_id, function (banner_url) {
+                    var banner = $('<img src=' + banner_url + ' />');
+                    $('#downloads').append(banner);
+                    progressJs(banner).start();
+                    progressJs(banner).set(download['progress'] * 100);
+
                 });
             });
         });
