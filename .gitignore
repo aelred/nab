@@ -1,0 +1,12 @@
+*.pyc
+*.cache
+
+build
+dist
+videos
+nab/static/modules
+nab.egg-info
+
+anime-titles.xml.gz
+
+.gitmodules
