@@ -44,7 +44,7 @@ class Feed(Searcher):
 
         # retry three times
         feed = []
-        for retry in range(3):
+        for retry in range(1):
             try:
                 feed = _get_feed(url)
             except IOError:
