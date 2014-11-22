@@ -1,0 +1,27 @@
+.ui-accordion .ui-accordion-header {
+    display: inline-block;
+    width: 758px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    vertical-align: top;
+}
+
+.ui-accordion .ui-accordion-content {
+    display: inline-block;
+    width: 756px;
+    padding: 0;
+    margin: 0;
+    vertical-align: top;
+}
+
+.show-banner {
+    width: 758px;
+    height: 140px;
+}
+
+.download-label {
+    float: left;
+    line-height: 2.2;
+    text-indent: 10px;
+}

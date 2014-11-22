@@ -6,6 +6,6 @@
         "url": "https://github.com/aelred/nab.git"
     },
     "dependencies": {
-        "progressjs": "0.1.x"
+        "jquery-ui": "1.11.x"
     }
 }
