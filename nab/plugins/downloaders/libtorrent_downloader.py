@@ -76,10 +76,12 @@ class Libtorrent(Downloader):
     def __init__(self, ratio=2.0, ports=[6881, 6891]):
         # create session
         self.session = lt.session()
+        self.session.add_dht_router("router.bittorrent.com", 6881)
         self.session.start_dht()
         self.session.listen_on(*ports)
         self.session.start_upnp()
         self.session.start_natpmp()
+        self.session.start_lsd()
 
         self.downloads = {}
         self.files = {}
