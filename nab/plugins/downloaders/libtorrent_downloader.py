@@ -171,9 +171,11 @@ class Libtorrent(Downloader):
             # silently return if already downloading
             return
 
+        url = torrent.url or torrent.magnet
+
         handle = self.session.add_torrent({
             'save_path': self.folder,
-            'url': torrent.url})
+            'url': url})
 
         self.downloads[handle] = torrent
         self.files[torrent] = handle

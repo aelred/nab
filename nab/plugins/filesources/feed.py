@@ -82,12 +82,9 @@ class Feed(Searcher):
                 break
 
             for f in results:
-                if "torrent_magneturi" in f:
-                    url = f["torrent_magneturi"]
-                else:
-                    url = f["link"]
-
-                files.append(Torrent(f["title"], url, get_seeds(f)))
+                url = f.get("link")
+                magnet = f.get("torrent_magneturi")
+                files.append(Torrent(f["title"], url, magnet, get_seeds(f)))
 
             if not self.multipage:
                 break

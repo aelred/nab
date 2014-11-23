@@ -326,9 +326,10 @@ class File(object):
 
 class Torrent(File):
 
-    def __init__(self, filename, url, seeds=None):
+    def __init__(self, filename, url=None, magnet=None, seeds=None):
         File.__init__(self, filename)
         self.url = url
+        self.magnet = magnet
         self.seeds = seeds
 
     def __str__(self):
@@ -338,11 +339,11 @@ class Torrent(File):
             return self.filename
 
     def __hash__(self):
-        return hash(self.url)
+        return hash((self.url, self.magnet))
 
     def __eq__(self, other):
         try:
-            return self.url == other.url
+            return self.url == other.url and self.magnet == other.magnet
         except AttributeError:
             return False
 
