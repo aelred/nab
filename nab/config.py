@@ -30,8 +30,36 @@ def _load_config():
     # find and create directories in settings
     s = c["settings"]
 
+    def case_insensitive(path):
+        # look up path in a case insensitive way
+        basepath, basedir = os.path.split(path)
+
+        if basepath == path:
+            # base case, return path as-is
+            return path
+
+        # recursive call to lower elements of path
+        basepath = case_insensitive(basepath)
+
+        dirs = os.listdir(basepath)
+        
+        # if this directory exists in the given casing, return it
+        if basedir not in dirs:
+            # lookup directory in lower case only
+            basedir = basedir.lower()
+            dir_map = dict((d.lower(), d) for d in dirs)
+
+            # convert case to case of existing file, if it exists
+            if basedir in dir_map:
+                basedir = dir_map[basedir]
+
+        return os.path.join(basepath, basedir)
+
     def format_path(path):
-        return path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
+        # format user directory in path
+        path =  path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
+        return case_insensitive(path)
+        
     s["downloads"] = format_path(s["downloads"])
     s["videos"] = map(format_path, s["videos"])
 

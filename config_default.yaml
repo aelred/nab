@@ -1,7 +1,7 @@
 settings:
-  downloads: '{user}/Downloads/nab'
+  downloads: '{user}/downloads/nab'
   videos:
-    - '{user}/Videos'
+    - '{user}/videos'
 shows:
   library:
     - filesystem
