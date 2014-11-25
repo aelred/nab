@@ -15,7 +15,22 @@ class Downloader(register.Entry):
     def download(self, torrent):
         raise NotImplemented()
 
+    def get_size(self, torrent):
+        raise NotImplemented()
+
     def get_progress(self, torrent):
+        raise NotImplemented()
+
+    def get_downspeed(self, torrent):
+        raise NotImplemented()
+    
+    def get_upspeed(self, torrent):
+        raise NotImplemented()
+    
+    def get_num_seeds(self, torrent):
+        raise NotImplemented()
+
+    def get_num_peers(self, torrent):
         raise NotImplemented()
 
     def is_completed(self, torrent):
@@ -65,3 +80,31 @@ def check_downloads():
                 scheduler.scheduler.add_asap("rename_file", path)
             del _downloads[d]
 scheduler.tasks["check_downloads"] = check_downloads
+
+
+def get_size(torrent):
+    return _downloader().get_size(torrent)
+
+
+def get_progress(torrent):
+    return _downloader().get_progress(torrent)
+
+
+def get_downspeed(torrent):
+    return _downloader().get_downspeed(torrent)
+
+
+def get_upspeed(torrent):
+    return _downloader().get_upspeed(torrent)
+
+
+def get_num_seeds(torrent):
+    return _downloader().get_num_seeds(torrent)
+
+
+def get_num_peers(torrent):
+    return _downloader().get_num_peers(torrent)
+
+
+def get_downloads():
+    return dict(_downloads)

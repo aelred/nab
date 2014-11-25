@@ -7,6 +7,8 @@ import appdirs
 import yaml
 import tempfile
 import urllib2
+from StringIO import StringIO
+import gzip
 
 from nab.downloader import Downloader
 from nab.config import config
@@ -130,8 +132,29 @@ class Libtorrent(Downloader):
         self._add_torrent(torrent)
         self.save_state()
 
+    def get_size(self, torrent):
+        try:
+            i = self.files[torrent].get_torrent_info()
+        except RuntimeError:
+            # caused if no metadata acquired
+            return 0
+        else:
+            return i.total_size()
+
     def get_progress(self, torrent):
         return self.files[torrent].status().progress
+    
+    def get_downspeed(self, torrent):
+        return self.files[torrent].status().download_rate
+
+    def get_upspeed(self, torrent):
+        return self.files[torrent].status().upload_rate
+
+    def get_num_seeds(self, torrent):
+        return self.files[torrent].status().num_seeds
+
+    def get_num_peers(self, torrent):
+        return self.files[torrent].status().num_peers
 
     def save_state(self):
         # write new state to file
@@ -175,14 +198,17 @@ class Libtorrent(Downloader):
 
         if torrent.url:
             # download torrent file
-            try:
-                handle, path = tempfile.mkstemp('.torrent')
-                t_file = urllib2.urlopen(torrent.url)
-                os.write(handle, t_file.read())
-                ti = lt.torrent_info(path)
-            finally:
-                os.close(handle)
-                t_file.close()
+            handle, path = tempfile.mkstemp('.torrent')
+            print torrent.url
+            request = urllib2.Request(torrent.url)
+            request.add_header('Accept-encoding', 'gzip')
+            response = urllib2.urlopen(request)
+            if response.info().get('Content-encoding') == 'gzip':
+                buf = StringIO(response.read())
+                f = gzip.GzipFile(fileobj=buf)
+            os.write(handle, f.read())
+            os.close(handle)
+            ti = lt.torrent_info(path)
         else:
             # use magnet link
             ti = lt.torrent_info(torrent.magnet)
@@ -191,7 +217,7 @@ class Libtorrent(Downloader):
             'save_path': self.folder, 'ti': ti})
 
         if torrent.url:
-            #delete torrent file
+            # delete torrent file
             os.remove(path)
 
         self.downloads[handle] = torrent
