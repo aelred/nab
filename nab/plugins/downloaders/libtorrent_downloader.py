@@ -5,6 +5,8 @@ import os
 import errno
 import appdirs
 import yaml
+import tempfile
+import urllib2
 
 from nab.downloader import Downloader
 from nab.config import config
@@ -171,11 +173,26 @@ class Libtorrent(Downloader):
             # silently return if already downloading
             return
 
-        url = torrent.url or torrent.magnet
-
+        if torrent.url:
+            # download torrent file
+            try:
+                handle, path = tempfile.mkstemp('.torrent')
+                t_file = urllib2.urlopen(torrent.url)
+                os.write(handle, t_file.read())
+                ti = lt.torrent_info(path)
+            finally:
+                os.close(handle)
+                t_file.close()
+        else:
+            # use magnet link
+            ti = lt.torrent_info(torrent.magnet)
+        
         handle = self.session.add_torrent({
-            'save_path': self.folder,
-            'url': url})
+            'save_path': self.folder, 'ti': ti})
+
+        if torrent.url:
+            #delete torrent file
+            os.remove(path)
 
         self.downloads[handle] = torrent
         self.files[torrent] = handle
@@ -221,6 +238,10 @@ class Libtorrent(Downloader):
                     self._remove_torrent(self.downloads[h])
                     self.log.debug(
                         "%s reached seed ratio, deleting." % h.name())
+
+                # test error state
+                if h.status().error != '':
+                    self.log.info(h.status().error)
 
             p = self.session.pop_alert()
             if not p:
