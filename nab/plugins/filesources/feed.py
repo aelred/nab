@@ -2,6 +2,7 @@ from filecache import filecache
 import feedparser
 from unidecode import unidecode
 import urllib
+import urlparse
 import re
 
 from nab.files import Searcher, Torrent
@@ -26,6 +27,15 @@ def get_seeds(f):
             return int(match.group(1))
     if "torrent_seeds" in f:
         return int(f["torrent_seeds"])
+    return None
+
+
+def get_torrent_url(f):
+    for link in f.get('links', []):
+        if link['type'] == 'application/x-bittorrent':
+            # remove query string and return
+            return link['href'][:link['href'].find('?')]
+    # no link found
     return None
 
 
@@ -82,7 +92,7 @@ class Feed(Searcher):
                 break
 
             for f in results:
-                url = f.get("link")
+                url = get_torrent_url(f)
                 magnet = f.get("torrent_magneturi")
                 files.append(Torrent(f["title"], url, magnet, get_seeds(f)))
 
