@@ -16,12 +16,14 @@
 }
 
 .show-banner {
+    outline: none;
     width: 758px;
     height: 140px;
 }
 
 .download table {
     table-layout: fixed;
+    border-collapse: collapse;
     float: left;
     line-height: 2.2;
     text-indent: 10px;
