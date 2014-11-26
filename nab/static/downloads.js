@@ -61,13 +61,9 @@ $(document).ready(function(){
         (function() {
             var table = that.div.find('table');
             var row = that.div.find('tr');
-            table.append('<col width=444px>');
             row.append('<td class=filename>');
-            table.append('<col width=100px>');
             row.append('<td class=size>');
-            table.append('<col width=100px>');
             row.append('<td class=speed>');
-            table.append('<col width=100px>');
             row.append('<td class=peers>');
         })();
 

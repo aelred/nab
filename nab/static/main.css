@@ -29,6 +29,28 @@
     text-indent: 10px;
 }
 
-.download table td {
+.download td {
     overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.download .filename {
+    width: 444px;
+    max-width: 444px;
+}
+
+.download .size {
+    width: 100px;
+    max-width: 100px;
+}
+
+.download .speed {
+    width: 100px;
+    max-width: 100px;
+}
+
+.download .peers {
+    width: 100px;
+    max-width: 100px;
 }
