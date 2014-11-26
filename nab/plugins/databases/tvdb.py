@@ -54,6 +54,9 @@ class TVDB(Database):
             return {}
         return {"tvdb": data["id"]}
 
+    def get_banner(self, show):
+        return show_get(show)['banner']
+
     def get_seasons(self, show):
         data = show_get(show)
         if data is None:

@@ -108,7 +108,7 @@ As well as downloading videos, nab sensibly renames them and moves them directly
 Smart recognition of files also allows nab to find series with unusual naming conventions, such as 24 or Bakemonogatari.
 
 
-### But I'm sure it won't be able to download <blank>!
+### But I'm sure it won't be able to download \<blank\>!
 
 Nab is designed to find just about anything, it isn't just for the most popular, current shows. It will recognize lots of old or obscure shows and anime.
 

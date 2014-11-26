@@ -5,6 +5,10 @@ import os
 import errno
 import appdirs
 import yaml
+import tempfile
+import urllib2
+from StringIO import StringIO
+import gzip
 
 from nab.downloader import Downloader
 from nab.config import config
@@ -27,40 +31,6 @@ _completed_states = [lt.torrent_status.states.seeding,
 libtorrent_file = os.path.join(appdirs.user_data_dir('nab'), 'libtorrent.yaml')
 
 
-def _sizeof_fmt(num):
-    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
-        if num < 1024.0:
-            return "%3.1f %s" % (num, x)
-        num /= 1024.0
-
-
-def _progress_bar(percent):
-    length = 20
-    filled = int(percent * length)
-    unfilled = int(length - filled)
-    return '[%s%s]' % ('=' * filled, ' ' * unfilled)
-
-
-def _torrent_info(handle):
-    s = handle.status()
-    try:
-        i = handle.get_torrent_info()
-    except RuntimeError:
-        # caused if no metadata acquired
-        size = ''
-    else:
-        size = _sizeof_fmt(i.total_size())
-
-    return handle.name() + '\n' + '\t'.join([
-        _state_str[s.state],
-        size.ljust(10),  # pad with spaces to format neatly
-        _progress_bar(s.progress),
-        '%d%%' % (s.progress * 100.0),
-        '%s/s' % _sizeof_fmt(s.download_rate),
-        '%d/%d' % (s.num_seeds, s.num_peers)
-    ])
-
-
 class Libtorrent(Downloader):
 
     _instance = None
@@ -76,10 +46,12 @@ class Libtorrent(Downloader):
     def __init__(self, ratio=2.0, ports=[6881, 6891]):
         # create session
         self.session = lt.session()
+        self.session.add_dht_router("router.bittorrent.com", 6881)
         self.session.start_dht()
         self.session.listen_on(*ports)
         self.session.start_upnp()
         self.session.start_natpmp()
+        self.session.start_lsd()
 
         self.downloads = {}
         self.files = {}
@@ -88,7 +60,9 @@ class Libtorrent(Downloader):
 
         self.folder = config["settings"]["downloads"]
         # begin thread to watch downloads
-        threading.Thread(target=self._watch_thread).start()
+        thread = threading.Thread(target=self._watch_thread)
+        thread.daemon = True
+        thread.start()
 
         # set session options
         self.ratio = ratio
@@ -123,6 +97,30 @@ class Libtorrent(Downloader):
     def download(self, torrent):
         self._add_torrent(torrent)
         self.save_state()
+
+    def get_size(self, torrent):
+        try:
+            i = self.files[torrent].get_torrent_info()
+        except RuntimeError:
+            # caused if no metadata acquired
+            return 0
+        else:
+            return i.total_size()
+
+    def get_progress(self, torrent):
+        return self.files[torrent].status().progress
+    
+    def get_downspeed(self, torrent):
+        return self.files[torrent].status().download_rate
+
+    def get_upspeed(self, torrent):
+        return self.files[torrent].status().upload_rate
+
+    def get_num_seeds(self, torrent):
+        return self.files[torrent].status().num_seeds
+
+    def get_num_peers(self, torrent):
+        return self.files[torrent].status().num_peers
 
     def save_state(self):
         # write new state to file
@@ -164,9 +162,28 @@ class Libtorrent(Downloader):
             # silently return if already downloading
             return
 
+        if torrent.url:
+            # download torrent file
+            handle, path = tempfile.mkstemp('.torrent')
+            request = urllib2.Request(torrent.url)
+            request.add_header('Accept-encoding', 'gzip')
+            response = urllib2.urlopen(request)
+            if response.info().get('Content-encoding') == 'gzip':
+                buf = StringIO(response.read())
+                f = gzip.GzipFile(fileobj=buf)
+            os.write(handle, f.read())
+            os.close(handle)
+            ti = lt.torrent_info(path)
+        else:
+            # use magnet link
+            ti = lt.torrent_info(torrent.magnet)
+        
         handle = self.session.add_torrent({
-            'save_path': self.folder,
-            'url': torrent.url})
+            'save_path': self.folder, 'ti': ti})
+
+        if torrent.url:
+            # delete torrent file
+            os.remove(path)
 
         self.downloads[handle] = torrent
         self.files[torrent] = handle
@@ -187,16 +204,9 @@ class Libtorrent(Downloader):
             time.sleep(1.0)
 
             self._progress_ticker += 1
-            # get list of active downloads
-            downloads = [h for h in list(self.downloads)
-                         if h.status().state not in _completed_states]
-            # print progress only if active downloads
-            if self._progress_ticker >= 30 and downloads:
+            if self._progress_ticker >= 30:
                 # save current torrent status
                 self.save_state()
-                # print progress
-                info_str = [_torrent_info(h) for h in list(self.downloads)]
-                print "\n".join(["Progress:"] + info_str)
                 self._progress_ticker = 0
 
             # check torrent ratios
@@ -212,6 +222,10 @@ class Libtorrent(Downloader):
                     self._remove_torrent(self.downloads[h])
                     self.log.debug(
                         "%s reached seed ratio, deleting." % h.name())
+
+                # test error state
+                if h.status().error != '':
+                    self.log.info(h.status().error)
 
             p = self.session.pop_alert()
             if not p:

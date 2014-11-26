@@ -34,7 +34,7 @@ except OSError:
 
 setup(
     name='nab',
-    version='0.1',
+    version='0.2',
     description='Automatic TV show download tool',
     author='Felix Chapman',
     packages=['nab', 'nab.plugins', 'nab.plugins.databases',
@@ -42,8 +42,8 @@ setup(
               'nab.plugins.shows'],
     install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache',
                       'py-plex', 'watchdog', 'flask', 'pyyaml', 'memoized',
-                      'unidecode', 'python-libtorrent', 'munkres',
-                      'feedparser', 'py-utorrent'],
+                      'unidecode', 'munkres', 'feedparser', 'py-utorrent',
+                      'lxml', 'flask-holster'],
 
     dependency_links=[
         'https://github.com/ftao/py-utorrent/tarball/master#egg=py-utorrent'],

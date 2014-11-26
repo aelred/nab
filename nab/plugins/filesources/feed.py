@@ -2,6 +2,7 @@ from filecache import filecache
 import feedparser
 from unidecode import unidecode
 import urllib
+import urlparse
 import re
 
 from nab.files import Searcher, Torrent
@@ -29,6 +30,15 @@ def get_seeds(f):
     return None
 
 
+def get_torrent_url(f):
+    for link in f.get('links', []):
+        if link['type'] == 'application/x-bittorrent':
+            # remove query string and return
+            return link['href'][:link['href'].find('?')]
+    # no link found
+    return None
+
+
 class Feed(Searcher):
     def __init__(self, url, name=None,
                  search_by=None, match_by=None, num_pages=1):
@@ -44,7 +54,7 @@ class Feed(Searcher):
 
         # retry three times
         feed = []
-        for retry in range(3):
+        for retry in range(1):
             try:
                 feed = _get_feed(url)
             except IOError:
@@ -82,12 +92,9 @@ class Feed(Searcher):
                 break
 
             for f in results:
-                if "torrent_magneturi" in f:
-                    url = f["torrent_magneturi"]
-                else:
-                    url = f["link"]
-
-                files.append(Torrent(f["title"], url, get_seeds(f)))
+                url = get_torrent_url(f)
+                magnet = f.get("torrent_magneturi")
+                files.append(Torrent(f["title"], url, magnet, get_seeds(f)))
 
             if not self.multipage:
                 break

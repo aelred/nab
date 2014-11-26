@@ -13,8 +13,9 @@ from nab import log
 _log = log.log.getChild("config")
 
 
-config_file = os.path.join(appdirs.user_config_dir('nab'), 'config.yaml')
-accounts_file = os.path.join(appdirs.user_config_dir('nab'), 'accounts.yaml')
+config_dir = appdirs.user_config_dir('nab')
+config_file = os.path.join(config_dir, 'config.yaml')
+accounts_file = os.path.join(config_dir, 'accounts.yaml')
 
 
 def _load_config():
@@ -29,8 +30,36 @@ def _load_config():
     # find and create directories in settings
     s = c["settings"]
 
+    def case_insensitive(path):
+        # look up path in a case insensitive way
+        basepath, basedir = os.path.split(path)
+
+        if basepath == path:
+            # base case, return path as-is
+            return path
+
+        # recursive call to lower elements of path
+        basepath = case_insensitive(basepath)
+
+        dirs = os.listdir(basepath)
+        
+        # if this directory exists in the given casing, return it
+        if basedir not in dirs:
+            # lookup directory in lower case only
+            basedir = basedir.lower()
+            dir_map = dict((d.lower(), d) for d in dirs)
+
+            # convert case to case of existing file, if it exists
+            if basedir in dir_map:
+                basedir = dir_map[basedir]
+
+        return os.path.join(basepath, basedir)
+
     def format_path(path):
-        return path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
+        # format user directory in path
+        path =  path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
+        return case_insensitive(path)
+        
     s["downloads"] = format_path(s["downloads"])
     s["videos"] = map(format_path, s["videos"])
 
@@ -55,20 +84,35 @@ def change_config(new_config):
     _log.info('Changing config file')
     yaml.safe_dump(new_config, file(config_file, 'w'))
 
+_observer = None
+
 
 def init():
     handler = ConfigWatcher()
-    observer = Observer()
-    observer.schedule(handler, ".")
-    observer.start()
+    global _observer
+    _observer = Observer()
+    _observer.schedule(handler, config_dir)
+    _observer.start()
+
+
+def stop():
+    try:
+        _observer.stop()
+    except:
+        pass
 
 
 class ConfigWatcher(FileSystemEventHandler):
-    def on_modified(self, event):
-        if event.src_path == os.path.join(os.getcwd(), config_file):
+    def on_any_event(self, event):
+        try:
+            dest = event.dest_path
+        except AttributeError:
+            dest = None
+
+        if event.src_path == config_file or dest == config_file:
             _log.info('Change detected in config.yaml, scheduling reload')
             scheduler.add_asap('load_config')
-        if event.src_path == os.path.join(os.getcwd(), accounts_file):
+        if event.src_path == accounts_file or dest == accounts_file:
             _log.info('Change detected in accounts.yaml, scheduling reload')
             scheduler.add_asap('load_config')
 
