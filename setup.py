@@ -34,7 +34,7 @@ except OSError:
 
 setup(
     name='nab',
-    version='0.2',
+    version='0.2.0',
     description='Automatic TV show download tool',
     author='Felix Chapman',
     packages=['nab', 'nab.plugins', 'nab.plugins.databases',
