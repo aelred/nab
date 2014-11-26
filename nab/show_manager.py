@@ -106,9 +106,9 @@ class ShowTree(show_elem.ShowParentElem):
 def get_shows():
     _log.info("Getting shows")
 
-    # get wanted shows from 'watching' list
+    # get wanted shows from 'following' list
     shows = []
-    for source in ShowSource.get_all(config.config["shows"]["watching"]):
+    for source in ShowSource.get_all(config.config["shows"]["following"]):
         source.__class__.log.info("Searching show source %s" % source)
         try:
             shows += source.get_cached_shows()
@@ -124,7 +124,7 @@ def filter_shows(shows):
     _log.info("Filtering shows")
 
     # get owned/watched info for all episodes
-    sources = (ShowSource.get_all(config.config["shows"]["watching"]) +
+    sources = (ShowSource.get_all(config.config["shows"]["following"]) +
                ShowSource.get_all(config.config["shows"]["library"]))
     try:
         for ep in shows.episodes:
@@ -181,7 +181,7 @@ def filter_shows(shows):
                                  permissive)
 
     # first filter using show sources and permissive filtering
-    filter_all(ShowSource.get_all(config.config["shows"]["watching"]), True)
+    filter_all(ShowSource.get_all(config.config["shows"]["following"]), True)
 
     # filter using show filters and strict filtering (must meet all criteria)
     filter_all(ShowFilter.get_all(config.config["shows"]["filters"]), False)

@@ -56,9 +56,9 @@ def remove(path):
         for i, p in enumerate(conf_sub):
             try:
                 # test for:
-                # - watching
+                # - following
                 # or
-                # - watching:
+                # - following:
                 #       params...
                 if plugin == p or plugin in p.keys():
                     break

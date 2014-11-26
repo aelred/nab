@@ -35,7 +35,7 @@ settings:
   videos: <video folders>
 shows:
   library: <used to find shows that you own>
-  watching: <used to find shows that you want>
+  following: <used to find shows that you want to download>
   filters: <used to filter episodes that you don't want>
 databases: <services for looking up show information>
 files:
@@ -81,10 +81,10 @@ The special word `{user}` translates into the path to the user's files (e.g. `C:
 
 ### Download missing episodes for my shows
 
-This can be done by adding `filesystem` to the `watching` list:
+This can be done by adding `filesystem` to the `following` list:
 
 ```
-watching:
+following:
   - watchlist
   - filesystem
 ```

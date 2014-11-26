@@ -5,7 +5,7 @@ settings:
 shows:
   library:
     - filesystem
-  watching:
+  following:
     - watchlist
   filters:
     - specials
