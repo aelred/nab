@@ -20,8 +20,13 @@
     height: 140px;
 }
 
-.download-label {
+.download table {
+    table-layout: fixed;
     float: left;
     line-height: 2.2;
     text-indent: 10px;
+}
+
+.download table td {
+    overflow: hidden;
 }

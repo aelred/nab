@@ -10,6 +10,16 @@ $(document).ready(function(){
         icons: false
     });
 
+    var format_bytes = function(num) {
+        powers = ['bytes', 'KB', 'MB', 'GB', 'TB']
+        var i = 0;
+        while (num >= 1024 && i < powers.length) {
+            num /= 1024;
+            i ++;
+        }
+        return num.toFixed(1) + powers[i];
+    }
+
     function Show(id) {
         this.downloads = {};
         this.header = $('<h3 class="show-banner">');
@@ -45,13 +55,28 @@ $(document).ready(function(){
 
     function Download(data) {
         // add progress bar
-        this.div = $('<div class="download">');
-        this.overlay = $('<div class="download-label">');
-        this.div.append(this.overlay);
+        this.div = $('<div class=download><table><tr>');
+        var that = this;
+
+        (function() {
+            var table = that.div.find('table');
+            var row = that.div.find('tr');
+            table.append('<col width=444px>');
+            row.append('<td class=filename>');
+            table.append('<col width=100px>');
+            row.append('<td class=size>');
+            table.append('<col width=100px>');
+            row.append('<td class=speed>');
+            table.append('<col width=100px>');
+            row.append('<td class=peers>');
+        })();
 
         this.set_data = function(data) {
             this.data = data;
-            this.overlay.text(data.filename);
+            this.div.find('.filename').text(data.filename);
+            this.div.find('.size').text(format_bytes(data.size));
+            this.div.find('.speed').text(format_bytes(data.downspeed) + '/s');
+            this.div.find('.peers').text(data.num_seeds + "/" + data.num_peers);
             this.div.progressbar({value: data.progress * 100});
         };
 

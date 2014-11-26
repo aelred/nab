@@ -113,7 +113,12 @@ def downloads():
     for (download, entry) in downloader.get_downloads().iteritems():
         download_data.append({
             'filename': download.filename,
+            'size': downloader.get_size(download),
             'progress': downloader.get_progress(download),
+            'downspeed': downloader.get_downspeed(download),
+            'upspeed': downloader.get_upspeed(download),
+            'num_seeds': downloader.get_num_seeds(download),
+            'num_peers': downloader.get_num_peers(download),
             'url': download.url,
             'entry': entry.id
             })
