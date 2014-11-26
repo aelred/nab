@@ -31,40 +31,6 @@ _completed_states = [lt.torrent_status.states.seeding,
 libtorrent_file = os.path.join(appdirs.user_data_dir('nab'), 'libtorrent.yaml')
 
 
-def _sizeof_fmt(num):
-    for x in ['bytes', 'KB', 'MB', 'GB', 'TB']:
-        if num < 1024.0:
-            return "%3.1f %s" % (num, x)
-        num /= 1024.0
-
-
-def _progress_bar(percent):
-    length = 20
-    filled = int(percent * length)
-    unfilled = int(length - filled)
-    return '[%s%s]' % ('=' * filled, ' ' * unfilled)
-
-
-def _torrent_info(handle):
-    s = handle.status()
-    try:
-        i = handle.get_torrent_info()
-    except RuntimeError:
-        # caused if no metadata acquired
-        size = ''
-    else:
-        size = _sizeof_fmt(i.total_size())
-
-    return handle.name() + '\n' + '\t'.join([
-        _state_str[s.state],
-        size.ljust(10),  # pad with spaces to format neatly
-        _progress_bar(s.progress),
-        '%d%%' % (s.progress * 100.0),
-        '%s/s' % _sizeof_fmt(s.download_rate),
-        '%d/%d' % (s.num_seeds, s.num_peers)
-    ])
-
-
 class Libtorrent(Downloader):
 
     _instance = None
@@ -199,7 +165,6 @@ class Libtorrent(Downloader):
         if torrent.url:
             # download torrent file
             handle, path = tempfile.mkstemp('.torrent')
-            print torrent.url
             request = urllib2.Request(torrent.url)
             request.add_header('Accept-encoding', 'gzip')
             response = urllib2.urlopen(request)
@@ -239,16 +204,9 @@ class Libtorrent(Downloader):
             time.sleep(1.0)
 
             self._progress_ticker += 1
-            # get list of active downloads
-            downloads = [h for h in list(self.downloads)
-                         if h.status().state not in _completed_states]
-            # print progress only if active downloads
-            if self._progress_ticker >= 30 and downloads:
+            if self._progress_ticker >= 30:
                 # save current torrent status
                 self.save_state()
-                # print progress
-                info_str = [_torrent_info(h) for h in list(self.downloads)]
-                print "\n".join(["Progress:"] + info_str)
                 self._progress_ticker = 0
 
             # check torrent ratios
