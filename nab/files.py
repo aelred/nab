@@ -332,6 +332,10 @@ class Torrent(File):
         self.magnet = magnet
         self.seeds = seeds
 
+    @property
+    def id(self):
+        return self.url or self.magnet
+
     def __str__(self):
         if self.seeds:
             return "%s (%d seeds)" % (self.filename, self.seeds)
@@ -339,11 +343,11 @@ class Torrent(File):
             return self.filename
 
     def __hash__(self):
-        return hash((self.url, self.magnet))
+        return hash(self.id)
 
     def __eq__(self, other):
         try:
-            return self.url == other.url and self.magnet == other.magnet
+            return self.id == other.id
         except AttributeError:
             return False
 

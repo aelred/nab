@@ -55,6 +55,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
     def to_yaml(self):
         return {
+            "id": self.id[0],
             "ids": self.ids,
             "titles": list(self.titles),
             "absolute": self.absolute,

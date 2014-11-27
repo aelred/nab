@@ -106,28 +106,51 @@ def access_config_path(config_data, path, config_set=None):
         return config_data
 
 
+def _down_yaml(download):
+    entry = downloader.get_downloads()[download]
+    return {
+        'id': download.id,
+        'filename': download.filename,
+        'size': downloader.get_size(download),
+        'progress': downloader.get_progress(download),
+        'downspeed': downloader.get_downspeed(download),
+        'upspeed': downloader.get_upspeed(download),
+        'num_seeds': downloader.get_num_seeds(download),
+        'num_peers': downloader.get_num_peers(download),
+        'url': download.url,
+        'magnet': download.magnet,
+        'entry': entry.id
+    }
+
+
+# RESTful downloads interface
 @app.holster('/downloads', methods=['GET'])
 def downloads():
-    download_data = []
-
-    for (download, entry) in downloader.get_downloads().iteritems():
-        download_data.append({
-            'filename': download.filename,
-            'size': downloader.get_size(download),
-            'progress': downloader.get_progress(download),
-            'downspeed': downloader.get_downspeed(download),
-            'upspeed': downloader.get_upspeed(download),
-            'num_seeds': downloader.get_num_seeds(download),
-            'num_peers': downloader.get_num_peers(download),
-            'url': download.url,
-            'entry': entry.id
-            })
-
-    return download_data
+    # return all downloads
+    return map(_down_yaml, downloader.get_downloads())
 
 
-@app.holster('/show/<path:path>', methods=['GET'])
+@app.holster('/downloads/<string:down_id>', methods=['GET'])
+def download(down_id):
+    # return a particular download id
+    down = next(d for d in downloader.get_downloads() if d.id == down_id)
+    return _down_yaml(down)
+
+
+# RESTful shows interface
+@app.holster('/shows', methods=['GET'])
+def shows():
+    # return a condensed view of all shows
+    def format(show):
+        yml = show.to_yaml()
+        del yml['seasons']
+        return yml
+    return map(format, _shows.itervalues())
+
+
+@app.holster('/shows/<path:path>', methods=['GET'])
 def show(path):
+    # return complete info about a show, season or episode
     search = path.split('/')
     # everything after the show name is an integer (season/ep number)
     search[1:] = [int(s) for s in search[1:]]

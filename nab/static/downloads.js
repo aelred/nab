@@ -40,7 +40,7 @@ $(document).ready(function () {
             this.header.append(banner);
         };
 
-        $.getJSON($SCRIPT_ROOT + '/show/' + id, this.set_data.bind(this));
+        $.getJSON($SCRIPT_ROOT + '/shows/' + id, this.set_data.bind(this));
 
         this.add_download = function (download) {
             if (!this.downloads.hasOwnProperty(download.data.url)) {
