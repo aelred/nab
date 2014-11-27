@@ -1,7 +1,10 @@
-$(document).ready(function(){
+/*global $, document, $SCRIPT_ROOT*/
+"use strict";
 
-    var downloads = {};
-    var shows = {};
+$(document).ready(function () {
+
+    var downloads = {}, shows = {},
+        format_bytes, add_download, remove_missing_shows, refresh;
 
     $('#downloads').accordion({
         collapsible: true,
@@ -10,15 +13,14 @@ $(document).ready(function(){
         icons: false
     });
 
-    var format_bytes = function(num) {
-        powers = ['bytes', 'KB', 'MB', 'GB', 'TB']
-        var i = 0;
+    format_bytes = function (num) {
+        var powers = ['bytes', 'KB', 'MB', 'GB', 'TB'], i = 0;
         while (num >= 1024 && i < powers.length) {
             num /= 1024;
-            i ++;
+            i += 1;
         }
         return num.toFixed(1) + powers[i];
-    }
+    };
 
     function Show(id) {
         this.downloads = {};
@@ -30,24 +32,24 @@ $(document).ready(function(){
         // retune the accordion
         $('#downloads').accordion("refresh");
 
-        this.set_data = function(data) {
+        this.set_data = function (data) {
             this.data = data;
 
             // create banner for this show
-            var banner = $('<img src="'+data.banner+'"/>');
+            var banner = $('<img src="' + data.banner + '"/>');
             this.header.append(banner);
         };
 
         $.getJSON($SCRIPT_ROOT + '/show/' + id, this.set_data.bind(this));
 
-        this.add_download = function(download) {
-            if (!(download.data.url in this.downloads)) {
+        this.add_download = function (download) {
+            if (!this.downloads.hasOwnProperty(download.data.url)) {
                 this.downloads[download.data.url] = download;
                 this.div.append(download.div);
             }
         };
 
-        this.delete = function() {
+        this.delete = function () {
             this.header.remove();
             this.div.remove();
         };
@@ -58,16 +60,15 @@ $(document).ready(function(){
         this.div = $('<div class=download><table><tr>');
         var that = this;
 
-        (function() {
-            var table = that.div.find('table');
+        (function () {
             var row = that.div.find('tr');
             row.append('<td class=filename>');
             row.append('<td class=size>');
             row.append('<td class=speed>');
             row.append('<td class=peers>');
-        })();
+        }());
 
-        this.set_data = function(data) {
+        this.set_data = function (data) {
             this.data = data;
             this.div.find('.filename').text(data.filename);
             this.div.find('.size').text(format_bytes(data.size));
@@ -77,44 +78,48 @@ $(document).ready(function(){
         };
 
         this.set_data(data);
-
     }
 
-    var refresh = function() {
-        // Get download information
-        $.getJSON($SCRIPT_ROOT + '/downloads', function (data) {
+    add_download = function (down_data) {
+        // find show on page
+        var show_id = down_data.entry[0];
+        if (!shows.hasOwnProperty(show_id)) {
+            shows[show_id] = new Show(show_id);
+        }
 
-            var show_ids = data.map(function(download) {
-                return download.entry[0];
-            });
+        // find download on page
+        if (!downloads.hasOwnProperty(down_data.url)) {
+            downloads[down_data.url] = new Download(down_data);
+        }
 
-            data.forEach(function(data) {
-                // find show on page
-                var show_id = data.entry[0];
-                if (!(show_id in shows)) {
-                    shows[show_id] = new Show(show_id);
-                }
+        // Set download progress
+        downloads[down_data.url].set_data(down_data);
 
-                // find download on page
-                var down_url = data.url;
-                if (!(down_url in downloads)) {
-                    downloads[down_url] = new Download(data);
-                }
+        // Add download to matching show
+        shows[show_id].add_download(downloads[down_data.url]);
+    };
 
-                // Set download progress
-                downloads[down_url].set_data(data);
-
-                // Add download to matching show
-                shows[show_id].add_download(downloads[down_url]);
-            });
-
-            // Remove any downloads on page if not in data
-            for (var show_id in shows) {
+    remove_missing_shows = function (show_ids) {
+        // Remove any shows on page if not in list of show_ids
+        var show_id;
+        for (show_id in shows) {
+            if (shows.hasOwnProperty(show_id)) {
                 if (show_ids.indexOf(show_id) === -1) {
                     shows[show_id].delete();
                     delete shows[show_id];
                 }
             }
+        }
+    };
+
+    refresh = function () {
+        // Get download information
+        $.getJSON($SCRIPT_ROOT + '/downloads', function (data) {
+            data.forEach(add_download);
+
+            remove_missing_shows(data.map(function (download) {
+                return download.entry[0];
+            }));
         });
     };
 
