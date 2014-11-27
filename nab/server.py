@@ -119,7 +119,8 @@ def _down_yaml(download):
         'num_peers': downloader.get_num_peers(download),
         'url': download.url,
         'magnet': download.magnet,
-        'entry': entry.id
+        'entry': entry.id,
+        'show': entry.id[0]
     }
 
 
