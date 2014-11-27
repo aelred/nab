@@ -1,7 +1,7 @@
-/*global $, document, $SCRIPT_ROOT*/
-"use strict";
+/*global $, _, document, $SCRIPT_ROOT*/
 
 $(document).ready(function () {
+    'use strict';
 
     var downloads = {}, shows = {},
         format_bytes, add_download, remove_missing_shows, refresh;
@@ -43,7 +43,7 @@ $(document).ready(function () {
         $.getJSON($SCRIPT_ROOT + '/shows/' + id, this.set_data.bind(this));
 
         this.add_download = function (download) {
-            if (!this.downloads.hasOwnProperty(download.data.url)) {
+            if (!_.has(this.downloads, download.data.url)) {
                 this.downloads[download.data.url] = download;
                 this.div.append(download.div);
             }
@@ -83,12 +83,12 @@ $(document).ready(function () {
     add_download = function (down_data) {
         // find show on page
         var show_id = down_data.entry[0];
-        if (!shows.hasOwnProperty(show_id)) {
+        if (!_.has(shows, show_id)) {
             shows[show_id] = new Show(show_id);
         }
 
         // find download on page
-        if (!downloads.hasOwnProperty(down_data.url)) {
+        if (!_.has(downloads, down_data.url)) {
             downloads[down_data.url] = new Download(down_data);
         }
 
@@ -101,27 +101,21 @@ $(document).ready(function () {
 
     remove_missing_shows = function (show_ids) {
         // Remove any shows on page if not in list of show_ids
-        var show_id;
-        for (show_id in shows) {
-            if (shows.hasOwnProperty(show_id)) {
-                if (show_ids.indexOf(show_id) === -1) {
-                    shows[show_id].delete();
-                    delete shows[show_id];
-                }
+        _.each(shows, function (show, show_id) {
+            if (!_.contains(show_ids, show_id)) {
+                shows[show_id].delete();
+                delete shows[show_id];
             }
-        }
-    };
-
-    refresh = function () {
-        // Get download information
-        $.getJSON($SCRIPT_ROOT + '/downloads', function (data) {
-            data.forEach(add_download);
-
-            remove_missing_shows(data.map(function (download) {
-                return download.entry[0];
-            }));
         });
     };
+
+    refresh = _.debounce(function () {
+        // Get download information
+        $.getJSON($SCRIPT_ROOT + '/downloads', function (data) {
+            _.each(data, add_download);
+            remove_missing_shows(_.pluck(data, 'show'));
+        });
+    }, 5000);
 
     refresh();
     setInterval(refresh, 5000);
