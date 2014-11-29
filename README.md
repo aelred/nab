@@ -7,10 +7,32 @@ Service for automatically downloading and managing TV shows.
 Getting started
 -------------------
 
-Nab requires [libtorrent](http://www.libtorrent.org/) to run.
-To install, run `python setup.py install`.
+Nab requires the following things installed:
 
-You can start Nab with the command `python -m nab`.
+- [Python](https://www.python.org/) 2.7
+- [libtorrent](http://www.libtorrent.org/)
+- [libxml](http://xmlsoft.org/)
+- [setuptools](https://pypi.python.org/pypi/setuptools)
+- [npm](https://www.npmjs.org/)
+- [bower](http://bower.io/)
+
+On Linux, these can be installed by:
+```
+$ apt-get install python python-libtorrent libxml2-dev libxslt1-dev python-lxml
+$ curl https://bootstrap.pypa.io/ez_setup.py -O - | python
+$ curl http://npmjs.org/install.sh | sh 
+$ npm install -g bower
+```
+
+To install Nab:
+```
+$ python setup.py install
+$ bower install
+```
+
+To start Nab:
+
+`python -m nab`.
 
 ### The watchlist
 
