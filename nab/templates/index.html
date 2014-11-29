@@ -1,7 +1,29 @@
 <!DOCTYPE HTML>
 
+<script type='text/x-underscore' id='download'>
+<div class='download'>
+    <table>
+        <tr>
+            <td class='filename'><%= filename %></td>
+            <td class='size'><%= size %></td>
+            <td class='speed'><%= downspeed %></td>
+            <td class='peers'><%= num_seeds %>/<%= num_peers %></td>
+        </tr>
+    </table>
+</div>
+</script>
+
+<script type='text/x-underscore' id='show-banner'>
+<h3 class='show-banner'>
+    <img src='<%= banner %>'/>
+</h3>
+<div class='show-downloads'>
+</div>
+</script>
+
 <script type="text/javascript">
     $SCRIPT_ROOT = {{request.script_root|tojson|safe }};
+    nab = {};
 </script>
 
 <html>
@@ -15,10 +37,13 @@
             url_for('static', filename='jquery.js') }}" defer>\x3C/script>')</script>
 <script src="{{ url_for('static', filename='modules/underscore/underscore.js')
     }}" defer></script>
+<script src="{{ url_for('static', filename='modules/backbone/backbone.js') }}"
+    defer></script>
 <script src="{{ url_for('static', filename='modules/jquery-ui/jquery-ui.js') }}" defer></script>
 <link rel='stylesheet' href="{{ url_for('static', filename='modules/jquery-ui/themes/flick/jquery-ui.css') }}"/>
 <link rel='stylesheet' href="{{ url_for('static', filename='main.css') }}"/>
 
+<script src={{ url_for('static', filename='model.js') }} defer></script>
 <script src={{ url_for('static', filename='downloads.js') }} defer></script>
 
 </head>
