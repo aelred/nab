@@ -31,11 +31,13 @@ def get_seeds(f):
 
 
 def get_torrent_url(f):
-    for link in f.get('links', []):
+    links = f.get('links', [])
+    for link in links:
         if link['type'] == 'application/x-bittorrent':
-            # remove query string and return
-            return link['href'][:link['href'].find('?')]
-    # no link found
+            return link['href']
+    # no link found, just return first link
+    if links:
+        return links[0]['href']
     return None
 
 

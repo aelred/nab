@@ -9,6 +9,7 @@ import tempfile
 import urllib2
 from StringIO import StringIO
 import gzip
+import re
 
 from nab.downloader import Downloader
 from nab.config import config
@@ -176,7 +177,9 @@ class Libtorrent(Downloader):
             ti = lt.torrent_info(path)
         else:
             # use magnet link
-            ti = lt.torrent_info(torrent.magnet)
+            infohash = re.search(r"\burn:btih:([A-F\d]+)\b", 
+                                 torrent.magnet).group()
+            ti = lt.torrent_info(infohash)
         
         handle = self.session.add_torrent({
             'save_path': self.folder, 'ti': ti})
