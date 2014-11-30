@@ -6,6 +6,7 @@ build
 dist
 videos
 nab/static/modules
+nab/static/banners
 nab.egg-info
 
 anime-titles.xml.gz

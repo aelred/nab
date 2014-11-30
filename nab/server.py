@@ -2,6 +2,9 @@ from flask import Flask, request, abort, render_template, make_response
 from flask.ext.holster.main import init_holster
 import yaml
 import copy
+import urllib
+import os
+from urlparse import urlparse
 
 from nab import config
 from nab import downloader
@@ -12,10 +15,16 @@ init_holster(app)
 
 _shows = None
 
+_static = os.path.join(os.path.dirname(__file__), 'static')
+
 
 def init(shows):
     global _shows
     _shows = shows
+
+    banners = os.path.join(_static, 'banners')
+    if not os.path.exists(banners):
+        os.makedirs(banners)
 
 
 def run():
@@ -138,6 +147,19 @@ def download(down_id):
     return _down_yaml(down)
 
 
+# format show data when sending
+def _format_show(show):
+    # download local copy of banner
+    url = show['banner']
+    if url:
+        ext = os.path.splitext(urlparse(url).path)[1]
+        local_path = os.path.join('static', 'banners', show['id'] + ext)
+        abs_path = os.path.join(os.path.dirname(__file__), local_path)
+        if not os.path.isfile(abs_path):
+            urllib.urlretrieve(url, abs_path)
+        show['banner'] = local_path
+    return show
+
 # RESTful shows interface
 @app.holster('/shows', methods=['GET'])
 def shows():
@@ -145,7 +167,7 @@ def shows():
     def format(show):
         yml = show.to_yaml()
         del yml['seasons']
-        return yml
+        return _format_show(yml)
     return map(format, _shows.itervalues())
 
 
@@ -161,4 +183,10 @@ def show(path):
     if not entry:
         abort(204)
 
-    return entry.to_yaml()
+    yml = entry.to_yaml()
+
+    if len(search) == 1:
+        # searching for show
+        yml = _format_show(yml)
+
+    return yml
