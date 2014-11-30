@@ -66,8 +66,6 @@ $(document).ready(function () {
     });
 
     var ShowView = Backbone.View.extend({
-        download_views: [],
-
         template: _.template($('#show-banner').html()),
         
         initialize: function () {
@@ -77,6 +75,7 @@ $(document).ready(function () {
                 active: false,
                 icons: false
             });
+            this.download_views = [];
             this.listenTo(this.model, 'change', this.render);
             this.listenTo(this.model, 'destroy', this.remove);
         },
@@ -99,24 +98,24 @@ $(document).ready(function () {
     });
 
     var AllDownloadsView = Backbone.View.extend({
-        show_views: {},
-
         initialize: function () {
+            this.show_views = {};
             this.listenTo(downloads, 'add', this.add_download);
             this.listenTo(downloads, 'reset', this.render);
         },
 
         add_download: function (download) {
             var show = new Show({id: download.get('show')});
-            return this.add_show(show).add_download(download);
+            return this.add_show(show).add_download(download).render();
         },
 
         add_show: function (show) {
             if (!_.has(this.show_views, show.id)) {
                 this.show_views[show.id] = new ShowView({model: show});
+                this.$el.append(this.show_views[show.id].render().$el);
             };
             var view = this.show_views[show.id];
-            this.$el.append(view.render().$el);
+            view.render();
             return view;
         },
     });
