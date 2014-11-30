@@ -1,3 +1,4 @@
+""" Module to manage logging. """
 import logging
 import logging.handlers
 import appdirs
@@ -5,6 +6,7 @@ import os
 
 log_dir = appdirs.user_log_dir('nab')
 log_file = os.path.join(log_dir, 'log.txt')
+
 
 def _init():
     log = logging.getLogger("nab")

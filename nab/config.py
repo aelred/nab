@@ -1,3 +1,4 @@
+""" Handles config files and command line arguments. """
 import yaml
 import os
 import os.path
@@ -19,6 +20,7 @@ accounts_file = os.path.join(config_dir, 'accounts.yaml')
 
 
 def _load_config():
+    """ Return contents of config files, creating them if they don't exist. """
     if not os.path.exists(config_file):
         _log.info("Creating default config file")
         copyfile("config_default.yaml", config_file)
@@ -31,7 +33,7 @@ def _load_config():
     s = c["settings"]
 
     def case_insensitive(path):
-        # look up path in a case insensitive way
+        """ look up path in a case insensitive way. """
         basepath, basedir = os.path.split(path)
 
         if basepath == path:
@@ -42,7 +44,7 @@ def _load_config():
         basepath = case_insensitive(basepath)
 
         dirs = os.listdir(basepath)
-        
+
         # if this directory exists in the given casing, return it
         if basedir not in dirs:
             # lookup directory in lower case only
@@ -56,10 +58,10 @@ def _load_config():
         return os.path.join(basepath, basedir)
 
     def format_path(path):
-        # format user directory in path
-        path =  path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
+        """ Format user directory in path. """
+        path = path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
         return case_insensitive(path)
-        
+
     s["downloads"] = format_path(s["downloads"])
     s["videos"] = map(format_path, s["videos"])
 
@@ -74,6 +76,7 @@ config, accounts = _load_config()
 
 
 def reload_config():
+    """ Reload config files into global variables. """
     _log.info('Reloading config and accounts files')
     global config, accounts
     config, accounts = _load_config()
@@ -81,6 +84,7 @@ tasks["load_config"] = reload_config
 
 
 def change_config(new_config):
+    """ Replace config file with new config file. """
     _log.info('Changing config file')
     yaml.safe_dump(new_config, file(config_file, 'w'))
 
@@ -88,6 +92,7 @@ _observer = None
 
 
 def init():
+    """ Initialize config file watcher. """
     handler = ConfigWatcher()
     global _observer
     _observer = Observer()
@@ -96,6 +101,7 @@ def init():
 
 
 def stop():
+    """ Stop config file watcher. """
     try:
         _observer.stop()
     except:
@@ -103,7 +109,11 @@ def stop():
 
 
 class ConfigWatcher(FileSystemEventHandler):
+
+    """ Watcher that reloads config files whenever they change. """
+
     def on_any_event(self, event):
+        """ Reload a config file if it has changed. """
         try:
             dest = event.dest_path
         except AttributeError:
@@ -118,6 +128,7 @@ class ConfigWatcher(FileSystemEventHandler):
 
 
 def _load_options():
+    """ Return option parser options. """
     parser = OptionParser()
     parser.add_option("-t", "--test", action="store_true", default=False)
     parser.add_option("-p", "--plugin", action="store_true", default=False)

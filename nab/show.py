@@ -1,10 +1,24 @@
+""" Handles TV shows. """
 import re
 from nab import show_elem, match, database, season
 
 
 class Show(show_elem.ShowParentElem, show_elem.ShowElem):
+
+    """ A TV show, part of a collection of ShowElem classes. """
+
     def __init__(self, title, ids=None, absolute=False, titles=None,
                  banner=None):
+        """
+        Create a TV show and automatically populate with data.
+
+        Args:
+            title (str): The title of the show.
+            ids ({str: str or int}): A dictionary of IDs.
+            absolute (bool): Whether this show uses absolute episode numbering.
+            titles ([str]): An optional list of additional titles.
+            banner (str): An optional url to a banner image of the show.
+        """
         show_elem.ShowParentElem.__init__(self)
         show_elem.ShowElem.__init__(self, None, title, titles)
         self.ids = ids or {}
@@ -16,13 +30,16 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
     @property
     def show(self):
+        """ Self. """
         return self
 
     @property
     def id(self):
+        """ A probably-unique ID describing this episode. """
         return (re.sub(r'\W+', '', self.title),)
 
     def format(self):
+        """ Format data in this show to make it easier to process. """
         # for all titles, remove bracketed year info
         # e.g. Archer (2009) -> Archer, Archer 2009, Archer (2009)
         newtitles = set()
@@ -45,15 +62,17 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
                     self.titles.remove(t)
 
     def merge(self, other):
+        """ Merge data from another show into this one. """
         show_elem.ShowParentElem.__merge__(self, other)
         show_elem.ShowElem.__merge__(self, other)
         self.ids = dict(self.ids.items() + other.ids.items())
 
     def update_data(self):
-        # get new data from database for this show
+        """ Get new data from databases for this show. """
         database.get_data(self)
 
     def to_yaml(self):
+        """ Return a yaml representation of this show. """
         return {
             "id": self.id[0],
             "ids": self.ids,
@@ -65,6 +84,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
     @staticmethod
     def from_yaml(yml, title, parent):
+        """ Create a show from the given yaml representation. """
         show = Show(title, yml["ids"], yml["absolute"], yml["titles"],
                     yml["banner"])
         show.update(show_elem.ShowParentElem.from_yaml(
@@ -72,9 +92,11 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         return show
 
     def search_terms(self):
+        """ Return a list of search terms to search for this show. """
         return set(map(match.format_title, self.titles))
 
     def match(self, f, total=True):
+        """ Return true if the given File object matches this show. """
         if total:
             # filename must not match any season name (if seasons > 1)
             # e.g. Season 1 of a show has the same name as the show itself.
@@ -100,11 +122,10 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         titles = map(match.format_title, self.titles)
         return match.format_title(f.title) in titles
 
-    def __eq__(self, other):
-        return show_elem.ShowElem.__eq__(self, other)
-
     def __str__(self):
+        """ Return a readable representation of this show. """
         return self.title.encode('utf-8')
 
     def __repr__(self):
+        """ Return a readable, probably-unique representation. """
         return "<Show (%s)>" % str(self)

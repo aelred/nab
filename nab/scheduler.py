@@ -1,3 +1,4 @@
+""" Module for the scheduler, that can run functions at certain times. """
 import time
 import threading
 import log
@@ -20,6 +21,7 @@ schedule_file = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
 
 
 def init(shows):
+    """ Initialize the main scheduler with the given show tree. """
     global _shows
     _shows = shows
 
@@ -128,8 +130,28 @@ class _SchedQueueTimed(_SchedQueue):
 
 
 class Scheduler:
+    """
+    A scheduler class that lets you schedule functions.
+
+    Events can be scheduled to run 'ASAP', 'lazy' or timed.
+    ASAP events occur before any lazy or timed events.
+    Lazy events occur before timed events
+    Timed events occur after the time specified.
+
+    Events are functions, which must be registered before they can be run.
+    An event can be registered by putting it in scheduler.tasks, a dictionary
+    from string event names to functions.
+
+    Event parameters must be hashable.
+    A special case is made for ShowElems like Show, Season and Episode, which
+    are automatically converted into a hashable ID.
+
+    Tasks are run in a single thread, one after the other. This avoids any
+    concurrency issues.
+    """
 
     def __init__(self):
+        """ Create a new scheduler. """
         self.queue = _SchedQueueTimed('timed')
         self.queue_asap = _SchedQueue('asap')
         self.queue_lazy = _SchedQueue('lazy')
@@ -142,6 +164,7 @@ class Scheduler:
         self._stop_flag = True
 
     def to_yaml(self):
+        """ Return a yaml representation of the scheduler. """
         return {
             "queue": (self.queue_asap.to_yaml() +
                       self.queue_lazy.to_yaml() +
@@ -149,6 +172,7 @@ class Scheduler:
             }
 
     def load(self):
+        """ Load scheduler events from the schedule yaml file. """
         with file(schedule_file, 'r') as f:
             yml = yaml.load(f)
             if not yml:
@@ -171,6 +195,7 @@ class Scheduler:
                     self.queue.push(dtime, action, argument)
 
     def save(self):
+        """ Save scheduler events to the schedule yaml file. """
         yaml.safe_dump(self.to_yaml(), file(schedule_file, 'w'))
 
     def _save_decision(self):
@@ -180,12 +205,14 @@ class Scheduler:
             self._last_save = time.time()
 
     def start(self):
+        """ Start the scheduler in a thread and return. """
         if self._stop_flag:
             _log.debug("Starting")
             self._stop_flag = False
             threading.Thread(target=self._run).start()
 
     def stop(self):
+        """ Tell the scheduler to stop running after the task is complete. """
         _log.debug("Setting stop flag")
         self._stop_flag = True
 
@@ -273,12 +300,15 @@ class Scheduler:
             self._qlock.notify()
 
     def add(self, delay, action, *argument):
+        """ Add a task to the scheduler which will run after time delay. """
         self._add(self.queue, delay, action, argument)
 
     def add_asap(self, action, *argument):
+        """ Add a task to the scheduler which will run as soon as possible. """
         self._add(self.queue_asap, None, action, argument)
 
     def add_lazy(self, action, *argument):
+        """ Add a task to the scheduler which will run after ASAP tasks. """
         self._add(self.queue_lazy, None, action, argument)
 
 

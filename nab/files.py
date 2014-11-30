@@ -1,3 +1,4 @@
+""" Module handling torrent files and file plugins. """
 import pprint
 import math
 import time
@@ -25,23 +26,62 @@ sub_exts = ['srt', 'sub', 'smi']
 
 
 class FileSource(register.Entry):
+
+    """ Plugin used for getting torrents for shows, seasons or episodes. """
+
     _register = register.Register()
     _type = "file source"
 
-    def find(self, show, season=None, episode=None):
+    def find(self, entry):
+        """
+        Return a list of files.Torrent objects matching the given ShowElem.
+
+        Most plugins should probably extend Searcher, which abstracts away
+        some of this behaviour to simple searching for strings.
+        """
         raise NotImplemented()
 
 
 class FileFilter(register.Entry):
+
+    """ Plugin used for filtering torrent files. """
+
     _register = register.Register()
     _type = "file filter"
 
     def filter(self, f):
+        """
+        Return a value indicating the acceptability of the given torrent.
+
+        Values returned should be floats between 0 and 1, or the value None
+        if the torrent should be rejected completely.
+
+        A torrent is chosen based on the best average score across all
+        given FileFilters.
+        """
         raise NotImplemented()
 
 
 class Searcher(FileSource):
+
+    """
+    Abstract plugin used for finding torrents from given search terms.
+
+    Plugins should implement Searcher.search(term) and call constructor.
+    """
+
     def __init__(self, search_by=None, match_by=None):
+        """
+        Create a Searcher with the given matching terms.
+
+        Args:
+            search_by ([str]):
+                A list specifying whether this plugin can search by 'show',
+                'season' or 'episode'. Defaults to all three.
+            match_by ([str]):
+                A list specifying what this plugin can match (i.e. what torrents
+                it can return). Same options and defaults as search_by.
+        """
         _conv = {
             "show": Show,
             "season": Season,
@@ -52,7 +92,12 @@ class Searcher(FileSource):
         self.match_by = match_by or ["show", "season", "episode"]
         self.match_by = [_conv[m] for m in self.match_by]
 
-    def search(self, term=None):
+    def search(self, terms):
+        """
+        Search using the given search term.
+
+        Return a list of torrents.
+        """
         raise NotImplemented()
 
     def _search_all(self, s_terms, entry):
@@ -88,6 +133,12 @@ class Searcher(FileSource):
         return filter(valid_file, files)
 
     def find(self, entry):
+        """
+        Return a list of torrents matching the given ShowElem.
+
+        If this Searcher does not support matching this particular ShowElem,
+        returns an empty list.
+        """
         # Only search for things this searcher supports
         for m in self.match_by:
             if isinstance(entry, m):
@@ -121,7 +172,31 @@ class Searcher(FileSource):
 
 class File(object):
 
+    """
+    A file for a show, season or episode.
+
+    Contains attributes extracted from the filename such as:
+        filename: the original filename.
+        title: the show title.
+        season: season number.
+        serange: season number upper range (e.g. 'seasons 1-3' -> serange=3).
+        episode: episode number.
+        eprange: episode number upper range (e.g. 'eps 14-15' -> eprange=15).
+        eptitle: the episode title.
+        ext: file extension.
+        group: release group or fansub group.
+        tags: a list of tags found in the filename (e.g. 'BRRip').
+    """
+
     def __init__(self, filename, format_filename=True):
+        """
+        Create a File object from the given filename.
+
+        If format_filename is set, the filename is formatted to remove
+        capital leters and common non-alphanumeric characters. This improves
+        recognition, but means the resulting attributes such as 'title' will
+        be lower case and have missing punctuation.
+        """
         self.filename = filename
 
         data = File._split_filename(filename, format_filename)
@@ -321,12 +396,24 @@ class File(object):
         return {"title": title, "tags": tags}
 
     def __str__(self):
+        """ Return filename. """
         return self.filename
 
 
 class Torrent(File):
 
+    """ Torrent, extending File with extra information about the torrent. """
+
     def __init__(self, filename, url=None, magnet=None, seeds=None):
+        """
+        Create a torrent from the given filename and optional links.
+
+        Torrent objects are usually created in FileSource plugins when
+        returning search results.
+
+        Torrents should provide either a url, magnet link or both.
+        The seed parameter should give number of seeds and is optional.
+        """
         File.__init__(self, filename)
         self.url = url
         self.magnet = magnet
@@ -334,18 +421,22 @@ class Torrent(File):
 
     @property
     def id(self):
+        """ Return unique identifier for this torrent. """
         return self.url or self.magnet
 
     def __str__(self):
+        """ Return representation including number of seeds. """
         if self.seeds:
             return "%s (%d seeds)" % (self.filename, self.seeds)
         else:
             return self.filename
 
     def __hash__(self):
+        """ Return hash value based on id. """
         return hash(self.id)
 
     def __eq__(self, other):
+        """ Return equality based on equality of ids. """
         try:
             return self.id == other.id
         except AttributeError:
@@ -407,6 +498,15 @@ def _find_all_files(entry):
 
 
 def find_file(entry, reschedule):
+    """
+    Find a torrent for the given ShowElem entry using FileSource plugins.
+
+    After a torrent is found, add it to the downloader.
+    If the entry is not wanted, then do nothing.
+
+    If a torrent is not found and reschedule is set to true, nab will
+    search for a torrent again later.
+    """
     # get entry only if wanted
     if entry.wanted:
         f = _best_file(_find_all_files(entry))
@@ -433,6 +533,7 @@ tasks["find_file"] = find_file
 
 
 def find_files(shows):
+    """ Find torrents for all wanted episodes in the given list of shows. """
     _log.info("Finding files")
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):

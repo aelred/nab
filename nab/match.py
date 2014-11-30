@@ -1,3 +1,4 @@
+""" Poorly-named module for formatting filenames. TODO: refactor and rename. """
 import re
 import unidecode
 import difflib
@@ -26,6 +27,7 @@ charswap_p = re.compile('|'.join(map(re.escape, charswap)),
 
 
 def format_filename(fname):
+    """ Format a filename, eliminating capitals and some punctuation. """
     formatted = fname
     if isinstance(formatted, unicode):
         formatted = unidecode.unidecode(fname)  # remove accented characters
@@ -41,6 +43,7 @@ def format_filename(fname):
 
 
 def format_title(title):
+    """ Format a title. Like format_filename, but removes hyphens. """
     formatted = re.sub(' -', '', title)  # remove hyphens from titles
     formatted = format_filename(formatted)
     return formatted
@@ -50,6 +53,7 @@ junk = ":-[]@~., \t"
 
 
 def comp(a, b, ignore=[]):
+    """ Return the number of differences between two strings. """
     if isinstance(a, unicode):
         a = unidecode.unidecode(a)
     if isinstance(b, unicode):
@@ -63,4 +67,5 @@ def comp(a, b, ignore=[]):
 
 
 def closest_match(title, matches):
+    """ Return the most similar string from a set of possible matches. """
     return max((comp(title, m), title) for m in matches)[1]

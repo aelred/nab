@@ -1,8 +1,8 @@
+""" Starts nab. """
 from nab import show_manager
 from nab import database
 from nab import files
 from nab import renamer
-from nab import show_manager
 from nab import config
 from nab import plugins
 from nab import downloader
@@ -11,24 +11,22 @@ from nab import server
 from nab.plugins.downloaders import libtorrent_downloader
 
 import os
-import time
-import threading
 
 
 if config.options.clean:
     # clean up schedule, show and libtorrent files, start fresh
     try:
         os.remove(show_manager.shows_file)
-    except Exception:  # don't know exception, depends on OS
+    except OSError:
         # file may not exist
         pass
     try:
         os.remove(scheduler.schedule_file)
-    except Exception:
+    except OSError:
         pass
     try:
         os.remove(libtorrent_downloader.libtorrent_file)
-    except Exception:
+    except OSError:
         pass
 
 shows = show_manager.ShowTree()
@@ -44,6 +42,7 @@ plugin_types = [
 
 
 def refresh():
+    """ Refresh list of shows and find files for any wanted episodes. """
     # reschedule to get data every hour
     scheduler.scheduler.add(60 * 60, "refresh")
 
@@ -61,6 +60,7 @@ scheduler.tasks["refresh"] = refresh
 
 
 def update_shows():
+    """ Update data for all shows. """
     # reschedule to refresh show data in a week's time
     scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
     shows.update_data()
@@ -76,7 +76,7 @@ if config.options.plugin:
     if not config.args:
         # list all plugins
         for plugin_type in plugin_types:
-            print plugin_type._type
+            print plugin_type.type
             for entry in plugin_type.list_entries():
                 print "\t" + entry.name
     else:

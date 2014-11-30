@@ -1,3 +1,8 @@
+"""
+Module for classes with a register that registers subclasses.
+
+These classes are mostly used for plugins in nab.
+"""
 from nab import log
 from nab import plugins
 import inspect
@@ -6,11 +11,22 @@ from memoized import memoized
 
 class Register:
 
+    """ A lookup class for subclasses of a particular Entry class. """
+
     def __init__(self):
+        """ Initialize lookup table as empty. """
         self.table = {}
 
     @memoized(hashable=False)
     def load(self, cfg):
+        """
+        Load plugins from part of a config file.
+
+        Given a yaml-style list of plugins from a config file, load the plugins
+        in that list with the given parameters.
+
+        This method is memoized so plugins are not constantly instantiated.
+        """
         plugins.load()
         results = []
 
@@ -60,23 +76,34 @@ class Register:
 
 class Entry(object):
 
+    """ The plugin base class with methods to register subclasses. """
+
+    @property
+    def type(self):
+        """ The type of this entry. """
+        return self._type
+
     @classmethod
     def register(cls, name):
+        """ Register a new subclass under the given name. """
         cls._register.table[name] = cls
         cls.name = name
         cls.log = log.log.getChild(name)
         cls.log.debug("Found plugin")
 
     @classmethod
-    def get_all(cls, cfg=None):
+    def get_all(cls, cfg):
+        """ Return loaded plugins from a given config file part. """
         return cls._register.load(cfg)
 
     @classmethod
     def list_entries(cls):
+        """ Return a list of all registered plugins. """
         return cls._register.table.values()
 
     @classmethod
     def help_text(cls):
+        """ Return help text for this plugin. """
         text = "Name\n\t%s\nType\n\t%s\n" % (cls.name, cls._type)
 
         try:
@@ -125,4 +152,5 @@ class Entry(object):
         return text.rstrip()
 
     def __str__(self):
+        """ Return the name of this plugin. """
         return type(self).name

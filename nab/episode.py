@@ -1,8 +1,22 @@
+""" Handles TV show episodes. """
 from nab import show_elem, match
 
 
 class Episode(show_elem.ShowElem):
+
+    """ A TV show episode, part of a collection of ShowElem classes.  """
+
     def __init__(self, season, num, title, aired, titles=None):
+        """
+        Create a TV episode for a season.
+
+        Args:
+            season (Season): The season this episode is part of.
+            num (int): The episode number within the season.
+            title (str): The title of the episode.
+            aired (int): When this episode aired in UNIX time.
+            titles ([str]): An optional list of additional titles.
+        """
         show_elem.ShowElem.__init__(self, season, title, titles)
         self.num = num
         self.owned = False
@@ -11,22 +25,27 @@ class Episode(show_elem.ShowElem):
         self.aired = aired
 
     def __repr__(self):
+        """ Return a readable, probably-unique representation. """
         return "<Episode (%s)>" % str(self)
 
     @show_elem.ShowElem.season.setter
     def season(self, value):
+        """ Set the episode season. This should usually only be done once. """
         self.parent = value
 
     @property
     def episode(self):
+        """ Self. """
         return self
 
     @property
     def episodes(self):
+        """ A list containing self. """
         return [self]
 
     @property
     def absolute(self):
+        """ The absolute number of the episode. """
         if self.season.num == 0:
             return None
         eps = [ep for ep in self.show.episodes if ep.season.num != 0]
@@ -34,6 +53,7 @@ class Episode(show_elem.ShowElem):
 
     @property
     def previous(self):
+        """ The episode before this, or None if no episode exists. """
         if self.season.num == 0:
             return None
         if self.season.num == 1 and self.num == 1:
@@ -47,6 +67,7 @@ class Episode(show_elem.ShowElem):
 
     @property
     def next(self):
+        """ The episode after this, or None if no episode exists. """
         if self.season.num == 0:
             return None
         if self.season.num == len(self.show)-1:
@@ -59,20 +80,29 @@ class Episode(show_elem.ShowElem):
 
     @property
     def aired_max(self):
+        """ The latest airtime of this episode (which is just the airtime). """
         return self.aired
 
     @property
     def id(self):
+        """ A probably-unique ID describing this episode. """
         return self.season.id + (self.num,)
 
     @property
     def epwanted(self):
+        """ A list containing all episodes wanted in this episode. """
         if self.wanted:
             return [self]
         else:
             return []
 
     def has_aired(self):
+        """
+        Whether this episode has aired.
+
+        Specials are always assumed to have aired because the airdates of
+        special episodes are very unreliable and variable.
+        """
         if show_elem.ShowElem.has_aired(self):
             return True
 
@@ -80,6 +110,7 @@ class Episode(show_elem.ShowElem):
             return True
 
     def merge(self, episode):
+        """ Merge data from another episode into this one. """
         if episode.owned:
             self.owned = True
         if episode.watched:
@@ -95,6 +126,7 @@ class Episode(show_elem.ShowElem):
         show_elem.ShowElem.merge(self, episode)
 
     def to_yaml(self):
+        """ Return a yaml representation of this episode. """
         return {
             "title": self.title,
             "titles": list(self.titles),
@@ -106,6 +138,7 @@ class Episode(show_elem.ShowElem):
 
     @staticmethod
     def from_yaml(yml, num, season):
+        """ Create an episode from the given yaml representation. """
         ep = Episode(season, num, yml["title"], yml["aired"], yml["titles"])
         ep.owned = yml["owned"]
         ep.watched = yml["watched"]
@@ -113,12 +146,14 @@ class Episode(show_elem.ShowElem):
         return ep
 
     def find(self, id_):
+        """ Search for a ShowElem id in this episode. """
         if self.id == id_:
             return self
         else:
             return None
 
     def names(self, full=False):
+        """ Return a list of names describing this episode. """
         names = self.season.names(full)
         for n in names:
             n["epnum"] = self.num
@@ -148,6 +183,7 @@ class Episode(show_elem.ShowElem):
         return names
 
     def search_terms(self):
+        """ Return a list of search terms to search for this episode. """
         terms = []
         for n in self.names():
             for t in n["titles"]:
@@ -164,6 +200,7 @@ class Episode(show_elem.ShowElem):
         return terms
 
     def match(self, f, total=True):
+        """ Return true if the given File object matches this episode. """
         # match by title if a special
         if self.season.num == 0:
             titles = [" ".join([match.format_title(t), self.title])
@@ -181,6 +218,7 @@ class Episode(show_elem.ShowElem):
                 and self.num >= f.episode and self.num <= f.eprange)
 
     def __str__(self):
+        """ Return a readable representation of this episode. """
         if self.season.num == 0:
             return ("%s - %s" % (self.show, self.title.encode('utf-8')))
         if self.season.title:

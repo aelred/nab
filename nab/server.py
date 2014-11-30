@@ -1,3 +1,4 @@
+""" Server that hosts a web interface to nab. """
 from flask import Flask, request, abort, render_template, make_response
 from flask.ext.holster.main import init_holster
 import yaml
@@ -19,6 +20,7 @@ _static = os.path.join(os.path.dirname(__file__), 'static')
 
 
 def init(shows):
+    """ Initialize server with the given list of shows. """
     global _shows
     _shows = shows
 
@@ -28,16 +30,19 @@ def init(shows):
 
 
 def run():
+    """ Run the server. Doesn't return until server closes. """
     app.run(debug=True, use_reloader=False)
 
 
 @app.route('/')
 def index():
-    return render_template('index.html', name='Felix')
+    """ Return index page of web interface. """
+    return render_template('index.html')
 
 
 @app.route('/log')
 def log_():
+    """ Return log file in plain text. """
     response = make_response(file(log.log_file).read())
     response.headers['content-type'] = 'text/plain'
     return response
@@ -45,16 +50,19 @@ def log_():
 
 @app.holster('/config', methods=['GET', 'POST'])
 def config_all():
+    """ Return entire config file. """
     return get_config([])
 
 
 @app.holster('/config/<path:path>', methods=['GET', 'POST'])
 def config_path(path=''):
+    """ Return part of config file. """
     return get_config(path.split('/'))
 
 
 @app.holster('/remove/<path:path>', methods=['POST'])
 def remove(path):
+    """ Remove part of config file. """
     path = path.split('/')
     plugin = request.values['plugin']
     conf_copy = copy.deepcopy(config.config)
@@ -87,6 +95,7 @@ def remove(path):
 
 
 def get_config(path):
+    """ Return part of path along config file. """
     # navigate provided path along config file
     conf_copy = copy.deepcopy(config.config)
     conf_sub = access_config_path(conf_copy, path)
@@ -101,6 +110,7 @@ def get_config(path):
 
 
 def access_config_path(config_data, path, config_set=None):
+    """ Access and optionally set part of the config path. """
     conf_sub = config_data
     # navigate to second-from-last index, to allow referencing later
     for p in path[:-1]:
@@ -136,13 +146,13 @@ def _down_yaml(download):
 # RESTful downloads interface
 @app.holster('/downloads', methods=['GET'])
 def downloads():
-    # return all downloads
+    """ Return list of all downloads. """
     return map(_down_yaml, downloader.get_downloads())
 
 
 @app.holster('/downloads/<string:down_id>', methods=['GET'])
 def download(down_id):
-    # return a particular download id
+    """ Return information on a particular download ID. """
     down = next(d for d in downloader.get_downloads() if d.id == down_id)
     return _down_yaml(down)
 
@@ -160,10 +170,11 @@ def _format_show(show):
         show['banner'] = local_path
     return show
 
+
 # RESTful shows interface
 @app.holster('/shows', methods=['GET'])
 def shows():
-    # return a condensed view of all shows
+    """ Return a condensed view of all shows. """
     def format(show):
         yml = show.to_yaml()
         del yml['seasons']
@@ -173,7 +184,7 @@ def shows():
 
 @app.holster('/shows/<path:path>', methods=['GET'])
 def show(path):
-    # return complete info about a show, season or episode
+    """ Return complete information about a show, season or episode. """
     search = path.split('/')
     # everything after the show name is an integer (season/ep number)
     search[1:] = [int(s) for s in search[1:]]

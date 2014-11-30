@@ -1,25 +1,45 @@
+""" Handles TV show seasons. """
 from nab import show_elem, match, episode
 
 
 class Season(show_elem.ShowParentElem, show_elem.ShowElem):
+
+    """ A TV season, part of a collection of ShowElem classes. """
+
     def __init__(self, show, num, title=None, titles=None):
+        """
+        Create a season for a TV show.
+
+        Args:
+            show (Show): The show this season is part of.
+            num (int): The season number within the show.
+            title (str):
+                The optional title of the season. Do not use 'Show - Season 2',
+                this is for when the season title is distinct in some way,
+                such as "BlackAdder Goes Forth".
+            titles ([str]): An optional list of additional titles.
+        """
         show_elem.ShowParentElem.__init__(self)
         show_elem.ShowElem.__init__(self, show, title, titles)
         self.num = num
 
     @property
     def season(self):
+        """ Self. """
         return self
 
     @property
     def id(self):
+        """ A probably-unique ID describing this season. """
         return self.show.id + (self.num,)
 
     def merge(self, season):
+        """ Merge data from another season into this one. """
         show_elem.ShowParentElem.merge(self, season)
         show_elem.ShowElem.merge(self, season)
 
     def to_yaml(self):
+        """ Return a yaml representation of this season. """
         return {
             "title": self.title,
             "titles": list(self.titles),
@@ -28,6 +48,7 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
 
     @staticmethod
     def from_yaml(yml, num, show):
+        """ Create a season from the given yaml representation. """
         season = Season(show, num, yml["title"], yml["titles"])
         season.update(
             show_elem.ShowParentElem.from_yaml(
@@ -35,6 +56,7 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
         return season
 
     def names(self, full=False):
+        """ Return a list of names describing this season. """
         names = []
 
         if self.num == 0 and not full:
@@ -55,6 +77,7 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
         return names
 
     def search_terms(self):
+        """ Return a list of search terms to search for this season. """
         terms = []
         for n in self.names():
             for t in n["titles"]:
@@ -75,6 +98,7 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
         return terms
 
     def match(self, f, total=True):
+        """ Return true if the given File object matches this season. """
         # if this is a total match, there must be no episode number
         if total and f.episode is not None:
             # if using absolute numbering, see if this file matches
@@ -99,13 +123,12 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
                 (self.show.match(f, False) and
                  f.season == self.num and f.serange == self.num))
 
-    def __eq__(self, other):
-        return show_elem.ShowElem.__eq__(self, other)
-
     def __str__(self):
+        """ Return a readable representation of this season. """
         if self.title:
             return self.title.encode('utf-8')
         return ("%s - S%02d" % (self.show, self.num))
 
     def __repr__(self):
+        """ Return a readable, probably-unique representation. """
         return "<Season (%s)>" % str(self)
