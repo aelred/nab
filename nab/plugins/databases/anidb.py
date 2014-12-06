@@ -65,9 +65,9 @@ def load_db():
             dbi[e.id] = e
 load_db()
 
-# only request one page every three seconds
+# only request one page every two seconds
 _last_get = time.clock()
-_get_interval = 3.0
+_get_interval = 2.0
 
 
 # only request anidb data once a week max
