@@ -156,7 +156,7 @@ renamer:
   # {s}         Season number
   # {e}         Episode number
   # {et}        Episode title
-  pattern: '{videos}/{t}/{st} - S{s:02d}E{e:02d} - {et}'
+  pattern: '{videos}/{t}/{st} - S{s}E{e} - {et}'
 
   # 'yes' means copy to the videos directory, 'no' means move, don't copy.
   # This is yes by default because it allows the torrent client to seed.

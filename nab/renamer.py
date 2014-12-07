@@ -40,9 +40,9 @@ def _new_name(file_, episode):
 
     # check if file is a range of episodes (e.g. a two-parter)
     if file_.episode is not None and file_.episode == file_.eprange:
-        epnum = episode.num
+        epnum = "%02d" % episode.num
     else:
-        epnum = "%d-%d" % (file_.episode, file_.eprange)
+        epnum = "%02d-%02d" % (file_.episode, file_.eprange)
 
     # format config file pattern with episode information
     mapping = {
@@ -50,7 +50,7 @@ def _new_name(file_, episode):
         "t": format_fname(episode.show.title),
         "st": format_fname(episode.show.title),
         "et": format_fname(episode.title),
-        "s": episode.season.num,
+        "s": "%02d" % episode.season.num,
         "e": epnum
     }
     if episode.season.title:

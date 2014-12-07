@@ -89,7 +89,7 @@ An example is given below:
 
 ```yaml
 renamer:
-  pattern: '{videos}/{t}/s{s:02d}/e{e:02d} {et}'
+  pattern: '{videos}/{t}/s{s}/e{e} {et}'
 ```
 
 Example output: `Videos/BlackAdder/s02/e06 Chains.avi`
