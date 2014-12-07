@@ -272,7 +272,7 @@ class File(object):
             # we do not match episode numbers greater than 999
             # because they usually indicate a year.
             'eptxt': r'(ep?|(episodes?)? )',
-            'ep': r'(?P<episode>\d{1,3})(-(?P<eprange>\d{1,3}))?(v\d+)?',
+            'ep': r'(?P<episode>\d{1,3})([-e](?P<eprange>\d{1,3}))?(v\d+)?',
             'eprange': r'(?P<episode>\d{1,3})-(?P<eprange>\d{1,3})(v\d+)?',
             'setxt': r'(s|seasons? )',
             'se': r'(?P<season>\d{1,3})(-(?P<serange>\d{1,3}))?',

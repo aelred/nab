@@ -109,7 +109,13 @@ file_tests = [
      {'entry': ("JoJo's Bizarre Adventure (2012)", ),
       'ext': None, 'group': None,
       'episode': None, 'eprange': None, 'season': None, 'serange': None,
-      'title': 'jojos bizarre adventure (2012)', 'eptitle': None})
+      'title': 'jojos bizarre adventure (2012)', 'eptitle': None}),
+
+    ('[PublicHD] Parks.and.Recreation.S06E21E22.720p.HDTV.X264-DIMENSION.mkv',
+     {'entry': ('Parks and Recreation', 6, 21),
+      'ext': 'mkv', 'group': 'dimension', 'tags': ['720p', 'hdtv', 'x264'],
+      'episode': 21, 'eprange': 22, 'season': 6, 'serange': 6,
+      'title': 'parks and recreation', 'eptitle': None})
 ]
 
 
