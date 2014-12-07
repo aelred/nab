@@ -13,7 +13,7 @@ from nab.exception import PluginError
 
 @filecache(60 * 60)
 def _cget(*args, **kwargs):
-    return requests.get(*args, **kwargs)
+    return requests.get(*args, **kwargs).json()
 
 show_data = {}
 
@@ -27,7 +27,7 @@ class Trakt:
             return requests.get(Trakt._url + url,
                                 auth=(config.accounts['trakt']['username'],
                                       config.accounts['trakt']['password']),
-                                *args, **kwargs)
+                                *args, **kwargs).json()
         except requests.exceptions.ConnectionError:
             raise PluginError(self, 'Error connecting to trakt')
 
@@ -50,14 +50,13 @@ class Trakt:
         else:
             # search for longest names first (avoid searching for initials)
             for title in reversed(sorted(show.titles, key=len)):
-                r = self._cget("/search/shows.json/%s" %
-                               config.accounts['trakt']['api'],
-                               params={"query": title, "limit": 1})
-
                 try:
-                    results = r.json()
+                    results = self._cget("/search/shows.json/%s" %
+                                         config.accounts['trakt']['api'],
+                                         params={"query": title, "limit": 1})
                 except ValueError:
-                    raise PluginError(self, 'Error decoding trakt data')
+                    raise PluginError(
+                        self, 'Error decoding trakt search data for %s' % show)
 
                 if results:
                     tvdb_id = results[0]["tvdb_id"]
@@ -66,12 +65,13 @@ class Trakt:
                 return None  # no result found
 
         # get show from trakt
-        r = self._cget("/show/summary.json/%s/%s/true"
-                       % (config.accounts['trakt']['api'], tvdb_id))
         try:
-            j = r.json()
+            j = self._cget("/show/summary.json/%s/%s/true"
+                           % (config.accounts['trakt']['api'], tvdb_id))
         except ValueError:
-            raise PluginError(self, 'Error decoding trakt data')
+            raise PluginError(self, 'Error decoding trakt show data for %s'
+                                    % show)
+
         show_data[tvdb_id] = j
         return j
 
@@ -79,21 +79,22 @@ class Trakt:
 class TraktSource(ShowSource, Trakt):
 
     def get_shows(self):
-        TraktSource.log.debug("Getting library")
-        r1 = self._cget("/user/library/shows/all.json/%s/%s/min" %
-                        (config.accounts['trakt']['api'],
-                         config.accounts['trakt']['username']))
-        # watchlist requests are never cached for fast response time
-        TraktSource.log.debug("Getting watchlist")
-        r2 = self._get("/user/watchlist/shows.json/%s/%s" %
-                       (config.accounts['trakt']['api'],
-                        config.accounts['trakt']['username']))
-        sort = lambda s: s["title"].lower()
-
         try:
-            shows_data = sorted(r1.json() + r2.json(), key=sort)
+            TraktSource.log.debug("Getting library")
+            r1 = self._cget("/user/library/shows/all.json/%s/%s/min" %
+                            (config.accounts['trakt']['api'],
+                             config.accounts['trakt']['username']))
+            # watchlist requests are never cached for fast response time
+            TraktSource.log.debug("Getting watchlist")
+            r2 = self._get("/user/watchlist/shows.json/%s/%s" %
+                           (config.accounts['trakt']['api'],
+                            config.accounts['trakt']['username']))
+            sort = lambda s: s["title"].lower()
         except ValueError:
-            raise PluginError(self, 'Error decoding trakt data')
+            raise PluginError(
+                self, 'Error decoding trakt library and watchlist data')
+
+        shows_data = sorted(r1 + r2, key=sort)
 
         # remove duplicate shows
         shows_data = [next(v) for k, v in groupby(shows_data, key=sort)]
