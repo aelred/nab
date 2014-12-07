@@ -18,7 +18,7 @@ files:
   sources:
     - feed:
         name: EZTV
-        url: http://ezrss-proxy.net/search/index.php?simple&show_name={s}&show_name_exact=true&mode=rss
+        url: https://ezrss.it/search/index.php?simple&show_name={s}&show_name_exact=true&mode=rss
         search_by:
           - show
     - feed:
