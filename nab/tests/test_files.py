@@ -96,7 +96,20 @@ file_tests = [
     ('[VIP]Black Lagoon - 1-24[BDrip,912x512,x264,AAC]',
      {'ext': None, 'group': 'vip', 'tags': ['bdrip', 'x264', 'aac'],
       'episode': 1, 'eprange': 24, 'season': None, 'serange': None,
-      'title': 'black lagoon', 'eptitle': None})
+      'title': 'black lagoon', 'eptitle': None}),
+
+    ("JoJo's Bizarre Adventure (2012) - S01E02 - A Letter from the Past.mkv",
+     {'entry': ("JoJo's Bizarre Adventure (2012)", 1, 2),
+      'ext': 'mkv', 'group': None,
+      'episode': 2, 'eprange': 2, 'season': 1, 'serange': 1,
+      'title': "jojos bizarre adventure (2012)",
+      'eptitle': 'a letter from past'}),
+
+    ('JoJos Bizarre Adventure (2012)',
+     {'entry': ("JoJo's Bizarre Adventure (2012)", ),
+      'ext': None, 'group': None,
+      'episode': None, 'eprange': None, 'season': None, 'serange': None,
+      'title': 'jojos bizarre adventure (2012)', 'eptitle': None})
 ]
 
 
