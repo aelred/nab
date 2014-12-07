@@ -13,6 +13,7 @@ import re
 
 from nab.downloader import Downloader
 from nab.config import config
+from nab.exception import PluginError
 
 
 _state_str = {
@@ -110,7 +111,7 @@ class Libtorrent(Downloader):
 
     def get_progress(self, torrent):
         return self.files[torrent].status().progress
-    
+
     def get_downspeed(self, torrent):
         return self.files[torrent].status().download_rate
 
@@ -168,7 +169,10 @@ class Libtorrent(Downloader):
             handle, path = tempfile.mkstemp('.torrent')
             request = urllib2.Request(torrent.url)
             request.add_header('Accept-encoding', 'gzip')
-            response = urllib2.urlopen(request)
+            try:
+                response = urllib2.urlopen(request)
+            except urllib2.URLError:
+                raise PluginError(self, "Error downloading torrent file")
             if response.info().get('Content-encoding') == 'gzip':
                 buf = StringIO(response.read())
                 f = gzip.GzipFile(fileobj=buf)
@@ -177,10 +181,10 @@ class Libtorrent(Downloader):
             ti = lt.torrent_info(path)
         else:
             # use magnet link
-            infohash = re.search(r"\burn:btih:([A-F\d]+)\b", 
+            infohash = re.search(r"\burn:btih:([A-F\d]+)\b",
                                  torrent.magnet).group()
             ti = lt.torrent_info(infohash)
-        
+
         handle = self.session.add_torrent({
             'save_path': self.folder, 'ti': ti})
 
