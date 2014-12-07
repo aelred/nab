@@ -166,11 +166,14 @@ def family(entries, criteria=lambda e: True, types=None):
     while queue:
         (entry, rel_type) = queue.pop()
         Anidb.log.debug("Checking %s" % entry.title)
-        if entry.id not in rids and criteria(entry, rel_type):
-            Anidb.log.debug("Adding %s" % entry.title)
-            relations.append(entry)
+        if entry.id not in rids:
             rids.add(entry.id)
-            queue += related(entry, types, True)
+            if criteria(entry, rel_type):
+                Anidb.log.debug("Adding %s" % entry.title)
+                relations.append(entry)
+            # continue searching if a direct pr/sequel or meets criteria
+            if rel_type in ['Sequel', 'Prequel'] or criteria(entry, rel_type):
+                queue += related(entry, types, True)
 
     Anidb.log.debug("Family found for %s" % [e.title for e in entries])
     return relations
@@ -188,9 +191,10 @@ def find_seasons(entry):
     def is_season(e, rel_type):
         if e == entry:
             return True
-        is_series = info(e).xpath("//type/text()")[0] == "TV Series"
-        is_movie = info(e).xpath("//type/text()")[0] == "Movie"
-        is_special = info(e).xpath("//type/text()")[0] == "TV Special"
+        e_type = info(e).xpath("//type/text()")[0]
+        is_series = e_type == "TV Series"
+        is_movie = e_type == "Movie"
+        is_special = e_type == "TV Special"
         is_sequel = not rel_type or rel_type == "Sequel"
         return (is_series or is_sequel) and not (is_movie or is_special)
     seasons = family([entry], is_season)
