@@ -85,7 +85,8 @@ class Feed(Searcher):
 
             # remember page 1 links so we can tell if the
             # site is giving us the same page again
-            links = set([f["link"] for f in results])
+            links = set([(get_torrent_url(f), f.get("torrent_magneturi"))
+                         for f in results])
             if page == 1:
                 p1_links = set(links)
 
