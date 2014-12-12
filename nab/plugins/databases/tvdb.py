@@ -1,3 +1,4 @@
+""" Database plugin using thetvdb to get up-to-date TV show info. """
 from filecache import filecache
 import tvdb_api
 import time
@@ -10,18 +11,18 @@ _t = tvdb_api.Tvdb()
 
 
 @filecache(7 * 24 * 60 * 60)
-def show_search(term):
+def _show_search(term):
     return _t.search(term)
 
 
-def show_get(show):
+def _show_get(show):
     try:
         if "tvdb" in show.ids:
             return _t[int(show.ids["tvdb"])]
 
         # search for longest names first (avoid searching for initials)
         for title in reversed(sorted(show.titles, key=len)):
-            result = show_search(title)
+            result = _show_search(title)
             if len(result):
                 return _t[int(result[0]["id"])]
     except (tvdb_api.tvdb_error, KeyError):
@@ -35,37 +36,44 @@ def show_get(show):
 
 class TVDB(Database):
 
+    """ Uses thetvdb to get up-to-date TV show info. """
+
     def get_show_titles(self, show):
-        data = show_get(show)
+        """ Return titles for the specified show. """
+        data = _show_get(show)
         if data is None:
             return []
 
         titles = [data["seriesname"]]
         try:
-            titles += show_search(data["seriesname"])[0]["aliasnames"]
+            titles += _show_search(data["seriesname"])[0]["aliasnames"]
         except KeyError:
             pass
 
         return titles
 
     def get_show_ids(self, show):
-        data = show_get(show)
+        """ Return thetvdb id for the specified show. """
+        data = _show_get(show)
         if data is None:
             return {}
         return {"tvdb": data["id"]}
 
     def get_banner(self, show):
-        return show_get(show)['banner']
+        """ Return thetvdb show banner url. """
+        return _show_get(show)['banner']
 
     def get_seasons(self, show):
-        data = show_get(show)
+        """ Return season data for the specified show. """
+        data = _show_get(show)
         if data is None:
             return []
 
         return [Season(show, senum) for senum in data]
 
     def get_episodes(self, season):
-        data = show_get(season.show)[season.num]
+        """ Return episode data for the specified season. """
+        data = _show_get(season.show)[season.num]
         if data is None:
             return []
 
