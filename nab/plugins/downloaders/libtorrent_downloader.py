@@ -1,8 +1,8 @@
+""" Built-in libtorrent downloader. """
 import libtorrent as lt
 import threading
 import time
 import os
-import errno
 import appdirs
 import yaml
 import tempfile
@@ -30,22 +30,30 @@ _state_str = {
 _completed_states = [lt.torrent_status.states.seeding,
                      lt.torrent_status.states.finished]
 
-libtorrent_file = os.path.join(appdirs.user_data_dir('nab'), 'libtorrent.yaml')
+_libtorrent_file = os.path.join(appdirs.user_data_dir('nab'), 'libtorrent.yaml')
 
 
 class Libtorrent(Downloader):
 
+    """ Built-in downloader in nab using libtorrent. """
+
     _instance = None
 
-    # make this a singleton
-    # by jojo on StackOverflow
     def __new__(cls, *args, **kwargs):
+        """ Make this a singleton, by jojo on StackOverflow. """
         if not cls._instance:
             cls._instance = super(Libtorrent, cls).__new__(
                 cls, *args, **kwargs)
         return cls._instance
 
     def __init__(self, ratio=2.0, ports=[6881, 6891]):
+        """
+        Create a libtorrent downloader.
+
+        Args:
+            ratio (float): The upload:download target before deleting files.
+            ports: ([int]): List of ports to use.
+        """
         # create session
         self.session = lt.session()
         self.session.add_dht_router("router.bittorrent.com", 6881)
@@ -81,7 +89,7 @@ class Libtorrent(Downloader):
 
         # reload persistent data
         try:
-            with file(libtorrent_file) as f:
+            with file(_libtorrent_file) as f:
                 data = yaml.load(f)
                 for torrent in data['torrents']:
                     self._add_torrent(torrent['torrent'])
@@ -97,10 +105,12 @@ class Libtorrent(Downloader):
         self.session.resume()
 
     def download(self, torrent):
+        """ Download the specified torrent. """
         self._add_torrent(torrent)
-        self.save_state()
+        self._save_state()
 
     def get_size(self, torrent):
+        """ Get the size of the torrent. """
         try:
             i = self.files[torrent].get_torrent_info()
         except RuntimeError:
@@ -110,21 +120,26 @@ class Libtorrent(Downloader):
             return i.total_size()
 
     def get_progress(self, torrent):
+        """ Get the download progress of the torrent. """
         return self.files[torrent].status().progress
 
     def get_downspeed(self, torrent):
+        """ Get the download speed of the torrent. """
         return self.files[torrent].status().download_rate
 
     def get_upspeed(self, torrent):
+        """ Get the upload speed of the torrent. """
         return self.files[torrent].status().upload_rate
 
     def get_num_seeds(self, torrent):
+        """ Get number of seeds for this torrent. """
         return self.files[torrent].status().num_seeds
 
     def get_num_peers(self, torrent):
+        """ Get number of peers for this torrent. """
         return self.files[torrent].status().num_peers
 
-    def save_state(self):
+    def _save_state(self):
         # write new state to file
         state = {
             'state': self.session.save_state(0x0ff),
@@ -133,13 +148,15 @@ class Libtorrent(Downloader):
                           'down': self._get_download_total(f)}
                          for f, h in self.files.iteritems()]
         }
-        with file(libtorrent_file, 'w') as f:
+        with file(_libtorrent_file, 'w') as f:
             yaml.dump(state, f)
 
     def is_completed(self, torrent):
+        """ Return if the torrent has finished downloading. """
         return self.files[torrent].status().state in _completed_states
 
     def get_files(self, torrent):
+        """ Return the files in the torrent. """
         handle = self.files[torrent]
         files = handle.get_torrent_info().files()
         return [os.path.join(handle.save_path(), f.path) for f in files]
@@ -213,7 +230,7 @@ class Libtorrent(Downloader):
             self._progress_ticker += 1
             if self._progress_ticker >= 30:
                 # save current torrent status
-                self.save_state()
+                self._save_state()
                 self._progress_ticker = 0
 
             # check torrent ratios
@@ -235,21 +252,16 @@ class Libtorrent(Downloader):
                     self.log.info(h.status().error)
 
             p = self.session.pop_alert()
-            if not p:
-                continue
+            while p:
+                if p.what() in ["torrent_finished_alert",
+                                "torrent_added_alert"]:
+                    self.log.info(p)
+                    continue
 
-            if (p.what() == "torrent_finished_alert"):
-                self.log.info(p)
-                continue
+                if (p.what() == "state_changed_alert" or
+                   p.category() == lt.alert.category_t.error_notification):
+                    self.log.debug(p)
 
-            if (p.what() == "torrent_added_alert"):
-                self.log.info(p)
-                continue
-
-            if p.what() == "state_changed_alert":
-                self.log.debug(p)
-
-            if p.category() == lt.alert.category_t.error_notification:
-                self.log.debug(p)
+                p = self.session.pop_alert()
 
 Libtorrent.register('libtorrent')
