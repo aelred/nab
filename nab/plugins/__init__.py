@@ -1,3 +1,4 @@
+""" Plugin package for plugins that extend nab. """
 import os
 import sys
 import importlib
@@ -8,9 +9,7 @@ _loaded = False
 
 
 def load():
-    """
-    Import all plugins in folder. Will only run once.
-    """
+    """ Import all plugins in folder. Will only run once.  """
     global _loaded
     if _loaded:
         return
