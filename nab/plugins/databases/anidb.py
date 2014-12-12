@@ -28,13 +28,11 @@ defparams = {
 langs = ["en", "x-jat"]
 ns = "{http://www.w3.org/XML/1998/namespace}"
 
-
 # fetch names database only once every two days max
 @filecache(7 * 24 * 60 * 60)
 def get_db():
     urllib.urlretrieve("http://anidb.net/api/anime-titles.xml.gz",
                        titles_file)
-get_db()
 
 # populate database of titles
 dbt = defaultdict(list)
@@ -63,7 +61,15 @@ def load_db():
             for t in e.titles:
                 dbt[format_title(t)].append(e)
             dbi[e.id] = e
-load_db()
+
+_init_flag = False
+
+
+def _init():
+    get_db()
+    load_db()
+    global _init_flag
+    _init_flag = True
 
 # only request one page every two seconds
 _last_get = time.clock()
@@ -278,6 +284,10 @@ def pair_episodes_to_titles(show, episodes, title_set):
 
 
 class Anidb(Database):
+
+    def __init__(self):
+        if not _init_flag:
+            _init()
 
     def show_get(self, show):
         # add data about other titles for this show
