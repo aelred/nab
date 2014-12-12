@@ -41,7 +41,7 @@ setup(
               'nab.plugins.downloaders', 'nab.plugins.filesources',
               'nab.plugins.shows'],
     install_requires=['appdirs', 'requests', 'tvdb_api', 'filecache',
-                      'py-plex', 'watchdog', 'flask', 'pyyaml', 'memoized',
+                      'py-plex', 'watchdog', 'Flask', 'pyyaml', 'memoized',
                       'unidecode', 'munkres', 'feedparser', 'py-utorrent',
                       'lxml', 'flask-holster'],
 
