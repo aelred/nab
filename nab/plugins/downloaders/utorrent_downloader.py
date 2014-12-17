@@ -1,3 +1,4 @@
+""" Downloader that interfaces with uTorrent Web UI. """
 from utorrent import client
 import os.path
 
@@ -19,42 +20,60 @@ _status = {
 
 class uTorrent(client.UTorrentClient, Downloader):
 
+    """ Downloader plugin to interface with uTorrent Web UI. """
+
     def __init__(self, ip="localhost", port=8080):
+        """
+        Create the uTorrent plugin.
+
+        Args:
+            ip (str): IP to utorrent client, defaults to 'localhost'.
+            port (int): Port to access uTorrent client, defaults to 8080.
+        """
         client.UTorrentClient.__init__(self, 'http://%s:%d/gui/' % (ip, port),
                                        config.accounts['utorrent']['username'],
                                        config.accounts['utorrent']['password'])
 
     def download(self, torrent):
-        self.addurl(torrent.url)
+        """ Tell uTorrent Web UI to download torrent. """
+        return self._action([('action', 'add-url'), ('s', torrent.url)])
 
     def get_size(self, torrent):
-        return self.lookup(torrent).get('size', 0)
+        """ Get size of torrent from Web UI. """
+        return self._lookup(torrent).get('size', 0)
 
     def get_progress(self, torrent):
-        return float(self.lookup(torrent).get('percent progress', 0)) / 1000.0
+        """ Get progress of torrent from Web UI. """
+        return float(self._lookup(torrent).get('percent progress', 0)) / 1000.0
 
     def get_downspeed(self, torrent):
-        return self.lookup(torrent).get('download speed', 0)
+        """ Get download speed of torrent from Web UI. """
+        return self._lookup(torrent).get('download speed', 0)
 
     def get_upspeed(self, torrent):
-        return self.lookup(torrent).get('upload speed', 0)
+        """ Get upload speed of torrent from Web UI. """
+        return self._lookup(torrent).get('upload speed', 0)
 
     def get_num_seeds(self, torrent):
-        return self.lookup(torrent).get('seeds connected', 0)
+        """ Get number of seeds from Web UI. """
+        return self._lookup(torrent).get('seeds connected', 0)
 
     def get_num_peers(self, torrent):
-        return self.lookup(torrent).get('peers connected', 0)
+        """ Get number of peers from Web UI. """
+        return self._lookup(torrent).get('peers connected', 0)
 
     def is_completed(self, torrent):
-        return (self.lookup(torrent).get('percent progress', 0) == 1000)
+        """ Return if the torrent is completed from Web UI. """
+        return (self._lookup(torrent).get('percent progress', 0) == 1000)
 
     def get_files(self, torrent):
-        d = self.lookup(torrent)
+        """ Return a list of files in the torrent from Web UI. """
+        d = self._lookup(torrent)
         files = self.getfiles(d['hash'])[1]['files'][1]
         return [os.path.join(d['path'], self._format_file_data(f)['name'])
                 for f in files]
 
-    def lookup(self, torrent):
+    def _lookup(self, torrent):
         downloads = self.list()[1]['torrents']
         for d in map(self._format_torrent_data, downloads):
             if torrent.url == d['url']:
@@ -77,8 +96,5 @@ class uTorrent(client.UTorrentClient, Downloader):
                   '', 'error', '', '', '', '', 'path', '']
         return dict(zip(fields, data))
 
-    def addurl(self, url):
-        params = [('action', 'add-url'), ('s', url)]
-        return self._action(params)
 
 uTorrent.register("utorrent")
