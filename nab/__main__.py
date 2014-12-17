@@ -86,16 +86,16 @@ if config.options.plugin:
     if not config.args:
         # list all plugins
         for plugin_type in plugin_types:
-            print plugin_type.type
+            print(plugin_type.type)
             for entry in plugin_type.list_entries():
-                print "\t" + entry.name
+                print("\t" + entry.name)
     else:
         # show data for given plugins
         for arg in config.args:
             for plugin_type in plugin_types:
                 for entry in plugin_type.list_entries():
                     if entry.name == arg:
-                        print entry.help_text() + "\n"
+                        print(entry.help_text() + "\n")
 else:
     try:
         # start nabbing shows
