@@ -38,8 +38,8 @@ def _load_config():
         copyfile("config_default.yaml", _CONFIG_FILE)
 
     _log.info("Loading config and accounts files")
-    c = yaml.load(file(_CONFIG_FILE, "r"))
-    a = yaml.load(file(_ACCOUNTS_FILE, "a+"))
+    c = yaml.load(open(_CONFIG_FILE, "r"))
+    a = yaml.load(open(_ACCOUNTS_FILE, "a+"))
     s = c["settings"]
 
     # find and create directories in settings
@@ -106,7 +106,7 @@ tasks["load_config"] = reload_config
 def change_config(new_config):
     """ Replace config file with new config file. """
     _log.info('Changing config file')
-    yaml.safe_dump(new_config, file(_CONFIG_FILE, 'w'))
+    yaml.safe_dump(new_config, open(_CONFIG_FILE, 'w'))
 
 _observer = None
 
