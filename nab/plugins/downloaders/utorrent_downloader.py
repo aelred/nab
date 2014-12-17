@@ -36,7 +36,8 @@ class uTorrent(client.UTorrentClient, Downloader):
 
     def download(self, torrent):
         """ Tell uTorrent Web UI to download torrent. """
-        return self._action([('action', 'add-url'), ('s', torrent.url)])
+        url = torrent.url or torrent.magnet
+        return self._action([('action', 'add-url'), ('s', url)])
 
     def get_size(self, torrent):
         """ Get size of torrent from Web UI. """
