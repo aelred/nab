@@ -15,7 +15,7 @@ def _makedirs(path):
         os.makedirs(path)
     except OSError as e:
         if e.errno != errno.EEXIST:
-            print "Couldn't create directory %s" % path
+            print("Couldn't create directory {}".format(path))
 
 for app_path in [appdirs.user_data_dir('nab'), appdirs.user_config_dir('nab'),
                  appdirs.user_cache_dir('nab'), appdirs.user_log_dir('nab')]:
