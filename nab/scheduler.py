@@ -1,7 +1,7 @@
 """ Module for the scheduler, that can run functions at certain times. """
 import time
 import threading
-import log
+from nab import log
 import heapq
 from collections import deque
 import yaml
