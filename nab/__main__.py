@@ -8,6 +8,10 @@ from nab import plugins
 from nab import downloader
 from nab import scheduler
 from nab import server
+import nab.plugins.shows
+import nab.plugins.databases
+import nab.plugins.filesources
+import nab.plugins.downloaders
 from nab.plugins.downloaders import libtorrent_downloader
 
 import os
@@ -32,12 +36,12 @@ if config.options.clean:
 shows = show_manager.ShowTree()
 
 plugin_types = [
-    show_manager.ShowSource,
-    database.Database,
-    show_manager.ShowFilter,
-    files.FileSource,
-    files.FileFilter,
-    downloader.Downloader
+    nab.plugins.shows.ShowSource,
+    nab.plugins.databases.Database,
+    nab.plugins.shows.ShowFilter,
+    nab.plugins.filesources.FileSource,
+    nab.plugins.filesources.FileFilter,
+    nab.plugins.downloaders.Downloader
 ]
 
 

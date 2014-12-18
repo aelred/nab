@@ -42,15 +42,6 @@ def _load_config():
     a = yaml.load(file(_ACCOUNTS_FILE, "a+"))
     s = c["settings"]
 
-    # load any plugins on paths in config
-    for entry_type, paths in _config_plugin_paths.items():
-        for path in paths:
-            subtree = c
-            for node in path[:-1]:
-                subtree = c[node]
-            # replace parts of config data with loaded plugin
-            subtree[path[-1]] = entry_type.get_all(subtree[path[-1]], s, a)
-
     # find and create directories in settings
     def case_insensitive(path):
         """ look up path in a case insensitive way. """
@@ -90,6 +81,15 @@ def _load_config():
         if not os.path.exists(d):
             _log.info("Creating directory %s" % d)
             os.makedirs(d)
+
+    # load any plugins on paths in config
+    for entry_type, paths in _config_plugin_paths.items():
+        for path in paths:
+            subtree = c
+            for node in path[:-1]:
+                subtree = c[node]
+            # replace parts of config data with loaded plugin
+            subtree[path[-1]] = entry_type.get_all(subtree[path[-1]], s, a)
 
     return c, a
 config, accounts = _load_config()
