@@ -22,8 +22,6 @@ class Register:
 
         Given a yaml-style list of plugins from a config file, load the plugins
         in that list with the given parameters.
-
-        This method is memoized so plugins are not constantly instantiated.
         """
         plugins.load()
         results = []
