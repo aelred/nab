@@ -124,15 +124,15 @@ class TestFile(unittest.TestCase):
     def test_file(self):
         for filename, data in file_tests:
             f = File(filename)
-            print filename
-            print f.__dict__
+            print(filename)
+            print(f.__dict__)
 
-            for name, value in data.iteritems():
+            for name, value in data.items():
                 if name == 'tags':
                     # if tags, make sure there are no MISSING tags
                     # extra tags are acceptable and unavoidable
                     for tag in value:
-                        print "Asserting %s in tags" % tag
+                        print("Asserting %s in tags" % tag)
                         self.assertIn(tag, f.__dict__[name])
                 elif name == 'entry':
                     # lookup the details for this show
@@ -146,11 +146,11 @@ class TestFile(unittest.TestCase):
                         entry = entry[index]
 
                     # test if this matches
-                    print "Asserting matches %s" % entry
+                    print("Asserting matches %s" % entry)
                     self.assertTrue(entry.match(f))
 
                 else:
-                    print "Asserting %s = %s" % (name, value)
+                    print("Asserting %s = %s" % (name, value))
                     self.assertEquals(f.__dict__[name], value)
 
 if __name__ == '__main__':
