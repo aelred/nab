@@ -1,7 +1,7 @@
 """ Starts nab. """
 from nab import show_manager
 from nab import database
-from nab import files
+from nab import file_manager
 from nab import renamer
 from nab import config
 from nab import plugins
@@ -55,7 +55,7 @@ def refresh():
         shows[sh.title] = sh
 
     show_manager.filter_shows(shows)
-    files.find_files(shows)
+    file_manager.find_files(shows)
 
     # write data to file for backup purposes
     shows.save()
