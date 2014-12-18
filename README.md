@@ -9,7 +9,7 @@ Getting started
 
 Nab requires the following things installed:
 
-- [Python](https://www.python.org/) 2.7
+- [Python](https://www.python.org/) 3.2
 - [libtorrent](http://www.libtorrent.org/)
 - [libxml](http://xmlsoft.org/)
 - [setuptools](https://pypi.python.org/pypi/setuptools)
@@ -18,21 +18,21 @@ Nab requires the following things installed:
 
 On Linux, these can be installed by:
 ```
-$ apt-get install python python-libtorrent libxml2-dev libxslt1-dev python-lxml
-$ curl https://bootstrap.pypa.io/ez_setup.py -O - | python
+$ apt-get install python3 python-libtorrent libxml2-dev libxslt1-dev python3-lxml
+$ curl https://bootstrap.pypa.io/ez_setup.py -O - | python3
 $ curl http://npmjs.org/install.sh | sh 
 $ npm install -g bower
 ```
 
 To install Nab:
 ```
-$ python setup.py install
+$ python3 setup.py install
 $ bower install
 ```
 
 To start Nab:
 
-`python -m nab`.
+`python3 -m nab`.
 
 ### The watchlist
 
