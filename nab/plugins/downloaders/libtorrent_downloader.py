@@ -6,8 +6,8 @@ import os
 import appdirs
 import yaml
 import tempfile
-import urllib2
-from StringIO import StringIO
+import urllib.request, urllib.error, urllib.parse
+from io import StringIO
 import gzip
 import re
 
@@ -145,7 +145,7 @@ class Libtorrent(Downloader):
             'torrents': [{'torrent': f,
                           'up': self._get_upload_total(f),
                           'down': self._get_download_total(f)}
-                         for f, h in self.files.iteritems()]
+                         for f, h in self.files.items()]
         }
         with file(libtorrent_file, 'w') as f:
             yaml.dump(state, f)
@@ -183,11 +183,11 @@ class Libtorrent(Downloader):
         if torrent.url:
             # download torrent file
             handle, path = tempfile.mkstemp('.torrent')
-            request = urllib2.Request(torrent.url)
+            request = urllib.request.Request(torrent.url)
             request.add_header('Accept-encoding', 'gzip')
             try:
-                response = urllib2.urlopen(request)
-            except urllib2.URLError:
+                response = urllib.request.urlopen(request)
+            except urllib.error.URLError:
                 raise PluginError(self, "Error downloading torrent file")
             if response.info().get('Content-encoding') == 'gzip':
                 buf = StringIO(response.read())
