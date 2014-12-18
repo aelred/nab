@@ -29,9 +29,7 @@ charswap_p = re.compile('|'.join(map(re.escape, charswap)),
 
 def format_filename(fname):
     """ Format a filename, eliminating capitals and some punctuation. """
-    formatted = fname
-    if isinstance(formatted, unicode):
-        formatted = unidecode.unidecode(fname)  # remove accented characters
+    formatted = unidecode.unidecode(fname)  # remove accented characters
     # perform any replacements from conversion dictionary
     formatted = wordswap_p.sub(
         lambda x: " " + wordswap[x.group(2).lower()] + " ",
@@ -55,12 +53,8 @@ junk = ":-[]@~., \t"
 
 def comp(a, b, ignore=[]):
     """ Return the number of differences between two strings. """
-    if isinstance(a, unicode):
-        a = unidecode.unidecode(a)
-    if isinstance(b, unicode):
-        b = unidecode.unidecode(b)
-    a = a.lower()
-    b = b.lower()
+    a = unidecode(a).lower()
+    b = unidecode(b).lower()
     for ig in ignore:
         a = a.replace(ig.lower(), "")
         b = b.replace(ig.lower(), "")
