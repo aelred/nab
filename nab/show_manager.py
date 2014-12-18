@@ -139,7 +139,7 @@ def filter_shows(shows):
                     ep.watched = True
                     break
     except exception.PluginError:
-        # if shouw source fails, abandon all hope! (try again later)
+        # if show source fails, abandon all hope! (try again later)
         for ep in shows.episodes:
             # mark all episodes as unwanted
             # don't accidentally download unwanted things
