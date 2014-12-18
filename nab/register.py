@@ -27,7 +27,7 @@ class Register:
         results = []
 
         # handle case where given entry is just a string
-        if isinstance(cfg, basestring):
+        if isinstance(cfg, str):
             # transform into dictionary
             cfg = {cfg: {}}
 
@@ -40,13 +40,13 @@ class Register:
                 results += self.load(entry, settings, accounts)
         else:
             # iterate on dictionary
-            for entry, params in cfg.iteritems():
+            for entry, params in cfg.items():
 
                 # check for list or dictionary parameters
                 param_dict = {}
                 param_list = []
                 try:
-                    params.iterkeys()
+                    params.keys()
                 except AttributeError:
                     param_list = params
                 else:
@@ -127,7 +127,7 @@ class Entry(object):
             # get parameters by inspection
             args = argspec.args
             if argspec.defaults:
-                defaults = map(lambda d: [d], argspec.defaults)
+                defaults = [[d] for d in argspec.defaults]
             else:
                 defaults = []
             defaults = [None] * (len(args) - len(defaults)) + defaults
