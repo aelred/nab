@@ -17,7 +17,7 @@ class FileSource(register.Entry):
         Most plugins should probably extend Searcher, which abstracts away
         some of this behaviour to simple searching for strings.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 class FileFilter(register.Entry):
@@ -37,7 +37,7 @@ class FileFilter(register.Entry):
         A torrent is chosen based on the best average score across all
         given FileFilters.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 class Searcher(FileSource):
@@ -69,7 +69,7 @@ class Searcher(FileSource):
 
         Return a list of torrents.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def _search_all(self, s_terms, entry):
 

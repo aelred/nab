@@ -72,7 +72,7 @@ class ShowSource(register.Entry):
 
         This function is cached, so don't re-cache results in implementations.
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def get_cached_shows(self):
         """ Return a list of show titles using the cache. """
@@ -100,7 +100,7 @@ class ShowSource(register.Entry):
 
         Implementation optional, default returns false.
         """
-        return NotImplemented()
+        return NotImplementedError()
 
     def filter_show(self, show):
         """
