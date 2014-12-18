@@ -14,12 +14,12 @@ class AltTitles(Database):
         Args:
             shows: A structure of titles.
         """
-        self.shows = dict((s.lower(), v) for s, v in shows.iteritems())
+        self.shows = {s.lower(): v for s, v in shows.items()}
 
     def get_show_titles(self, show):
         """ Return alternative titles to the given show. """
         titles = []
-        for t in map(lambda t: t.lower(), show.titles):
+        for t in map(str.lower, show.titles):
             titles += self.shows.get(t, {}).get('titles', [])
 
             for se in show:
@@ -33,9 +33,9 @@ class AltTitles(Database):
         """ Return seasons with alternative titles for the given show. """
         seasons = []
 
-        for t in map(lambda t: t.lower(), show.titles):
+        for t in map(str.lower, show.titles):
             if t in self.shows:
-                for (num, titles) in self.shows[t].iteritems():
+                for (num, titles) in self.shows[t].items():
                     seasons.append(Season(show, num, titles=titles))
 
         return seasons
