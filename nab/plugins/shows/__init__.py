@@ -4,6 +4,7 @@ import time
 
 from nab import register
 from nab import scheduler
+from nab import files
 
 
 class ShowFilter(register.Entry):
@@ -108,7 +109,7 @@ class ShowSource(register.Entry):
 
         Implementation optional, default filters shows not in get_shows().
         """
-        return show in self.get_cached_shows()
+        return any(show.match(files.File(t)) for t in self.get_cached_shows())
 
     def filter_season(self, season):
         """
@@ -116,7 +117,7 @@ class ShowSource(register.Entry):
 
         Implementation optional, default filters seasons not in get_shows().
         """
-        return season.show in self.get_cached_shows()
+        return self.filter_show(season.show)
 
     def filter_episode(self, episode):
         """
@@ -124,7 +125,7 @@ class ShowSource(register.Entry):
 
         Implementation optional, default filters episodes not in get_shows().
         """
-        return episode.show in self.get_cached_shows()
+        return self.filter_show(episode.show)
 
     def trigger_refresh(self):
         """
