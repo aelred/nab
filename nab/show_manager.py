@@ -36,7 +36,7 @@ class ShowTree(show_elem.ShowParentElem):
         if isinstance(id_, str):
             id_ = (id_,)
 
-        for child in self.itervalues():
+        for child in self.values():
             f = child.find(id_)
             if f is not None:
                 return f
@@ -88,16 +88,16 @@ def _filter_entry(entry, filter_funcs, permissive):
 
 def _apply_filters(shows, filters, permissive):
     # permissive = False means must be accepted by ALL filters
-    for sh in shows.itervalues():
+    for sh in shows.values():
         if not _filter_entry(sh, [f.filter_show for f in filters], permissive):
             continue
 
-        for se in sh.itervalues():
+        for se in sh.values():
             if not _filter_entry(se, [f.filter_season for f in filters],
                                  permissive):
                 continue
 
-            for ep in se.itervalues():
+            for ep in se.values():
                 _filter_entry(ep, [f.filter_episode for f in filters],
                               permissive)
 
