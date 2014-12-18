@@ -4,7 +4,8 @@ import requests
 import urllib
 from lxml import html
 
-from nab.files import Searcher, Torrent
+from nab.files import Torrent
+from nab.plugins.filesources import Searcher
 from nab import exception
 
 session = requests.session()

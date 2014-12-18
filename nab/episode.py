@@ -24,6 +24,11 @@ class Episode(show_elem.ShowElem):
         self.wanted = True
         self.aired = aired
 
+    @property
+    def type(self):
+        """ Type of show element. """
+        return "episode"
+
     def __repr__(self):
         """ Return a readable, probably-unique representation. """
         return "<Episode (%s)>" % str(self)

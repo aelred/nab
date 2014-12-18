@@ -29,6 +29,11 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         self.update_data()
 
     @property
+    def type(self):
+        """ Type of show element. """
+        return "show"
+
+    @property
     def show(self):
         """ Self. """
         return self

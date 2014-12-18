@@ -6,7 +6,6 @@ These classes are mostly used for plugins in nab.
 from nab import log
 from nab import plugins
 import inspect
-from memoized import memoized
 
 
 class Register:
@@ -17,7 +16,6 @@ class Register:
         """ Initialize lookup table as empty. """
         self.table = {}
 
-    @memoized(hashable=False)
     def load(self, cfg, accounts):
         """
         Load plugins from part of a config file.

@@ -10,9 +10,21 @@ import appdirs
 
 from nab.scheduler import scheduler, tasks
 from nab import log
+from nab.plugins import shows
+from nab.plugins import databases
+from nab.plugins import filesources
+from nab.plugins import downloaders
 
 _log = log.log.getChild("config")
 
+_config_plugin_paths = {
+    shows.ShowSource: [['shows', 'library'], ['shows', 'following']],
+    shows.ShowFilter: [['shows', 'filters']],
+    databases.Database: [['databases']],
+    filesources.FileSource: [['files', 'sources']],
+    filesources.FileFilter: [['files', 'filters']],
+    downloaders.Downloader: [['downloader']]
+}
 
 _CONFIG_DIR = appdirs.user_config_dir('nab')
 _CONFIG_FILE = os.path.join(_CONFIG_DIR, 'config.yaml')
@@ -28,6 +40,15 @@ def _load_config():
     _log.info("Loading config and accounts files")
     c = yaml.load(file(_CONFIG_FILE, "r"))
     a = yaml.load(file(_ACCOUNTS_FILE, "a+"))
+
+    # load any plugins on paths in config
+    for entry_type, paths in _config_plugin_paths.items():
+        for path in paths:
+            subtree = c
+            for node in path[:-1]:
+                subtree = c[node]
+            # replace parts of config data with loaded plugin
+            subtree[path[-1]] = entry_type.get_all(subtree[path[-1]])
 
     # find and create directories in settings
     s = c["settings"]

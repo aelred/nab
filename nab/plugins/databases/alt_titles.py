@@ -1,5 +1,5 @@
 """ Database plugin for providing alternative titles for certain shows. """
-from nab.database import Database
+from nab.plugins.databases import Database
 from nab.season import Season
 
 

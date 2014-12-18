@@ -5,7 +5,8 @@ import urllib
 import urlparse
 import re
 
-from nab.files import Searcher, Torrent
+from nab.files import Torrent
+from nab.plugins.filesources import Searcher
 
 
 @filecache(60 * 60)

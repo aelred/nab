@@ -2,7 +2,7 @@
 from utorrent import client
 import os.path
 
-from nab.downloader import Downloader
+from nab.plugins.downloaders import Downloader
 
 
 _status = {

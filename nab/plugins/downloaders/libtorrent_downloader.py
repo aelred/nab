@@ -11,7 +11,7 @@ from StringIO import StringIO
 import gzip
 import re
 
-from nab.downloader import Downloader
+from nab.plugins.downloaders import Downloader
 from nab.config import config
 from nab.exception import PluginError
 

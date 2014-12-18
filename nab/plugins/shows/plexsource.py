@@ -1,7 +1,7 @@
 from plex.server import Server
 from itertools import chain
 
-from nab.show_manager import ShowSource
+from nab.plugins.shows import ShowSource
 from nab.show import Show
 
 

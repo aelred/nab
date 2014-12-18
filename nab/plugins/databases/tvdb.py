@@ -3,7 +3,7 @@ from filecache import filecache
 import tvdb_api
 import time
 
-from nab.database import Database
+from nab.plugins.databases import Database
 from nab.season import Season
 from nab.episode import Episode
 

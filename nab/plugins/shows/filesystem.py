@@ -1,7 +1,7 @@
 import os
 import re
 
-from nab.show_manager import ShowSource
+from nab.plugins.shows import ShowSource
 from nab.files import File
 from nab.show import Show
 from nab import config

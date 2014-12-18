@@ -1,4 +1,4 @@
-from nab.files import FileFilter
+from nab.plugins.filesources import FileFilter
 
 
 class KeywordFilter(FileFilter):

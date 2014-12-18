@@ -12,7 +12,7 @@ from munkres import Munkres
 import appdirs
 import os
 
-from nab.database import Database
+from nab.plugins.databases import Database
 from nab.season import Season
 from nab.match import format_title, comp
 

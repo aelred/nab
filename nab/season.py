@@ -24,6 +24,11 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
         self.num = num
 
     @property
+    def type(self):
+        """ Type of show element. """
+        return "season"
+
+    @property
     def season(self):
         """ Self. """
         return self
