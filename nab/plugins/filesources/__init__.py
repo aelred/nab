@@ -2,6 +2,8 @@
 
 from nab import register
 
+import re
+
 
 class FileSource(register.Entry):
 
