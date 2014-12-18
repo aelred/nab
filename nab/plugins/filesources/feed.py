@@ -1,8 +1,8 @@
 from filecache import filecache
 import feedparser
 from unidecode import unidecode
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import re
 
 from nab.files import Torrent
@@ -75,9 +75,7 @@ class Feed(Searcher):
     def search(self, term):
         files = []
 
-        if isinstance(term, unicode):
-            term = unidecode(term)
-        term = urllib.quote(term)
+        term = urllib.parse.quote(unidecode(term))
 
         files = []
         # only search first few pages for files
