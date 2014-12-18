@@ -74,7 +74,7 @@ def _load_config():
         return case_insensitive(path)
 
     s["downloads"] = format_path(s["downloads"])
-    s["videos"] = map(format_path, s["videos"])
+    s["videos"] = [format_path(v) for v in s["videos"]]
 
     dirs = [s["downloads"]] + s["videos"]
     for d in dirs:
