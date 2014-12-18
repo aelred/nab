@@ -8,6 +8,7 @@ from nab import plugins
 from nab import downloader
 from nab import scheduler
 from nab import server
+from nab import log
 import nab.plugins.shows
 import nab.plugins.databases
 import nab.plugins.filesources
@@ -15,6 +16,7 @@ import nab.plugins.downloaders
 from nab.plugins.downloaders import libtorrent_downloader
 
 import os
+import logging
 
 
 if config.options.clean:
@@ -72,6 +74,10 @@ def update_shows():
 scheduler.tasks["update_shows"] = update_shows
 
 config.init()
+
+# Begin logging
+_log_level = logging.DEBUG if config.options.debug else logging.INFO
+log.set_level(_log_level)
 
 if config.options.plugin:
     # load plugins
