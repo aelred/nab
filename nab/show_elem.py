@@ -122,18 +122,18 @@ class ShowParentElem(dict):
 
     def format(self):
         """ Format all children. """
-        for child in self.itervalues():
+        for child in self.values():
             child.format()
 
     def to_yaml(self):
         """ Return yaml representation of this ShowParentElem. """
-        return dict([(k, v.to_yaml()) for k, v in self.iteritems()])
+        return dict([(k, v.to_yaml()) for k, v in self.items()])
 
     @staticmethod
     def from_yaml(yml, child_type, parent):
         """ Create a new ShowParentElem from the given yaml representation. """
         return dict([(k, child_type.from_yaml(v, k, parent))
-                     for k, v in yml.iteritems()])
+                     for k, v in yml.items()])
 
     def find(self, id_):
         """
@@ -146,7 +146,7 @@ class ShowParentElem(dict):
         if id_ == self.id:
             return self
 
-        for child in self.itervalues():
+        for child in self.values():
             f = child.find(id_)
             if f is not None:
                 return f
