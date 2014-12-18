@@ -1,7 +1,7 @@
 import string
 from filecache import filecache
 import requests
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from lxml import html
 
 from nab.files import Torrent
@@ -38,7 +38,7 @@ class Bakabt(Searcher):
             raise exception.PluginError(self, "Error connecting to bakabt")
 
     def search(self, term):
-        r = self._cget(Bakabt._surl.substitute({"s": urllib.quote(term)}),
+        r = self._cget(Bakabt._surl.substitute({"s": urllib.parse.quote(term)}),
                        auth=(self._account['username'],
                              self._account['password']))
         tree = html.fromstring(r.text)
