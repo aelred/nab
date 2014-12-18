@@ -2,7 +2,7 @@
 from collections import namedtuple, defaultdict
 import requests
 import xml.etree.ElementTree as ET
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import gzip
 import time
 from filecache import filecache
@@ -32,7 +32,7 @@ ns = "{http://www.w3.org/XML/1998/namespace}"
 @filecache(7 * 24 * 60 * 60)
 def _get_db():
     # fetch names database only once every two days max
-    urllib.urlretrieve("http://anidb.net/api/anime-titles.xml.gz",
+    urllib.request.urlretrieve("http://anidb.net/api/anime-titles.xml.gz",
                        titles_file)
 
 # populate database of titles
@@ -233,7 +233,7 @@ def _find_specials(entry):
 
     # next search special series for episodes (e.g. spinoffs)
     sp_series = chain(*[_related(e) for e in season_entries])
-    sp_series = filter(lambda s: s not in season_entries, sp_series)
+    sp_series = [s for s in sp_series if s not in season_entries]
 
     for series in sp_series:
         # pick regular and special episodes from special seasons
@@ -365,7 +365,7 @@ class Anidb(Database):
             return
 
         # match wanted specials to find special titles
-        assign = _pair_episodes_to_titles(sh, season_sp.itervalues(), specials)
+        assign = _pair_episodes_to_titles(sh, season_sp.values(), specials)
         for ep in assign:
             titles, airdate = assign[ep]
             # root out any obvious non-matches
