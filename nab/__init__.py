@@ -26,8 +26,9 @@ for app_path in [appdirs.user_data_dir('nab'), appdirs.user_config_dir('nab'),
 _log = nab.log.log.getChild("exception")
 
 
-def _handle_exception(*exception):
+def _handle_exception(ex_cls, ex, tb):
     """ Pass exception to nab log. """
-    _log.exception("".join(traceback.format_exception(*exception)))
+    _log.critical(''.join(traceback.format_tb(tb)))
+    _log.critical('{}: {}'.format(ex_cls, ex))
 
 sys.excepthook = _handle_exception
