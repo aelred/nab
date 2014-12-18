@@ -54,4 +54,4 @@ class Bakabt(Searcher):
 
         return files
 
-Bakabt.register("bakabt", has_account=True)
+Bakabt.register("bakabt", req_account=True)

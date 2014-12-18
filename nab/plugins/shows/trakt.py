@@ -131,7 +131,7 @@ class TraktSource(ShowSource, Trakt):
         except (KeyError, StopIteration):
             return False
 
-TraktSource.register("trakt", has_account=True)
+TraktSource.register("trakt", req_account=True)
 
 
 class TraktDB(Database, Trakt):
@@ -161,4 +161,4 @@ class TraktDB(Database, Trakt):
 
         return episodes
 
-TraktDB.register("trakt", has_account=True)
+TraktDB.register("trakt", req_account=True)

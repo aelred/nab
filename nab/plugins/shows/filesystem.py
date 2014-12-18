@@ -3,7 +3,6 @@ import re
 
 from nab.plugins.shows import ShowSource
 from nab.files import File
-from nab import config
 
 
 class FileSystem(ShowSource):
@@ -11,14 +10,14 @@ class FileSystem(ShowSource):
     Show source that finds shows and episode files in the filesystem.
     """
 
-    def __init__(self):
+    def __init__(self, settings):
         """
         Args:
             paths: A list of path strings specifying where to search for files.
         """
         ShowSource.__init__(self)
 
-        self.paths = config.config["settings"]["videos"]
+        self.paths = settings["videos"]
 
         # find show directories
         dirs = []
@@ -94,4 +93,4 @@ class FileSystem(ShowSource):
                 return True
 
         return False
-FileSystem.register("filesystem")
+FileSystem.register("filesystem", req_settings=True)

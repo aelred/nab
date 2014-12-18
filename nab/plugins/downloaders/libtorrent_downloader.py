@@ -12,7 +12,6 @@ import gzip
 import re
 
 from nab.plugins.downloaders import Downloader
-from nab.config import config
 from nab.exception import PluginError
 
 
@@ -46,7 +45,7 @@ class Libtorrent(Downloader):
                 cls, *args, **kwargs)
         return cls._instance
 
-    def __init__(self, ratio=2.0, ports=[6881, 6891]):
+    def __init__(self, settings, ratio=2.0, ports=[6881, 6891]):
         """
         Create a libtorrent downloader.
 
@@ -68,7 +67,7 @@ class Libtorrent(Downloader):
         self.upload_total = {}
         self.download_total = {}
 
-        self.folder = config["settings"]["downloads"]
+        self.folder = settings["downloads"]
         # begin thread to watch downloads
         thread = threading.Thread(target=self._watch_thread)
         thread.daemon = True
@@ -264,4 +263,4 @@ class Libtorrent(Downloader):
 
                 p = self.session.pop_alert()
 
-Libtorrent.register('libtorrent')
+Libtorrent.register('libtorrent', req_settings=True)

@@ -97,4 +97,4 @@ class uTorrent(client.UTorrentClient, Downloader):
         return dict(zip(fields, data))
 
 
-uTorrent.register("utorrent", has_account=True)
+uTorrent.register("utorrent", req_account=True)

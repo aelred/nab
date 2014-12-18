@@ -16,7 +16,7 @@ class Register:
         """ Initialize lookup table as empty. """
         self.table = {}
 
-    def load(self, cfg, accounts):
+    def load(self, cfg, settings=None, accounts=None):
         """
         Load plugins from part of a config file.
 
@@ -39,7 +39,7 @@ class Register:
         except AttributeError:
             # iterate on list
             for entry in cfg:
-                results += self.load(entry, accounts)
+                results += self.load(entry, settings, accounts)
         else:
             # iterate on dictionary
             for entry, params in cfg.iteritems():
@@ -66,9 +66,19 @@ class Register:
                     log.log.error("No plugin named %s" % entry)
                     continue
 
+                # check if plugin requires config settings passed in
+                if plugin_class.req_settings:
+                    if settings is None:
+                        raise ValueError('No global settings given.')
+                    param_dict['settings'] = settings
+
                 # check if plugin requires account details
-                if plugin_class.has_account:
-                    param_dict['account'] = accounts[plugin_class.name]
+                if plugin_class.req_account:
+                    try:
+                        param_dict['account'] = accounts[plugin_class.name]
+                    except (KeyError, TypeError):
+                        raise ValueError('No account given for plugin %s'
+                                         % plugin_class.name)
 
                 plugin = plugin_class(*param_list, **param_dict)
                 results.append(plugin)
@@ -86,20 +96,19 @@ class Entry(object):
         return self._type
 
     @classmethod
-    def register(cls, name, has_account=False):
+    def register(cls, name, req_settings=False, req_account=False):
         """ Register a new subclass under the given name. """
         cls._register.table[name] = cls
         cls.name = name
-        cls.has_account = has_account
+        cls.req_settings = req_settings
+        cls.req_account = req_account
         cls.log = log.log.getChild(name)
         cls.log.debug("Found plugin")
 
     @classmethod
-    def get_all(cls, cfg, accounts=None):
+    def get_all(cls, cfg, settings=None, accounts=None):
         """ Return loaded plugins from a given config file part. """
-        if accounts is None:
-            accounts = {}
-        return cls._register.load(cfg, accounts)
+        return cls._register.load(cfg, settings, accounts)
 
     @classmethod
     def list_entries(cls):
