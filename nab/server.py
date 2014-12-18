@@ -3,9 +3,9 @@ from flask import Flask, request, abort, render_template, make_response
 from flask.ext.holster.main import init_holster
 import yaml
 import copy
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import os
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from nab import config
 from nab import downloader
@@ -166,7 +166,7 @@ def _format_show(show):
         local_path = os.path.join('static', 'banners', show['id'] + ext)
         abs_path = os.path.join(os.path.dirname(__file__), local_path)
         if not os.path.isfile(abs_path):
-            urllib.urlretrieve(url, abs_path)
+            urllib.request.urlretrieve(url, abs_path)
         show['banner'] = local_path
     return show
 
@@ -179,7 +179,7 @@ def shows():
         yml = show.to_yaml()
         del yml['seasons']
         return _format_show(yml)
-    return map(format, _shows.itervalues())
+    return map(format, iter(_shows.values()))
 
 
 @app.holster('/shows/<path:path>', methods=['GET'])
