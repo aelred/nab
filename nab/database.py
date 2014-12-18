@@ -85,7 +85,7 @@ class Database(register.Entry):
 
 def _databases():
     """ Return all databases in config file. """
-    return Database.get_all(config.config["databases"])
+    return Database.get_all(config.config["databases"], config.accounts)
 
 
 def get_data(show):

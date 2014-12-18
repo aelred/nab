@@ -3,7 +3,6 @@ from utorrent import client
 import os.path
 
 from nab.downloader import Downloader
-from nab import config
 
 
 _status = {
@@ -22,7 +21,7 @@ class uTorrent(client.UTorrentClient, Downloader):
 
     """ Downloader plugin to interface with uTorrent Web UI. """
 
-    def __init__(self, ip="localhost", port=8080):
+    def __init__(self, account, ip="localhost", port=8080):
         """
         Create the uTorrent plugin.
 
@@ -31,8 +30,8 @@ class uTorrent(client.UTorrentClient, Downloader):
             port (int): Port to access uTorrent client, defaults to 8080.
         """
         client.UTorrentClient.__init__(self, 'http://%s:%d/gui/' % (ip, port),
-                                       config.accounts['utorrent']['username'],
-                                       config.accounts['utorrent']['password'])
+                                       account['utorrent']['username'],
+                                       account['utorrent']['password'])
 
     def download(self, torrent):
         """ Tell uTorrent Web UI to download torrent. """
@@ -98,4 +97,4 @@ class uTorrent(client.UTorrentClient, Downloader):
         return dict(zip(fields, data))
 
 
-uTorrent.register("utorrent")
+uTorrent.register("utorrent", has_account=True)

@@ -197,7 +197,8 @@ def get_shows():
 
     # get wanted shows from 'following' list
     shows = []
-    for source in ShowSource.get_all(config.config["shows"]["following"]):
+    for source in ShowSource.get_all(config.config["shows"]["following"],
+                                     config.accounts):
         source.__class__.log.info("Searching show source %s" % source)
         try:
             shows += source.get_cached_shows()
@@ -255,9 +256,12 @@ def filter_shows(shows):
     """
     _log.info("Filtering shows")
 
-    following = ShowSource.get_all(config.config["shows"]["following"])
-    library = ShowSource.get_all(config.config["shows"]["library"])
-    filters = ShowFilter.get_all(config.config["shows"]["filters"])
+    following = ShowSource.get_all(
+        config.config["shows"]["following"], config.accounts)
+    library = ShowSource.get_all(
+        config.config["shows"]["library"], config.accounts)
+    filters = ShowFilter.get_all(
+        config.config["shows"]["filters"], config.accounts)
 
     # get owned/watched info for all episodes
     sources = following + library

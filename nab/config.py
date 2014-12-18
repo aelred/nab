@@ -14,20 +14,20 @@ from nab import log
 _log = log.log.getChild("config")
 
 
-config_dir = appdirs.user_config_dir('nab')
-config_file = os.path.join(config_dir, 'config.yaml')
-accounts_file = os.path.join(config_dir, 'accounts.yaml')
+_CONFIG_DIR = appdirs.user_config_dir('nab')
+_CONFIG_FILE = os.path.join(_CONFIG_DIR, 'config.yaml')
+_ACCOUNTS_FILE = os.path.join(_CONFIG_DIR, 'accounts.yaml')
 
 
 def _load_config():
     """ Return contents of config files, creating them if they don't exist. """
-    if not os.path.exists(config_file):
+    if not os.path.exists(_CONFIG_FILE):
         _log.info("Creating default config file")
-        copyfile("config_default.yaml", config_file)
+        copyfile("config_default.yaml", _CONFIG_FILE)
 
     _log.info("Loading config and accounts files")
-    c = yaml.load(file(config_file, "r"))
-    a = yaml.load(file(accounts_file, "a+"))
+    c = yaml.load(file(_CONFIG_FILE, "r"))
+    a = yaml.load(file(_ACCOUNTS_FILE, "a+"))
 
     # find and create directories in settings
     s = c["settings"]
@@ -86,7 +86,7 @@ tasks["load_config"] = reload_config
 def change_config(new_config):
     """ Replace config file with new config file. """
     _log.info('Changing config file')
-    yaml.safe_dump(new_config, file(config_file, 'w'))
+    yaml.safe_dump(new_config, file(_CONFIG_FILE, 'w'))
 
 _observer = None
 
@@ -96,7 +96,7 @@ def init():
     handler = ConfigWatcher()
     global _observer
     _observer = Observer()
-    _observer.schedule(handler, config_dir)
+    _observer.schedule(handler, _CONFIG_DIR)
     _observer.start()
 
 
@@ -119,10 +119,10 @@ class ConfigWatcher(FileSystemEventHandler):
         except AttributeError:
             dest = None
 
-        if event.src_path == config_file or dest == config_file:
+        if event.src_path == _CONFIG_FILE or dest == _CONFIG_FILE:
             _log.info('Change detected in config.yaml, scheduling reload')
             scheduler.add_asap('load_config')
-        if event.src_path == accounts_file or dest == accounts_file:
+        if event.src_path == _ACCOUNTS_FILE or dest == _ACCOUNTS_FILE:
             _log.info('Change detected in accounts.yaml, scheduling reload')
             scheduler.add_asap('load_config')
 

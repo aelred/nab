@@ -460,7 +460,8 @@ def _schedule_find(entry):
 
 
 def _rank_file(f):
-    filters = FileFilter.get_all(config.config["files"]["filters"])
+    filters = FileFilter.get_all(
+        config.config["files"]["filters"], config.accounts)
     _log.debug(f.filename)
     rank = sum(filt.filter(f) for filt in filters)
     _log.debug(rank)
@@ -485,7 +486,8 @@ def _find_all_files(entry):
     _log.info("Searching for %s" % entry)
     files = []
     try:
-        for source in FileSource.get_all(config.config["files"]["sources"]):
+        for source in FileSource.get_all(
+            config.config["files"]["sources"], config.accounts):
             source.__class__.log.debug("Searching in %s" % source)
             files += source.find(entry)
     except exception.PluginError:

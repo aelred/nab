@@ -18,7 +18,7 @@ class Register:
         self.table = {}
 
     @memoized(hashable=False)
-    def load(self, cfg):
+    def load(self, cfg, accounts):
         """
         Load plugins from part of a config file.
 
@@ -41,7 +41,7 @@ class Register:
         except AttributeError:
             # iterate on list
             for entry in cfg:
-                results += self.load(entry)
+                results += self.load(entry, accounts)
         else:
             # iterate on dictionary
             for entry, params in cfg.iteritems():
@@ -68,6 +68,10 @@ class Register:
                     log.log.error("No plugin named %s" % entry)
                     continue
 
+                # check if plugin requires account details
+                if plugin_class.has_account:
+                    param_dict['account'] = accounts[plugin_class.name]
+
                 plugin = plugin_class(*param_list, **param_dict)
                 results.append(plugin)
 
@@ -84,17 +88,20 @@ class Entry(object):
         return self._type
 
     @classmethod
-    def register(cls, name):
+    def register(cls, name, has_account=False):
         """ Register a new subclass under the given name. """
         cls._register.table[name] = cls
         cls.name = name
+        cls.has_account = has_account
         cls.log = log.log.getChild(name)
         cls.log.debug("Found plugin")
 
     @classmethod
-    def get_all(cls, cfg):
+    def get_all(cls, cfg, accounts=None):
         """ Return loaded plugins from a given config file part. """
-        return cls._register.load(cfg)
+        if accounts is None:
+            accounts = {}
+        return cls._register.load(cfg, accounts)
 
     @classmethod
     def list_entries(cls):

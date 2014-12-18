@@ -7,7 +7,6 @@ from nab.database import Database
 from nab.show import Show
 from nab.season import Season
 from nab.episode import Episode
-from nab import config
 from nab.exception import PluginError
 
 
@@ -22,11 +21,14 @@ class Trakt:
 
     _url = "http://api.trakt.tv"
 
+    def __init__(self, account):
+        self._account = account
+
     def _get(self, url, *args, **kwargs):
         try:
             return requests.get(Trakt._url + url,
-                                auth=(config.accounts['trakt']['username'],
-                                      config.accounts['trakt']['password']),
+                                auth=(self._account['username'],
+                                      self._account['password']),
                                 *args, **kwargs).json()
         except requests.exceptions.ConnectionError:
             raise PluginError(self, 'Error connecting to trakt')
@@ -34,8 +36,8 @@ class Trakt:
     def _cget(self, url, *args, **kwargs):
         try:
             return _cget(Trakt._url + url,
-                         auth=(config.accounts['trakt']['username'],
-                               config.accounts['trakt']['password']),
+                         auth=(self._account['username'],
+                               self._account['password']),
                          *args, **kwargs)
         except requests.exceptions.ConnectionError:
             raise PluginError(self, 'Error connecting to trakt')
@@ -52,7 +54,7 @@ class Trakt:
             for title in reversed(sorted(show.titles, key=len)):
                 try:
                     results = self._cget("/search/shows.json/%s" %
-                                         config.accounts['trakt']['api'],
+                                         self._account['api'],
                                          params={"query": title, "limit": 1})
                 except ValueError:
                     raise PluginError(
@@ -67,7 +69,7 @@ class Trakt:
         # get show from trakt
         try:
             j = self._cget("/show/summary.json/%s/%s/true"
-                           % (config.accounts['trakt']['api'], tvdb_id))
+                           % (self._account['api'], tvdb_id))
         except ValueError:
             raise PluginError(self, 'Error decoding trakt show data for %s'
                                     % show)
@@ -82,13 +84,13 @@ class TraktSource(ShowSource, Trakt):
         try:
             TraktSource.log.debug("Getting library")
             r1 = self._cget("/user/library/shows/all.json/%s/%s/min" %
-                            (config.accounts['trakt']['api'],
-                             config.accounts['trakt']['username']))
+                            (self._account['api'],
+                             self._account['username']))
             # watchlist requests are never cached for fast response time
             TraktSource.log.debug("Getting watchlist")
             r2 = self._get("/user/watchlist/shows.json/%s/%s" %
-                           (config.accounts['trakt']['api'],
-                            config.accounts['trakt']['username']))
+                           (self._account['api'],
+                            self._account['username']))
             sort = lambda s: s["title"].lower()
         except ValueError:
             raise PluginError(
@@ -136,7 +138,7 @@ class TraktSource(ShowSource, Trakt):
         except (KeyError, StopIteration):
             return False
 
-TraktSource.register("trakt")
+TraktSource.register("trakt", has_account=True)
 
 
 class TraktDB(Database, Trakt):
@@ -166,4 +168,4 @@ class TraktDB(Database, Trakt):
 
         return episodes
 
-TraktDB.register("trakt")
+TraktDB.register("trakt", has_account=True)

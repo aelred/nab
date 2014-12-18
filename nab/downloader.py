@@ -71,7 +71,8 @@ class DownloadException(Exception):
 
 
 def _downloader():
-    return Downloader.get_all(config.config["downloader"])[0]
+    return Downloader.get_all(
+        config.config["downloader"], config.accounts)[0]
 
 
 def download(entry, torrent):

@@ -5,7 +5,7 @@ import urllib
 from lxml import html
 
 from nab.files import Searcher, Torrent
-from nab import config, exception
+from nab import exception
 
 session = requests.session()
 
@@ -25,10 +25,10 @@ class Bakabt(Searcher):
                             "&multiaudio=1&bonus=1&c1=1&c2=1&reorder=1"
                             "&q=${s}" % _url)
 
-    def __init__(self):
+    def __init__(self, account):
         Searcher.__init__(self, ["season"], ["season"])
-        session.post("%s/login.php" % Bakabt._url,
-                     data=config.accounts['bakabt'])
+        self._account = account
+        session.post("%s/login.php" % Bakabt._url, data=self._account)
 
     def _cget(self, *args, **kwargs):
         try:
@@ -38,8 +38,8 @@ class Bakabt(Searcher):
 
     def search(self, term):
         r = self._cget(Bakabt._surl.substitute({"s": urllib.quote(term)}),
-                       auth=(config.accounts['bakabt']['username'],
-                             config.accounts['bakabt']['password']))
+                       auth=(self._account['username'],
+                             self._account['password']))
         tree = html.fromstring(r.text)
         results = tree.xpath('//table[@class="torrents"]/tbody/'
                              'tr/td[@class="name"]/div/a/@href')
@@ -53,4 +53,4 @@ class Bakabt(Searcher):
 
         return files
 
-Bakabt.register("bakabt")
+Bakabt.register("bakabt", has_account=True)

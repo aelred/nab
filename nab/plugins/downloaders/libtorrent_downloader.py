@@ -30,7 +30,7 @@ _state_str = {
 _completed_states = [lt.torrent_status.states.seeding,
                      lt.torrent_status.states.finished]
 
-_libtorrent_file = os.path.join(appdirs.user_data_dir('nab'), 'libtorrent.yaml')
+libtorrent_file = os.path.join(appdirs.user_data_dir('nab'), 'libtorrent.yaml')
 
 
 class Libtorrent(Downloader):
@@ -89,7 +89,7 @@ class Libtorrent(Downloader):
 
         # reload persistent data
         try:
-            with file(_libtorrent_file) as f:
+            with file(libtorrent_file) as f:
                 data = yaml.load(f)
                 for torrent in data['torrents']:
                     self._add_torrent(torrent['torrent'])
@@ -148,7 +148,7 @@ class Libtorrent(Downloader):
                           'down': self._get_download_total(f)}
                          for f, h in self.files.iteritems()]
         }
-        with file(_libtorrent_file, 'w') as f:
+        with file(libtorrent_file, 'w') as f:
             yaml.dump(state, f)
 
     def is_completed(self, torrent):
