@@ -27,7 +27,7 @@ class Watchlist(ShowSource):
                 entries.append(entry)
         return entries
 
-    def get_show_titles(self):
+    def get_shows(self):
         return [entry.title for entry in self.entries()]
 
     def is_owned(self, ep):
