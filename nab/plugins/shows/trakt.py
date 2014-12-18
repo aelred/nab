@@ -4,7 +4,6 @@ from itertools import groupby
 
 from nab.plugins.shows import ShowSource
 from nab.plugins.databases import Database
-from nab.show import Show
 from nab.season import Season
 from nab.episode import Episode
 from nab.exception import PluginError
@@ -102,13 +101,7 @@ class TraktSource(ShowSource, Trakt):
         shows_data = [next(v) for k, v in groupby(shows_data, key=sort)]
         shows_data = sorted(shows_data, key=sort)
 
-        shows = []
-
-        # get episode info
-        for shd in shows_data:
-            shows.append(Show(shd["title"], ids={"tvdb": shd["tvdb_id"]}))
-
-        return shows
+        return [shd["title"] for shd in shows_data]
 
     def is_watched(self, episode):
         shd = self.get_data(episode.show)

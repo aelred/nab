@@ -68,14 +68,14 @@ class ShowSource(register.Entry):
 
     def get_shows(self):
         """
-        Return a list of shows.
+        Return a list of show titles ([str]).
 
         This function is cached, so don't re-cache results in implementations.
         """
         raise NotImplemented()
 
     def get_cached_shows(self):
-        """ Return a list of shows using the cache. """
+        """ Return a list of show titles using the cache. """
         elapsed = time.time() - self._cached_time
         if self._cached_shows is None or elapsed > self.cache_timeout:
             self._cached_time = time.time()

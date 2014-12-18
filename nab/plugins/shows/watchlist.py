@@ -1,6 +1,5 @@
 from nab.plugins.shows import ShowSource
 from nab.files import File
-from nab.show import Show
 
 import appdirs
 import os
@@ -28,11 +27,8 @@ class Watchlist(ShowSource):
                 entries.append(entry)
         return entries
 
-    def get_shows(self):
-        shows = []
-        for entry in self.entries():
-            shows.append(Show(entry.title))
-        return shows
+    def get_show_titles(self):
+        return [entry.title for entry in self.entries()]
 
     def is_owned(self, ep):
         return False

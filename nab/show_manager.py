@@ -60,17 +60,17 @@ def get_shows():
     _log.info("Getting shows")
 
     # get wanted shows from 'following' list
-    shows = []
+    titles = []
     for source in config.config["shows"]["following"]:
         source.__class__.log.info("Searching show source %s" % source)
         try:
-            shows += source.get_cached_shows()
+            titles += source.get_cached_shows()
         except exception.PluginError:
             # errors are printed, but keep running
             # shows will be looked up again in an hour
             pass
 
-    return shows
+    return [show.Show(title) for title in titles]
 
 
 def _filter_entry(entry, filter_funcs, permissive):

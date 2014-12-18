@@ -3,7 +3,6 @@ import re
 
 from nab.plugins.shows import ShowSource
 from nab.files import File
-from nab.show import Show
 from nab import config
 
 
@@ -71,10 +70,7 @@ class FileSystem(ShowSource):
         return dirs
 
     def get_shows(self):
-        shows = []
-        for p, d in self.dirs:
-            shows.append(Show(d))
-        return shows
+        return [d for p, d in self.dirs]
 
     def is_owned(self, ep):
         # find show directories

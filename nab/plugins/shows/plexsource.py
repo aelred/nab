@@ -2,7 +2,6 @@ from plex.server import Server
 from itertools import chain
 
 from nab.plugins.shows import ShowSource
-from nab.show import Show
 
 
 class Plex(ShowSource):
@@ -36,11 +35,7 @@ class Plex(ShowSource):
             return None
 
     def get_shows(self):
-        shows = []
-        for title in self.shows:
-            shows.append(Show(title))
-
-        return shows
+        return list(self.shows)
 
     def is_watched(self, episode):
         epd = self.get_ep_data(episode)
