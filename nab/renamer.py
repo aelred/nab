@@ -76,7 +76,7 @@ def _move_file(origin, dest):
             shutil.copyfile(origin, dest)
         else:
             shutil.move(origin, dest)
-    except IOError, e:
+    except IOError as e:
         _log.error(str(e))
         return False
     else:
