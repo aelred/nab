@@ -10,27 +10,10 @@ import os
 
 _log = log.log.getChild("scheduler")
 
-
 # lists all valid scheduler tasks
 tasks = {}
 
-_shows = None
-
-
-schedule_file = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
-
-
-def init(shows):
-    """ Initialize the main scheduler with the given show tree. """
-    global _shows
-    _shows = shows
-
-    try:
-        scheduler.load()
-    except (IOError, ValueError):
-        pass
-
-    scheduler.start()
+_SCHEDULE_FILE = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
 
 
 class _SchedQueue:
@@ -171,9 +154,9 @@ class Scheduler:
                       self.queue.to_yaml())
             }
 
-    def load(self):
+    def load(self, shows):
         """ Load scheduler events from the schedule yaml file. """
-        with file(schedule_file, 'r') as f:
+        with file(_SCHEDULE_FILE, 'r') as f:
             yml = yaml.load(f)
             if not yml:
                 # yaml file is invalid
@@ -182,7 +165,7 @@ class Scheduler:
             for entry in yml["queue"]:
                 dtime = entry["time"]
                 action = entry["action"]
-                argument = self._decode_argument(entry["argument"])
+                argument = self._decode_argument(entry["argument"], shows)
                 argument = self._encode_argument(argument)
                 # yes I did just encode the decoded argument
                 # this is to add back in tuples, which are hashable
@@ -196,7 +179,7 @@ class Scheduler:
 
     def save(self):
         """ Save scheduler events to the schedule yaml file. """
-        yaml.safe_dump(self.to_yaml(), file(schedule_file, 'w'))
+        yaml.safe_dump(self.to_yaml(), file(_SCHEDULE_FILE, 'w'))
 
     def _save_decision(self):
         if time.time() - self._last_save > 1.0 and self._save_invalidate:
@@ -264,7 +247,7 @@ class Scheduler:
             new_arguments.append(arg)
         return tuple(new_arguments)
 
-    def _decode_argument(self, argument):
+    def _decode_argument(self, argument, shows):
         new_arguments = []
         for arg in argument:
             try:
@@ -274,7 +257,7 @@ class Scheduler:
             else:
                 if arg[0] == "show_entry":
                     # find element matching id
-                    narg = _shows.find(tuple(arg[1]))
+                    narg = shows.find(tuple(arg[1]))
                     if narg is None:
                         raise TypeError("No match for entry %s" % arg)
                     arg = narg
@@ -311,5 +294,14 @@ class Scheduler:
         """ Add a task to the scheduler which will run after ASAP tasks. """
         self._add(self.queue_lazy, None, action, argument)
 
-
 scheduler = Scheduler()
+
+
+def init(shows):
+    """ Initialize the main scheduler with the given show tree. """
+    try:
+        scheduler.load(shows)
+    except (IOError, ValueError):
+        pass
+
+    scheduler.start()

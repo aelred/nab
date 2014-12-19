@@ -1,7 +1,6 @@
 """ Starts nab. """
 from nab import show_manager
 from nab import file_manager
-from nab import renamer
 from nab import config
 from nab import plugins
 from nab import scheduler
@@ -65,9 +64,8 @@ class _Nab:
 
     def _start(self):
         """ Start nabbing shows. """
-        renamer.init(self.shows)
         scheduler.init(self.shows)
-        server.init(self.shows)
+        server.init(self)
 
         # add command to refresh data
         # if command is already scheduled, this will be ignored
@@ -112,7 +110,7 @@ class _Nab:
     def _check_downloads(self):
         # every 15 seconds
         scheduler.scheduler.add(15, "check_downloads")
-        downloader.check_downloads(self.downloader(),
+        downloader.check_downloads(self.downloader(),  self.shows,
                                    self.config['renamer']['pattern'],
                                    self.config['settings']['videos'],
                                    self.config['renamer']['copy'])
@@ -148,7 +146,7 @@ def _clean():
         # file may not exist
         pass
     try:
-        os.remove(scheduler.schedule_file)
+        os.remove(scheduler._SCHEDULE_FILE)
     except OSError:
         pass
     try:

@@ -8,19 +8,11 @@ from nab import log
 from nab import files
 from nab.scheduler import scheduler, tasks
 
-_shows = None
-
 _log = log.log.getChild("renamer")
 
 
-def init(shows):
-    """ Initialize renamer with the given show tree. """
-    global _shows
-    _shows = shows
-
-
-def _find_episode(file_):
-    for ep in _shows.episodes:
+def _find_episode(file_, shows):
+    for ep in shows.episodes:
         if ep.match(file_):
             return ep
     return None
@@ -79,7 +71,7 @@ def _move_file(origin, dest, copy):
         return True
 
 
-def rename_file(path, pattern, videos_path, copy):
+def rename_file(path, shows, pattern, videos_path, copy):
     """ Rename and move the video file on the given path. """
     # must be a file
     if not os.path.isfile(path):
@@ -102,7 +94,7 @@ def rename_file(path, pattern, videos_path, copy):
     _log.debug("File created %s" % f)
 
     # look for a matching episode
-    episode = _find_episode(f)
+    episode = _find_episode(f, shows)
 
     # if no match, try again with parent directories prefixed
     parent = path
@@ -114,7 +106,7 @@ def rename_file(path, pattern, videos_path, copy):
 
         pname = os.path.basename(parent)
         f = files.File(" ".join([pname, f.filename]))
-        episode = _find_episode(f)
+        episode = _find_episode(f, shows)
 
     if episode is None:
         _log.warning("No match found for %s" % f)
