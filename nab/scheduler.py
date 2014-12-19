@@ -133,7 +133,7 @@ class Scheduler:
     concurrency issues.
     """
 
-    def __init__(self):
+    def __init__(self, shows):
         """ Create a new scheduler. """
         self.queue = _SchedQueueTimed('timed')
         self.queue_asap = _SchedQueue('asap')
@@ -145,6 +145,12 @@ class Scheduler:
         self._save_invalidate = False
 
         self._stop_flag = True
+        self._shows = shows
+
+        try:
+            self.load()
+        except (IOError, ValueError):
+            pass
 
     def to_yaml(self):
         """ Return a yaml representation of the scheduler. """
@@ -154,7 +160,7 @@ class Scheduler:
                       self.queue.to_yaml())
             }
 
-    def load(self, shows):
+    def load(self):
         """ Load scheduler events from the schedule yaml file. """
         with file(_SCHEDULE_FILE, 'r') as f:
             yml = yaml.load(f)
@@ -165,7 +171,7 @@ class Scheduler:
             for entry in yml["queue"]:
                 dtime = entry["time"]
                 action = entry["action"]
-                argument = self._decode_argument(entry["argument"], shows)
+                argument = self._decode_argument(entry["argument"])
                 argument = self._encode_argument(argument)
                 # yes I did just encode the decoded argument
                 # this is to add back in tuples, which are hashable
@@ -247,7 +253,7 @@ class Scheduler:
             new_arguments.append(arg)
         return tuple(new_arguments)
 
-    def _decode_argument(self, argument, shows):
+    def _decode_argument(self, argument):
         new_arguments = []
         for arg in argument:
             try:
@@ -257,7 +263,7 @@ class Scheduler:
             else:
                 if arg[0] == "show_entry":
                     # find element matching id
-                    narg = shows.find(tuple(arg[1]))
+                    narg = self._shows.find(tuple(arg[1]))
                     if narg is None:
                         raise TypeError("No match for entry %s" % arg)
                     arg = narg
@@ -293,15 +299,3 @@ class Scheduler:
     def add_lazy(self, action, *argument):
         """ Add a task to the scheduler which will run after ASAP tasks. """
         self._add(self.queue_lazy, None, action, argument)
-
-scheduler = Scheduler()
-
-
-def init(shows):
-    """ Initialize the main scheduler with the given show tree. """
-    try:
-        scheduler.load(shows)
-    except (IOError, ValueError):
-        pass
-
-    scheduler.start()

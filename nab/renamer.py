@@ -6,7 +6,7 @@ import string
 
 from nab import log
 from nab import files
-from nab.scheduler import scheduler, tasks
+from nab import scheduler
 
 _log = log.log.getChild("renamer")
 
@@ -71,7 +71,7 @@ def _move_file(origin, dest, copy):
         return True
 
 
-def rename_file(path, shows, pattern, videos_path, copy):
+def rename_file(path, scheduler, shows, pattern, videos_path, copy):
     """ Rename and move the video file on the given path. """
     # must be a file
     if not os.path.isfile(path):
@@ -126,6 +126,7 @@ def rename_file(path, shows, pattern, videos_path, copy):
             episode.owned = True
     else:
         # retry again later
-        scheduler.add(5 * 60, "rename_file", path)
+        scheduler.add(5 * 60, "rename_file", path, scheduler, shows,
+                      videos_path, copy)
 
-tasks["rename_file"] = rename_file
+scheduler.tasks["rename_file"] = rename_file

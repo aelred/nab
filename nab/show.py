@@ -91,7 +91,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
     @staticmethod
     def from_yaml(yml, title, parent):
         """ Create a show from the given yaml representation. """
-        show = Show(title, yml["ids"], yml["absolute"], yml["titles"],
+        show = Show([], title, yml["ids"], yml["absolute"], yml["titles"],
                     yml["banner"])
         show.update(show_elem.ShowParentElem.from_yaml(
             yml["seasons"], season.Season, show))

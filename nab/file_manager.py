@@ -5,13 +5,13 @@ import time
 from nab import log
 from nab import downloader
 from nab import exception
-from nab.scheduler import scheduler, tasks
+from nab import scheduler
 
 
 _log = log.log.getChild("files")
 
 
-def _schedule_find(entry, file_sources, file_filters):
+def _schedule_find(entry, scheduler, file_sources, file_filters):
     if entry.aired is None:
         time_since_aired = time.time()
     else:
@@ -24,7 +24,8 @@ def _schedule_find(entry, file_sources, file_filters):
     else:
         delay = -time_since_aired  # nab as soon as it airs
 
-    scheduler.add(delay, "find_file", entry, True, file_sources, file_filters)
+    scheduler.add(delay, "find_file", entry, scheduler, True, file_sources,
+                  file_filters)
 
 
 def _rank_file(f, file_filters):
@@ -64,7 +65,7 @@ def _find_all_files(entry, file_sources):
     return files
 
 
-def find_file(entry, reschedule, file_sources, file_filters):
+def find_file(entry, scheduler, reschedule, file_sources, file_filters):
     """
     Find a torrent for the given ShowElem entry using FileSource plugins.
 
@@ -86,25 +87,25 @@ def find_file(entry, reschedule, file_sources, file_filters):
                 return  # succesful, return
 
         if reschedule:
-            _schedule_find(entry, file_sources, file_filters)
+            _schedule_find(entry, scheduler, file_sources, file_filters)
             reschedule = False
 
     try:
         for child in sorted(entry.values(),
                             key=lambda c: c.aired, reverse=True):
             if len(child.epwanted):
-                scheduler.add_lazy(
-                    "find_file", child, reschedule, file_sources, file_filters)
+                scheduler.add_lazy("find_file", child, scheduler, reschedule,
+                                   file_sources, file_filters)
     except AttributeError:
         pass
-tasks["find_file"] = find_file
+scheduler.tasks["find_file"] = find_file
 
 
-def find_files(shows, file_sources, file_filters):
+def find_files(shows, scheduler, file_sources, file_filters):
     """ Find torrents for all wanted episodes in the given list of shows. """
     _log.info("Finding files")
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):
         if len(sh.epwanted):
             scheduler.add_lazy(
-                "find_file", sh, True, file_sources, file_filters)
+                "find_file", sh, scheduler, True, file_sources, file_filters)

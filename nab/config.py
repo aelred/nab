@@ -8,8 +8,8 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import appdirs
 
-from nab.scheduler import scheduler, tasks
 from nab import log
+from nab import scheduler
 from nab.plugins import shows
 from nab.plugins import databases
 from nab.plugins import filesources
@@ -19,11 +19,11 @@ _LOG = log.log.getChild("config")
 
 _CONFIG_PLUGIN_PATHS = {
     shows.ShowSource: (('shows', 'library'), ('shows', 'following')),
-    shows.ShowFilter: (('shows', 'filters')),
-    databases.Database: (('databases')),
-    filesources.FileSource: (('files', 'sources')),
-    filesources.FileFilter: (('files', 'filters')),
-    downloaders.Downloader: (('downloader'))
+    shows.ShowFilter: (('shows', 'filters'),),
+    databases.Database: (('databases',),),
+    filesources.FileSource: (('files', 'sources'),),
+    filesources.FileFilter: (('files', 'filters'),),
+    downloaders.Downloader: (('downloader',),)
 }
 
 
@@ -36,7 +36,7 @@ class _Config(FileSystemEventHandler):
     If the base files are modified, a reload is automatically scheduled.
     """
 
-    def __init__(self, path):
+    def __init__(self, path, sched):
         # read config files
         self._accounts_file = os.path.join(path, 'accounts.yaml')
         self._config_file = os.path.join(path, 'config.yaml')
@@ -50,8 +50,10 @@ class _Config(FileSystemEventHandler):
         self._observer.schedule(self, path)
 
         # set scheduler task to point to this object
-        tasks["load_config"] = self.load
-        tasks["set_config"] = self.set_config
+        scheduler.tasks["load_config"] = self.load
+        scheduler.tasks["set_config"] = self.set_config
+
+        self._scheduler = sched
 
     def load(self):
         """ Reload config files. """
@@ -73,11 +75,11 @@ class _Config(FileSystemEventHandler):
 
         if event.src_path == self._config_file or dest == self._config_file:
             _LOG.info('Change detected in config.yaml, scheduling reload')
-            scheduler.add_asap('load_config')
+            self._scheduler.add_asap('load_config')
         if (event.src_path == self._accounts_file
            or dest == self._accounts_file):
             _LOG.info('Change detected in accounts.yaml, scheduling reload')
-            scheduler.add_asap('load_config')
+            self._scheduler.add_asap('load_config')
 
 
 def _load_config(path, accounts):
@@ -160,5 +162,5 @@ def _load_options():
     return parser.parse_args()
 
 
-def create():
-    return _Config(appdirs.user_config_dir('nab'))
+def create(scheduler):
+    return _Config(appdirs.user_config_dir('nab'), scheduler)

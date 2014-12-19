@@ -32,8 +32,9 @@ class _Nab:
 
     def __init__(self):
         """ Initialize nab. """
-        self.config = config.create()
         self.shows = show_manager.ShowTree()
+        self.scheduler = scheduler.Scheduler(self.shows)
+        self.config = config.create(self.scheduler)
 
         # set scheduler tasks to point to this object
         scheduler.tasks["update_shows"] = self._update_shows
@@ -47,7 +48,7 @@ class _Nab:
             log_level = logging.INFO
         log.set_level(log_level)
 
-        if self.confg.options.clean:
+        if self.config.options.clean:
             _clean()
 
         if self.config.options.plugin:
@@ -59,23 +60,28 @@ class _Nab:
                 pass
             finally:
                 # stop other running threads on interrupt
-                scheduler.scheduler.stop()
+                try:
+                    self.scheduler.stop()
+                except AttributeError:
+                    pass
                 del self.config
 
     def _start(self):
         """ Start nabbing shows. """
-        scheduler.init(self.shows)
         server.init(self)
 
         # add command to refresh data
         # if command is already scheduled, this will be ignored
-        scheduler.scheduler.add_asap("refresh")
+        self.scheduler.add_asap("refresh")
 
         # schedule first refresh of show data a week from now
-        scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+        self.scheduler.add(60 * 60 * 24 * 7, "update_shows")
 
         # add command to check download progress
-        scheduler.scheduler.add_asap("check_downloads")
+        self.scheduler.add_asap("check_downloads")
+
+        # start scheduler
+        self.scheduler.start()
 
         # start server
         server.run()
@@ -83,13 +89,13 @@ class _Nab:
     def _update_shows(self):
         """ Update data for all shows. """
         # reschedule to refresh show data in a week's time
-        scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+        self.scheduler.add(60 * 60 * 24 * 7, "update_shows")
         self.shows.update_data(self.config.config['databases'])
 
     def _refresh(self):
         """ Refresh list of shows and find files for any wanted episodes. """
         # reschedule to get data every hour
-        scheduler.scheduler.add(60 * 60, "refresh")
+        self.scheduler.add(60 * 60, "refresh")
 
         # add all shows
         for show in show_manager.get_shows(
@@ -101,19 +107,21 @@ class _Nab:
                                   self.config.config['shows']['following'],
                                   self.config.config['shows']['library'],
                                   self.config.config['shows']['filters'])
-        file_manager.find_files(self.shows, self.config['files']['sources'],
-                                self.config['files']['filters'])
+        file_manager.find_files(self.shows, self.scheduler,
+                                self.config.config['files']['sources'],
+                                self.config.config['files']['filters'])
 
         # write data to file for backup purposes
         self.shows.save()
 
     def _check_downloads(self):
         # every 15 seconds
-        scheduler.scheduler.add(15, "check_downloads")
-        downloader.check_downloads(self.downloader(),  self.shows,
-                                   self.config['renamer']['pattern'],
-                                   self.config['settings']['videos'],
-                                   self.config['renamer']['copy'])
+        self.scheduler.add(15, "check_downloads")
+        downloader.check_downloads(self.downloader(), self.scheduler,
+                                   self.shows,
+                                   self.config.config['renamer']['pattern'],
+                                   self.config.config['settings']['videos'],
+                                   self.config.config['renamer']['copy'])
 
     def _show_plugins(self):
         """ Display information about plugins. """
@@ -135,7 +143,7 @@ class _Nab:
                             print entry.help_text() + "\n"
 
     def downloader(self):
-        return self.config['downloader'][0]
+        return self.config.config['downloader'][0]
 
 
 def _clean():
