@@ -9,7 +9,6 @@ from watchdog.events import FileSystemEventHandler
 import appdirs
 
 from nab import log
-from nab import scheduler
 from nab.plugins import shows
 from nab.plugins import databases
 from nab.plugins import filesources
@@ -36,7 +35,7 @@ class _Config(FileSystemEventHandler):
     If the base files are modified, a reload is automatically scheduled.
     """
 
-    def __init__(self, path, sched):
+    def __init__(self, path, scheduler):
         # read config files
         self._accounts_file = os.path.join(path, 'accounts.yaml')
         self._config_file = os.path.join(path, 'config.yaml')
@@ -50,10 +49,9 @@ class _Config(FileSystemEventHandler):
         self._observer.schedule(self, path)
 
         # set scheduler task to point to this object
-        scheduler.tasks["load_config"] = self.load
-        scheduler.tasks["set_config"] = self.set_config
-
-        self._scheduler = sched
+        self._scheduler = scheduler
+        self._scheduler.tasks["load_config"] = self.load
+        self._scheduler.tasks["set_config"] = self.set_config
 
     def load(self):
         """ Reload config files. """

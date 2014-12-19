@@ -36,10 +36,14 @@ class _Nab:
         self.scheduler = scheduler.Scheduler(self.shows)
         self.config = config.create(self.scheduler)
 
+        self.show_manager = show_manager.ShowManager(self.config)
+        self.file_manager = file_manager.FileManager(
+            self.scheduler, self.config)
+
         # set scheduler tasks to point to this object
-        scheduler.tasks["update_shows"] = self._update_shows
-        scheduler.tasks["refresh"] = self._refresh
-        scheduler.tasks["check_downloads"] = self._check_downloads
+        self.scheduler.tasks["update_shows"] = self._update_shows
+        self.scheduler.tasks["refresh"] = self._refresh
+        self.scheduler.tasks["check_downloads"] = self._check_downloads
 
         # Begin logging
         if self.config.options.debug:
@@ -98,18 +102,11 @@ class _Nab:
         self.scheduler.add(60 * 60, "refresh")
 
         # add all shows
-        for show in show_manager.get_shows(
-                self.config.config['databases'],
-                self.config.config['shows']['following']):
+        for show in self.show_manager.get_shows():
             self.shows[show.title] = show
 
-        show_manager.filter_shows(self.shows,
-                                  self.config.config['shows']['following'],
-                                  self.config.config['shows']['library'],
-                                  self.config.config['shows']['filters'])
-        file_manager.find_files(self.shows, self.scheduler,
-                                self.config.config['files']['sources'],
-                                self.config.config['files']['filters'])
+        self.show_manager.filter_shows(self.shows)
+        self.file_manager.find_files(self.shows)
 
         # write data to file for backup purposes
         self.shows.save()
@@ -117,11 +114,7 @@ class _Nab:
     def _check_downloads(self):
         # every 15 seconds
         self.scheduler.add(15, "check_downloads")
-        downloader.check_downloads(self.downloader(), self.scheduler,
-                                   self.shows,
-                                   self.config.config['renamer']['pattern'],
-                                   self.config.config['settings']['videos'],
-                                   self.config.config['renamer']['copy'])
+        downloader.check_downloads(self.downloader(), self.scheduler)
 
     def _show_plugins(self):
         """ Display information about plugins. """

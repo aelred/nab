@@ -48,14 +48,12 @@ def download(downloader, entry, torrent, test):
             episode.wanted = False
 
 
-def check_downloads(downloader, scheduler, shows, rename_pattern, videos_path,
-                    rename_copy):
+def check_downloads(downloader, scheduler):
     """ Check downloads to see if any have completed. """
     for d in list(_downloads):
         if downloader.is_completed(d):
             for path in sorted(downloader.get_files(d)):
-                scheduler.add_asap("rename_file", path, scheduler, shows,
-                                   rename_pattern, videos_path, rename_copy)
+                scheduler.add_asap("rename_file", path)
                 del _downloads[d]
 
 

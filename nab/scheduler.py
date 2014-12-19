@@ -10,9 +10,6 @@ import os
 
 _log = log.log.getChild("scheduler")
 
-# lists all valid scheduler tasks
-tasks = {}
-
 _SCHEDULE_FILE = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
 
 
@@ -122,7 +119,7 @@ class Scheduler:
     Timed events occur after the time specified.
 
     Events are functions, which must be registered before they can be run.
-    An event can be registered by putting it in scheduler.tasks, a dictionary
+    An event can be registered by putting it in Scheduler.tasks, a dictionary
     from string event names to functions.
 
     Event parameters must be hashable.
@@ -138,6 +135,8 @@ class Scheduler:
         self.queue = _SchedQueueTimed('timed')
         self.queue_asap = _SchedQueue('asap')
         self.queue_lazy = _SchedQueue('lazy')
+
+        self.tasks = {}
 
         self._qlock = threading.Condition()
 
@@ -233,7 +232,7 @@ class Scheduler:
             _log.debug("Executing scheduled task %s%s"
                        % (action, tuple(argument)))
 
-            tasks[action](*self._decode_argument(argument))
+            self.tasks[action](*self._decode_argument(argument))
             self._save_invalidate = True
             self._save_decision()
 
