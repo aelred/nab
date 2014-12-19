@@ -1,11 +1,9 @@
 """ Starts nab. """
 from nab import show_manager
-from nab import database
 from nab import file_manager
 from nab import renamer
 from nab import config
 from nab import plugins
-from nab import downloader
 from nab import scheduler
 from nab import server
 from nab import log
@@ -35,16 +33,16 @@ if config.options.clean:
     except OSError:
         pass
 
-shows = show_manager.ShowTree()
+_SHOWS = show_manager.ShowTree()
 
-plugin_types = [
+_PLUGIN_TYPES = (
     nab.plugins.shows.ShowSource,
     nab.plugins.databases.Database,
     nab.plugins.shows.ShowFilter,
     nab.plugins.filesources.FileSource,
     nab.plugins.filesources.FileFilter,
     nab.plugins.downloaders.Downloader
-]
+)
 
 
 def refresh():
@@ -53,14 +51,14 @@ def refresh():
     scheduler.scheduler.add(60 * 60, "refresh")
 
     # add all shows
-    for sh in show_manager.get_shows():
-        shows[sh.title] = sh
+    for show in show_manager.get_shows():
+        _SHOWS[show.title] = show
 
-    show_manager.filter_shows(shows)
-    file_manager.find_files(shows)
+    show_manager.filter_shows(_SHOWS)
+    file_manager.find_files(_SHOWS)
 
     # write data to file for backup purposes
-    shows.save()
+    _SHOWS.save()
 
 scheduler.tasks["refresh"] = refresh
 
@@ -69,55 +67,68 @@ def update_shows():
     """ Update data for all shows. """
     # reschedule to refresh show data in a week's time
     scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
-    shows.update_data()
+    _SHOWS.update_data()
 
 scheduler.tasks["update_shows"] = update_shows
 
-config.init()
 
-# Begin logging
-_log_level = logging.DEBUG if config.options.debug else logging.INFO
-log.set_level(_log_level)
+def _start():
+    """ Start nabbing shows. """
+    renamer.init(_SHOWS)
+    scheduler.init(_SHOWS)
+    server.init(_SHOWS)
 
-if config.options.plugin:
+    # add command to refresh data
+    # if command is already scheduled, this will be ignored
+    scheduler.scheduler.add_asap("refresh")
+
+    # schedule first refresh of show data a week from now
+    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+
+    # add command to check download progress
+    scheduler.scheduler.add_asap("check_downloads")
+
+    # start server
+    server.run()
+
+
+def _show_plugins():
+    """ Display information about plugins. """
     # load plugins
     plugins.load()
 
     if not config.args:
         # list all plugins
-        for plugin_type in plugin_types:
+        for plugin_type in _PLUGIN_TYPES:
             print plugin_type.type
             for entry in plugin_type.list_entries():
                 print "\t" + entry.name
     else:
         # show data for given plugins
         for arg in config.args:
-            for plugin_type in plugin_types:
+            for plugin_type in _PLUGIN_TYPES:
                 for entry in plugin_type.list_entries():
                     if entry.name == arg:
                         print entry.help_text() + "\n"
-else:
-    try:
-        # start nabbing shows
-        renamer.init(shows)
-        scheduler.init(shows)
-        server.init(shows)
 
-        # add command to refresh data
-        # if command is already scheduled, this will be ignored
-        scheduler.scheduler.add_asap("refresh")
 
-        # schedule first refresh of show data a week from now
-        scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+def _init():
+    """ Initialize nab. """
+    config.init()
 
-        # add command to check download progress
-        scheduler.scheduler.add_asap("check_downloads")
+    # Begin logging
+    log_level = logging.DEBUG if config.options.debug else logging.INFO
+    log.set_level(log_level)
 
-        # start server
-        server.run()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        # stop other running threads on interrupt
-        scheduler.scheduler.stop()
-        config.stop()
+    if config.options.plugin:
+        _show_plugins()
+    else:
+        try:
+            _start()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            # stop other running threads on interrupt
+            scheduler.scheduler.stop()
+            config.stop()
+_init()

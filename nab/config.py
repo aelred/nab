@@ -15,15 +15,15 @@ from nab.plugins import databases
 from nab.plugins import filesources
 from nab.plugins import downloaders
 
-_log = log.log.getChild("config")
+_LOG = log.log.getChild("config")
 
-_config_plugin_paths = {
-    shows.ShowSource: [['shows', 'library'], ['shows', 'following']],
-    shows.ShowFilter: [['shows', 'filters']],
-    databases.Database: [['databases']],
-    filesources.FileSource: [['files', 'sources']],
-    filesources.FileFilter: [['files', 'filters']],
-    downloaders.Downloader: [['downloader']]
+_CONFIG_PLUGIN_PATHS = {
+    shows.ShowSource: (('shows', 'library'), ('shows', 'following')),
+    shows.ShowFilter: (('shows', 'filters')),
+    databases.Database: (('databases')),
+    filesources.FileSource: (('files', 'sources')),
+    filesources.FileFilter: (('files', 'filters')),
+    downloaders.Downloader: (('downloader'))
 }
 
 _CONFIG_DIR = appdirs.user_config_dir('nab')
@@ -34,13 +34,13 @@ _ACCOUNTS_FILE = os.path.join(_CONFIG_DIR, 'accounts.yaml')
 def _load_config():
     """ Return contents of config files, creating them if they don't exist. """
     if not os.path.exists(_CONFIG_FILE):
-        _log.info("Creating default config file")
+        _LOG.info("Creating default config file")
         copyfile("config_default.yaml", _CONFIG_FILE)
 
-    _log.info("Loading config and accounts files")
-    c = yaml.load(file(_CONFIG_FILE, "r"))
-    a = yaml.load(file(_ACCOUNTS_FILE, "a+"))
-    s = c["settings"]
+    _LOG.info("Loading config and accounts files")
+    conf = yaml.load(file(_CONFIG_FILE, "r"))
+    acc = yaml.load(file(_ACCOUNTS_FILE, "a+"))
+    settings = conf["settings"]
 
     # find and create directories in settings
     def case_insensitive(path):
@@ -60,7 +60,7 @@ def _load_config():
         if basedir not in dirs:
             # lookup directory in lower case only
             basedir = basedir.lower()
-            dir_map = dict((d.lower(), d) for d in dirs)
+            dir_map = dict((dir_.lower(), dir_) for dir_ in dirs)
 
             # convert case to case of existing file, if it exists
             if basedir in dir_map:
@@ -73,31 +73,31 @@ def _load_config():
         path = path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
         return case_insensitive(path)
 
-    s["downloads"] = format_path(s["downloads"])
-    s["videos"] = map(format_path, s["videos"])
+    settings["downloads"] = format_path(settings["downloads"])
+    settings["videos"] = map(format_path, settings["videos"])
 
-    dirs = [s["downloads"]] + s["videos"]
-    for d in dirs:
-        if not os.path.exists(d):
-            _log.info("Creating directory %s" % d)
-            os.makedirs(d)
+    dirs = [settings["downloads"]] + settings["videos"]
+    for dir_ in dirs:
+        if not os.path.exists(dir_):
+            _LOG.info("Creating directory %s" % dir_)
+            os.makedirs(dir_)
 
     # load any plugins on paths in config
-    for entry_type, paths in _config_plugin_paths.items():
+    for entry_type, paths in _CONFIG_PLUGIN_PATHS.items():
         for path in paths:
-            subtree = c
+            subtree = conf
             for node in path[:-1]:
-                subtree = c[node]
+                subtree = conf[node]
             # replace parts of config data with loaded plugin
-            subtree[path[-1]] = entry_type.get_all(subtree[path[-1]], s, a)
+            subtree[path[-1]] = entry_type.get_all(subtree[path[-1]], settings, acc)
 
-    return c, a
+    return conf, acc
 config, accounts = _load_config()
 
 
 def reload_config():
     """ Reload config files into global variables. """
-    _log.info('Reloading config and accounts files')
+    _LOG.info('Reloading config and accounts files')
     global config, accounts
     config, accounts = _load_config()
 tasks["load_config"] = reload_config
@@ -105,25 +105,23 @@ tasks["load_config"] = reload_config
 
 def change_config(new_config):
     """ Replace config file with new config file. """
-    _log.info('Changing config file')
+    _LOG.info('Changing config file')
     yaml.safe_dump(new_config, file(_CONFIG_FILE, 'w'))
 
-_observer = None
+OBSERVER = Observer()
 
 
 def init():
     """ Initialize config file watcher. """
     handler = ConfigWatcher()
-    global _observer
-    _observer = Observer()
-    _observer.schedule(handler, _CONFIG_DIR)
-    _observer.start()
+    _OBSERVER.schedule(handler, _CONFIG_DIR)
+    _OBSERVER.start()
 
 
 def stop():
     """ Stop config file watcher. """
     try:
-        _observer.stop()
+        _OBSERVER.stop()
     except:
         pass
 
@@ -140,10 +138,10 @@ class ConfigWatcher(FileSystemEventHandler):
             dest = None
 
         if event.src_path == _CONFIG_FILE or dest == _CONFIG_FILE:
-            _log.info('Change detected in config.yaml, scheduling reload')
+            _LOG.info('Change detected in config.yaml, scheduling reload')
             scheduler.add_asap('load_config')
         if event.src_path == _ACCOUNTS_FILE or dest == _ACCOUNTS_FILE:
-            _log.info('Change detected in accounts.yaml, scheduling reload')
+            _LOG.info('Change detected in accounts.yaml, scheduling reload')
             scheduler.add_asap('load_config')
 
 
