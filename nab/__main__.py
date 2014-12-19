@@ -7,6 +7,7 @@ from nab import plugins
 from nab import scheduler
 from nab import server
 from nab import log
+from nab import downloader
 import nab.plugins.shows
 import nab.plugins.databases
 import nab.plugins.filesources
@@ -16,8 +17,130 @@ from nab.plugins.downloaders import libtorrent_downloader
 import os
 import logging
 
+_PLUGIN_TYPES = (
+    nab.plugins.shows.ShowSource,
+    nab.plugins.databases.Database,
+    nab.plugins.shows.ShowFilter,
+    nab.plugins.filesources.FileSource,
+    nab.plugins.filesources.FileFilter,
+    nab.plugins.downloaders.Downloader
+)
 
-if config.options.clean:
+
+class _Nab:
+
+    """ Class that organizes nab. """
+
+    def __init__(self):
+        """ Initialize nab. """
+        self.config = config.create()
+        self.shows = show_manager.ShowTree()
+
+        # set scheduler tasks to point to this object
+        scheduler.tasks["update_shows"] = self._update_shows
+        scheduler.tasks["refresh"] = self._refresh
+        scheduler.tasks["check_downloads"] = self._check_downloads
+
+        # Begin logging
+        if self.config.options.debug:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.INFO
+        log.set_level(log_level)
+
+        if self.confg.options.clean:
+            _clean()
+
+        if self.config.options.plugin:
+            self._show_plugins()
+        else:
+            try:
+                self._start()
+            except KeyboardInterrupt:
+                pass
+            finally:
+                # stop other running threads on interrupt
+                scheduler.scheduler.stop()
+                del self.config
+
+    def _start(self):
+        """ Start nabbing shows. """
+        renamer.init(self.shows)
+        scheduler.init(self.shows)
+        server.init(self.shows)
+
+        # add command to refresh data
+        # if command is already scheduled, this will be ignored
+        scheduler.scheduler.add_asap("refresh")
+
+        # schedule first refresh of show data a week from now
+        scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+
+        # add command to check download progress
+        scheduler.scheduler.add_asap("check_downloads")
+
+        # start server
+        server.run()
+
+    def _update_shows(self):
+        """ Update data for all shows. """
+        # reschedule to refresh show data in a week's time
+        scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+        self.shows.update_data(self.config.config['databases'])
+
+    def _refresh(self):
+        """ Refresh list of shows and find files for any wanted episodes. """
+        # reschedule to get data every hour
+        scheduler.scheduler.add(60 * 60, "refresh")
+
+        # add all shows
+        for show in show_manager.get_shows(
+                self.config.config['databases'],
+                self.config.config['shows']['following']):
+            self.shows[show.title] = show
+
+        show_manager.filter_shows(self.shows,
+                                  self.config.config['shows']['following'],
+                                  self.config.config['shows']['library'],
+                                  self.config.config['shows']['filters'])
+        file_manager.find_files(self.shows, self.config['files']['sources'],
+                                self.config['files']['filters'])
+
+        # write data to file for backup purposes
+        self.shows.save()
+
+    def _check_downloads(self):
+        # every 15 seconds
+        scheduler.scheduler.add(15, "check_downloads")
+        downloader.check_downloads(self.downloader(),
+                                   self.config['renamer']['pattern'],
+                                   self.config['settings']['videos'],
+                                   self.config['renamer']['copy'])
+
+    def _show_plugins(self):
+        """ Display information about plugins. """
+        # load plugins
+        plugins.load()
+
+        if not self.config.args:
+            # list all plugins
+            for plugin_type in _PLUGIN_TYPES:
+                print plugin_type.type
+                for entry in plugin_type.list_entries():
+                    print "\t" + entry.name
+        else:
+            # show data for given plugins
+            for arg in self.config.args:
+                for plugin_type in _PLUGIN_TYPES:
+                    for entry in plugin_type.list_entries():
+                        if entry.name == arg:
+                            print entry.help_text() + "\n"
+
+    def downloader(self):
+        return self.config['downloader'][0]
+
+
+def _clean():
     # clean up schedule, show and libtorrent files, start fresh
     try:
         os.remove(show_manager.shows_file)
@@ -33,102 +156,5 @@ if config.options.clean:
     except OSError:
         pass
 
-_SHOWS = show_manager.ShowTree()
-
-_PLUGIN_TYPES = (
-    nab.plugins.shows.ShowSource,
-    nab.plugins.databases.Database,
-    nab.plugins.shows.ShowFilter,
-    nab.plugins.filesources.FileSource,
-    nab.plugins.filesources.FileFilter,
-    nab.plugins.downloaders.Downloader
-)
-
-
-def refresh():
-    """ Refresh list of shows and find files for any wanted episodes. """
-    # reschedule to get data every hour
-    scheduler.scheduler.add(60 * 60, "refresh")
-
-    # add all shows
-    for show in show_manager.get_shows():
-        _SHOWS[show.title] = show
-
-    show_manager.filter_shows(_SHOWS)
-    file_manager.find_files(_SHOWS)
-
-    # write data to file for backup purposes
-    _SHOWS.save()
-
-scheduler.tasks["refresh"] = refresh
-
-
-def update_shows():
-    """ Update data for all shows. """
-    # reschedule to refresh show data in a week's time
-    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
-    _SHOWS.update_data()
-
-scheduler.tasks["update_shows"] = update_shows
-
-
-def _start():
-    """ Start nabbing shows. """
-    renamer.init(_SHOWS)
-    scheduler.init(_SHOWS)
-    server.init(_SHOWS)
-
-    # add command to refresh data
-    # if command is already scheduled, this will be ignored
-    scheduler.scheduler.add_asap("refresh")
-
-    # schedule first refresh of show data a week from now
-    scheduler.scheduler.add(60 * 60 * 24 * 7, "update_shows")
-
-    # add command to check download progress
-    scheduler.scheduler.add_asap("check_downloads")
-
-    # start server
-    server.run()
-
-
-def _show_plugins():
-    """ Display information about plugins. """
-    # load plugins
-    plugins.load()
-
-    if not config.args:
-        # list all plugins
-        for plugin_type in _PLUGIN_TYPES:
-            print plugin_type.type
-            for entry in plugin_type.list_entries():
-                print "\t" + entry.name
-    else:
-        # show data for given plugins
-        for arg in config.args:
-            for plugin_type in _PLUGIN_TYPES:
-                for entry in plugin_type.list_entries():
-                    if entry.name == arg:
-                        print entry.help_text() + "\n"
-
-
-def _init():
-    """ Initialize nab. """
-    config.init()
-
-    # Begin logging
-    log_level = logging.DEBUG if config.options.debug else logging.INFO
-    log.set_level(log_level)
-
-    if config.options.plugin:
-        _show_plugins()
-    else:
-        try:
-            _start()
-        except KeyboardInterrupt:
-            pass
-        finally:
-            # stop other running threads on interrupt
-            scheduler.scheduler.stop()
-            config.stop()
-_init()
+# Create main nab object and start!
+_Nab()

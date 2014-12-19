@@ -4,13 +4,9 @@ import os.path
 import shutil
 import string
 
-from nab import config
 from nab import log
 from nab import files
 from nab.scheduler import scheduler, tasks
-
-pattern = config.config["renamer"]["pattern"]
-copy = config.config["renamer"].get("copy", True)
 
 _shows = None
 
@@ -30,7 +26,7 @@ def _find_episode(file_):
     return None
 
 
-def _new_name(file_, episode):
+def _new_name(file_, episode, videos_path, pattern):
     # valid range of characters for a filename
     valid_fname = "-_.()[]! %s%s" % (string.ascii_letters, string.digits)
 
@@ -44,9 +40,9 @@ def _new_name(file_, episode):
     else:
         epnum = "%02d-%02d" % (file_.episode, file_.eprange)
 
-    # format config file pattern with episode information
+    # format pattern with episode information
     mapping = {
-        "videos": config.config["settings"]["videos"][0],
+        "videos": videos_path,
         "t": format_fname(episode.show.title),
         "st": format_fname(episode.show.title),
         "et": format_fname(episode.title),
@@ -59,7 +55,7 @@ def _new_name(file_, episode):
     return ".".join([pattern.format(**mapping), file_.ext])
 
 
-def _move_file(origin, dest):
+def _move_file(origin, dest, copy):
     dest_dir = os.path.dirname(dest)
 
     # create directory if necessary
@@ -83,7 +79,7 @@ def _move_file(origin, dest):
         return True
 
 
-def rename_file(path):
+def rename_file(path, pattern, videos_path, copy):
     """ Rename and move the video file on the given path. """
     # must be a file
     if not os.path.isfile(path):
@@ -126,11 +122,11 @@ def rename_file(path):
 
     _log.debug("%s matches %s" % (f, episode))
 
-    dest = _new_name(f, episode)
+    dest = _new_name(f, episode, videos_path, pattern)
 
     _log.info("Moving %s to %s" % (f, dest))
 
-    if _move_file(path, dest):
+    if _move_file(path, dest, copy):
         _log.info("Successfully moved %s" % f)
 
         # mark episode as owned

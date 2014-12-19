@@ -7,12 +7,13 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
     """ A TV show, part of a collection of ShowElem classes. """
 
-    def __init__(self, title, ids=None, absolute=False, titles=None,
-                 banner=None):
+    def __init__(self, databases, title, ids=None, absolute=False,
+                 titles=None, banner=None):
         """
         Create a TV show and automatically populate with data.
 
         Args:
+            databases ([Database]): A list of databases to get show data.
             title (str): The title of the show.
             ids ({str: str or int}): A dictionary of IDs.
             absolute (bool): Whether this show uses absolute episode numbering.
@@ -26,7 +27,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         self.banner = banner
 
         # automatically get show data from database
-        self.update_data()
+        self.update_data(databases)
 
     @property
     def type(self):
@@ -72,9 +73,9 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         show_elem.ShowElem.__merge__(self, other)
         self.ids = dict(self.ids.items() + other.ids.items())
 
-    def update_data(self):
+    def update_data(self, databases):
         """ Get new data from databases for this show. """
-        database.get_data(self)
+        database.get_data(self, databases)
 
     def to_yaml(self):
         """ Return a yaml representation of this show. """

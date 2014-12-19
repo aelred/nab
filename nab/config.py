@@ -26,20 +26,68 @@ _CONFIG_PLUGIN_PATHS = {
     downloaders.Downloader: (('downloader'))
 }
 
-_CONFIG_DIR = appdirs.user_config_dir('nab')
-_CONFIG_FILE = os.path.join(_CONFIG_DIR, 'config.yaml')
-_ACCOUNTS_FILE = os.path.join(_CONFIG_DIR, 'accounts.yaml')
+
+class _Config(FileSystemEventHandler):
+
+    """
+    Encapsulates config file and accounts file.
+
+    Should never be directly modified except through specific scheduler calls.
+    If the base files are modified, a reload is automatically scheduled.
+    """
+
+    def __init__(self, path):
+        # read config files
+        self._accounts_file = os.path.join(path, 'accounts.yaml')
+        self._config_file = os.path.join(path, 'config.yaml')
+        self.load()
+
+        # parse command line options
+        self.options, self.args = _load_options()
+
+        # watch config directory
+        self._observer = Observer()
+        self._observer.schedule(self, path)
+
+        # set scheduler task to point to this object
+        tasks["load_config"] = self.load
+        tasks["set_config"] = self.set_config
+
+    def load(self):
+        """ Reload config files. """
+        _LOG.info('Reloading config and accounts files')
+        self.accounts = _load_accounts(self._accounts_file)
+        self.config = _load_config(self._config_file, self.accounts)
+
+    def set_config(self, new_config):
+        """ Replace config file with new config file. """
+        _LOG.info('Changing config file')
+        yaml.safe_dump(new_config, open(self._config_file, 'w'))
+
+    def on_any_event(self, event):
+        """ Reload a config file if it has changed. """
+        try:
+            dest = event.dest_path
+        except AttributeError:
+            dest = None
+
+        if event.src_path == self._config_file or dest == self._config_file:
+            _LOG.info('Change detected in config.yaml, scheduling reload')
+            scheduler.add_asap('load_config')
+        if (event.src_path == self._accounts_file
+           or dest == self._accounts_file):
+            _LOG.info('Change detected in accounts.yaml, scheduling reload')
+            scheduler.add_asap('load_config')
 
 
-def _load_config():
-    """ Return contents of config files, creating them if they don't exist. """
-    if not os.path.exists(_CONFIG_FILE):
+def _load_config(path, accounts):
+    """ Return contents of config file, creating it if it don't exist. """
+    if not os.path.exists(path):
         _LOG.info("Creating default config file")
-        copyfile("config_default.yaml", _CONFIG_FILE)
+        copyfile("config_default.yaml", path)
 
-    _LOG.info("Loading config and accounts files")
-    conf = yaml.load(file(_CONFIG_FILE, "r"))
-    acc = yaml.load(file(_ACCOUNTS_FILE, "a+"))
+    _LOG.info("Loading config file")
+    conf = yaml.load(open(path, "r"))
     settings = conf["settings"]
 
     # find and create directories in settings
@@ -89,60 +137,17 @@ def _load_config():
             for node in path[:-1]:
                 subtree = conf[node]
             # replace parts of config data with loaded plugin
-            subtree[path[-1]] = entry_type.get_all(subtree[path[-1]], settings, acc)
+            subtree[path[-1]] = entry_type.get_all(
+                subtree[path[-1]], settings, accounts)
 
-    return conf, acc
-config, accounts = _load_config()
-
-
-def reload_config():
-    """ Reload config files into global variables. """
-    _LOG.info('Reloading config and accounts files')
-    global config, accounts
-    config, accounts = _load_config()
-tasks["load_config"] = reload_config
+    return conf
 
 
-def change_config(new_config):
-    """ Replace config file with new config file. """
-    _LOG.info('Changing config file')
-    yaml.safe_dump(new_config, file(_CONFIG_FILE, 'w'))
-
-OBSERVER = Observer()
-
-
-def init():
-    """ Initialize config file watcher. """
-    handler = ConfigWatcher()
-    _OBSERVER.schedule(handler, _CONFIG_DIR)
-    _OBSERVER.start()
-
-
-def stop():
-    """ Stop config file watcher. """
-    try:
-        _OBSERVER.stop()
-    except:
-        pass
-
-
-class ConfigWatcher(FileSystemEventHandler):
-
-    """ Watcher that reloads config files whenever they change. """
-
-    def on_any_event(self, event):
-        """ Reload a config file if it has changed. """
-        try:
-            dest = event.dest_path
-        except AttributeError:
-            dest = None
-
-        if event.src_path == _CONFIG_FILE or dest == _CONFIG_FILE:
-            _LOG.info('Change detected in config.yaml, scheduling reload')
-            scheduler.add_asap('load_config')
-        if event.src_path == _ACCOUNTS_FILE or dest == _ACCOUNTS_FILE:
-            _LOG.info('Change detected in accounts.yaml, scheduling reload')
-            scheduler.add_asap('load_config')
+def _load_accounts(path):
+    """ Return contents of accounts file, creating it if it doesn't exist. """
+    _LOG.info("Loading accounts file")
+    acc = yaml.load(open(path, "a+"))
+    return acc
 
 
 def _load_options():
@@ -153,4 +158,7 @@ def _load_options():
     parser.add_option("-c", "--clean", action="store_true", default=False)
     parser.add_option("-d", "--debug", action="store_true", default=False)
     return parser.parse_args()
-options, args = _load_options()
+
+
+def create():
+    return _Config(appdirs.user_config_dir('nab'))

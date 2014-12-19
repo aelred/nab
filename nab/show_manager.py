@@ -3,7 +3,6 @@ import yaml
 import os
 import appdirs
 
-from nab import config
 from nab import log
 from nab import exception
 from nab import show_elem
@@ -49,19 +48,19 @@ class ShowTree(show_elem.ShowParentElem):
         """ Return yaml representation of ShowTree. """
         return show_elem.ShowParentElem.to_yaml(self)
 
-    def update_data(self):
+    def update_data(self, databases):
         """ Update show data for all shows. """
-        for show in self.values():
-            show.update_data()
+        for sh in self.values():
+            sh.update_data(databases)
 
 
-def get_shows():
+def get_shows(databases, shows_following):
     """ Get shows from all ShowSources. """
     _log.info("Getting shows")
 
     # get wanted shows from 'following' list
     titles = []
-    for source in config.config["shows"]["following"]:
+    for source in shows_following:
         source.__class__.log.info("Searching show source %s" % source)
         try:
             titles += source.get_cached_shows()
@@ -70,7 +69,7 @@ def get_shows():
             # shows will be looked up again in an hour
             pass
 
-    return [show.Show(title) for title in titles]
+    return [show.Show(databases, title) for title in titles]
 
 
 def _filter_entry(entry, filter_funcs, permissive):
@@ -102,7 +101,7 @@ def _apply_filters(shows, filters, permissive):
                               permissive)
 
 
-def filter_shows(shows):
+def filter_shows(shows, shows_following, shows_library, shows_filters):
     """
     Filter unwanted shows, seasons and episodes from list of shows.
 
@@ -119,12 +118,8 @@ def filter_shows(shows):
     """
     _log.info("Filtering shows")
 
-    following = config.config["shows"]["following"]
-    library = config.config["shows"]["library"]
-    filters = config.config["shows"]["filters"]
-
     # get owned/watched info for all episodes
-    sources = following + library
+    sources = shows_following + shows_library
     try:
         for ep in shows.episodes:
             for source in sources:
@@ -151,10 +146,10 @@ def filter_shows(shows):
     _log.info("Applying filters")
 
     # first filter using show sources and permissive filtering
-    _apply_filters(shows, following, True)
+    _apply_filters(shows, shows_following, True)
 
     # filter using show filters and strict filtering (must meet all criteria)
-    _apply_filters(shows, filters, False)
+    _apply_filters(shows, shows_filters, False)
 
     _log.info("Found %s needed episode(s)" % len(shows.epwanted))
     for ep in shows.epwanted:

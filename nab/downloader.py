@@ -1,5 +1,4 @@
 """ Handles downloader plugins and downloads. """
-from nab import config
 from nab import log
 from nab import exception
 from nab import scheduler
@@ -21,11 +20,7 @@ class DownloadException(Exception):
         Exception.__init__(self, msg)
 
 
-def _downloader():
-    return config.config["downloader"][0]
-
-
-def download(entry, torrent):
+def download(downloader, entry, torrent, test):
     """ Download the given torrent for the given entry.
 
     An entry is a nab.show.Show, nab.season.Season or nab.episode.Episode and
@@ -38,10 +33,9 @@ def download(entry, torrent):
 
     _log.info('For "%s" downloading %s' % (entry, torrent))
     _log.debug(torrent.url)
-    if config.options.test:
+    if test:
         raise DownloadException("Nab is in test mode, no downloading allowed")
 
-    downloader = _downloader()
     try:
         downloader.download(torrent)
     except exception.PluginError:
@@ -55,46 +49,15 @@ def download(entry, torrent):
             episode.wanted = False
 
 
-def check_downloads():
+def check_downloads(downloader, rename_pattern, videos_path, rename_copy):
     """ Check downloads to see if any have completed. """
-    scheduler.scheduler.add(15, "check_downloads")
-    downloader = _downloader()
     for d in list(_downloads):
         if downloader.is_completed(d):
             for path in sorted(downloader.get_files(d)):
-                scheduler.scheduler.add_asap("rename_file", path)
-            del _downloads[d]
-scheduler.tasks["check_downloads"] = check_downloads
-
-
-def get_size(torrent):
-    """ Return the total size in bytes of this torrent. """
-    return _downloader().get_size(torrent)
-
-
-def get_progress(torrent):
-    """ Return download progress of this torrent as a float from 0 to 1. """
-    return _downloader().get_progress(torrent)
-
-
-def get_downspeed(torrent):
-    """ Return download speed in bytes per second of this torrent. """
-    return _downloader().get_downspeed(torrent)
-
-
-def get_upspeed(torrent):
-    """ Return upload speed in bytes per second of this torrent. """
-    return _downloader().get_upspeed(torrent)
-
-
-def get_num_seeds(torrent):
-    """ Return the number of seeds for this torrent. """
-    return _downloader().get_num_seeds(torrent)
-
-
-def get_num_peers(torrent):
-    """ Return the number of peers for this torrent. """
-    return _downloader().get_num_peers(torrent)
+                scheduler.scheduler.add_asap("rename_file", path,
+                                             rename_pattern, videos_path,
+                                             rename_copy)
+                del _downloads[d]
 
 
 def get_downloads():

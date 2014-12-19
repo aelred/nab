@@ -7,22 +7,21 @@ import urllib
 import os
 from urlparse import urlparse
 
-from nab import config
 from nab import downloader
 from nab import log
 
 app = Flask('nab')
 init_holster(app)
 
-_shows = None
+_nab = None
 
 _static = os.path.join(os.path.dirname(__file__), 'static')
 
 
-def init(shows):
+def init(nab_):
     """ Initialize server with the given list of shows. """
-    global _shows
-    _shows = shows
+    global _nab
+    _nab = nab_
 
     banners = os.path.join(_static, 'banners')
     if not os.path.exists(banners):
@@ -65,7 +64,7 @@ def remove(path):
     """ Remove part of config file. """
     path = path.split('/')
     plugin = request.values['plugin']
-    conf_copy = copy.deepcopy(config.config)
+    conf_copy = copy.deepcopy(_nab.config.config)
     conf_sub = access_config_path(conf_copy, path)
 
     try:
@@ -89,7 +88,7 @@ def remove(path):
 
     # delete plugin from config file
     del conf_sub[index]
-    config.change_config(conf_copy)
+    _nab.config.change_config(conf_copy)
 
     return conf_copy
 
@@ -97,14 +96,14 @@ def remove(path):
 def get_config(path):
     """ Return part of path along config file. """
     # navigate provided path along config file
-    conf_copy = copy.deepcopy(config.config)
+    conf_copy = copy.deepcopy(_nab.config.config)
     conf_sub = access_config_path(conf_copy, path)
 
     if request.method == 'POST':
         # replace config path with given data
         access_config_path(conf_copy, path, yaml.safe_load(request.data))
         # update config
-        config.change_config(conf_copy)
+        _nab.config.change_config(conf_copy)
 
     return conf_sub
 
@@ -130,12 +129,12 @@ def _down_yaml(download):
     return {
         'id': download.id,
         'filename': download.filename,
-        'size': downloader.get_size(download),
-        'progress': downloader.get_progress(download),
-        'downspeed': downloader.get_downspeed(download),
-        'upspeed': downloader.get_upspeed(download),
-        'num_seeds': downloader.get_num_seeds(download),
-        'num_peers': downloader.get_num_peers(download),
+        'size': _nab.downloader().get_size(download),
+        'progress': _nab.downloader().get_progress(download),
+        'downspeed': _nab.downloader().get_downspeed(download),
+        'upspeed': _nab.downloader().get_upspeed(download),
+        'num_seeds': _nab.downloader().get_num_seeds(download),
+        'num_peers': _nab.downloader().get_num_peers(download),
         'url': download.url,
         'magnet': download.magnet,
         'entry': entry.id,
@@ -179,7 +178,7 @@ def shows():
         yml = show.to_yaml()
         del yml['seasons']
         return _format_show(yml)
-    return map(format, _shows.itervalues())
+    return map(format, _nab.shows.itervalues())
 
 
 @app.holster('/shows/<path:path>', methods=['GET'])
@@ -189,7 +188,7 @@ def show(path):
     # everything after the show name is an integer (season/ep number)
     search[1:] = [int(s) for s in search[1:]]
 
-    entry = _shows.find(tuple(search))
+    entry = _nab.shows.find(tuple(search))
 
     if not entry:
         abort(204)

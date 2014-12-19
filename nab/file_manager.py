@@ -3,7 +3,6 @@ import math
 import time
 
 from nab import log
-from nab import config
 from nab import downloader
 from nab import exception
 from nab.scheduler import scheduler, tasks
@@ -12,7 +11,7 @@ from nab.scheduler import scheduler, tasks
 _log = log.log.getChild("files")
 
 
-def _schedule_find(entry):
+def _schedule_find(entry, file_sources, file_filters):
     if entry.aired is None:
         time_since_aired = time.time()
     else:
@@ -25,28 +24,27 @@ def _schedule_find(entry):
     else:
         delay = -time_since_aired  # nab as soon as it airs
 
-    scheduler.add(delay, "find_file", entry, True)
+    scheduler.add(delay, "find_file", entry, True, file_sources, file_filters)
 
 
-def _rank_file(f):
-    filters = config.config["files"]["filters"]
+def _rank_file(f, file_filters):
     _log.debug(f.filename)
-    rank = sum(filt.filter(f) for filt in filters)
+    rank = sum(filt.filter(f) for filt in file_filters)
     _log.debug(rank)
     return rank
 
 
-def _best_file(files):
+def _best_file(files, file_filters):
     if files:
         _log.debug("Finding best file:")
-        best = max(files, key=lambda f: _rank_file(f))
+        best = max(files, key=lambda f: _rank_file(f, file_filters))
         _log.debug("Best file found:")
         _log.debug(best.filename)
         return best
     return None
 
 
-def _find_all_files(entry):
+def _find_all_files(entry, file_sources):
     # only search for aired shows
     if not entry.has_aired():
         return None
@@ -54,7 +52,7 @@ def _find_all_files(entry):
     _log.info("Searching for %s" % entry)
     files = []
     try:
-        for source in config.config["files"]["sources"]:
+        for source in file_sources:
             source.__class__.log.debug("Searching in %s" % source)
             files += source.find(entry)
     except exception.PluginError:
@@ -66,7 +64,7 @@ def _find_all_files(entry):
     return files
 
 
-def find_file(entry, reschedule):
+def find_file(entry, reschedule, file_sources, file_filters):
     """
     Find a torrent for the given ShowElem entry using FileSource plugins.
 
@@ -78,7 +76,7 @@ def find_file(entry, reschedule):
     """
     # get entry only if wanted
     if entry.wanted:
-        f = _best_file(_find_all_files(entry))
+        f = _best_file(_find_all_files(entry, file_sources), file_filters)
         if f:
             try:
                 downloader.download(entry, f)
@@ -88,23 +86,25 @@ def find_file(entry, reschedule):
                 return  # succesful, return
 
         if reschedule:
-            _schedule_find(entry)
+            _schedule_find(entry, file_sources, file_filters)
             reschedule = False
 
     try:
         for child in sorted(entry.values(),
                             key=lambda c: c.aired, reverse=True):
             if len(child.epwanted):
-                scheduler.add_lazy("find_file", child, reschedule)
+                scheduler.add_lazy(
+                    "find_file", child, reschedule, file_sources, file_filters)
     except AttributeError:
         pass
 tasks["find_file"] = find_file
 
 
-def find_files(shows):
+def find_files(shows, file_sources, file_filters):
     """ Find torrents for all wanted episodes in the given list of shows. """
     _log.info("Finding files")
 
     for sh in sorted(shows.values(), key=lambda sh: sh.aired, reverse=True):
         if len(sh.epwanted):
-            scheduler.add_lazy("find_file", sh, True)
+            scheduler.add_lazy(
+                "find_file", sh, True, file_sources, file_filters)
