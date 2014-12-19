@@ -23,11 +23,9 @@ for app_path in [appdirs.user_data_dir('nab'), appdirs.user_config_dir('nab'),
 
 
 # set up logging for uncaught exceptions
-_LOG = nab.log.log.getChild("exception")
-
-
 def _handle_exception(*exception):
     """ Pass exception to nab log. """
-    _LOG.exception("".join(traceback.format_exception(*exception)))
+    log = nab.log.log.getChild("exception")
+    log.exception("".join(traceback.format_exception(*exception)))
 
 sys.excepthook = _handle_exception

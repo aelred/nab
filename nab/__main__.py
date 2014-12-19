@@ -34,7 +34,11 @@ class _Nab:
         """ Initialize nab. """
         self.shows = show_manager.ShowTree()
         self.scheduler = scheduler.Scheduler(self.shows)
-        self.config = config.create(self.scheduler)
+        self.config = config.Config(self.scheduler)
+
+        self.show_manager = show_manager.ShowManager(self.config)
+        self.file_manager = file_manager.FileManager(
+            self.scheduler, self.config)
 
         self.show_manager = show_manager.ShowManager(self.config)
         self.file_manager = file_manager.FileManager(
