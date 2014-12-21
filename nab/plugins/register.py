@@ -74,6 +74,7 @@ class Register:
                         raise ValueError('No account given for plugin %s'
                                          % plugin_class.name)
 
+                plugin_log.debug('Starting plugin %s' % plugin_class.name)
                 plugin = plugin_class(*param_list, **param_dict)
                 results.append(plugin)
 

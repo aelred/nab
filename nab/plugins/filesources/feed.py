@@ -2,10 +2,8 @@ from filecache import filecache
 import feedparser
 from unidecode import unidecode
 import urllib
-import urlparse
 import re
 
-from nab.files import Torrent
 from nab.plugins.filesources import Searcher
 
 
@@ -95,10 +93,16 @@ class Feed(Searcher):
             if not results or (page != 1 and p1_links == links):
                 break
 
-            for f in results:
-                url = get_torrent_url(f)
-                magnet = f.get("torrent_magneturi")
-                files.append(Torrent(f["title"], url, magnet, get_seeds(f)))
+            for r in results:
+                f = {
+                    'filename': r['title'],
+                    'url': get_torrent_url(r),
+                    'seeds': get_seeds(r)
+                }
+                if 'torrent_magneturi' in r:
+                    f['magnet'] = r['torrent_magneturi']
+
+                files.append(f)
 
             if not self.multipage:
                 break

@@ -4,7 +4,6 @@ import requests
 import urllib
 from lxml import html
 
-from nab.files import Torrent
 from nab.plugins.filesources import Searcher
 from nab import exception
 
@@ -50,7 +49,7 @@ class Bakabt(Searcher):
             title = tree.xpath('//div[@id="description_title"]/h1/text()')[0]
             url = tree.xpath('//div[@class="download_link"]/a/@href')[0]
             tags = tree.xpath('//div[@class="tags"]/a/text()')
-            files.append(Torrent(title, url))
+            files.append({'filename': title, 'url': url})
 
         return files
 

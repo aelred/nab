@@ -2,8 +2,6 @@
 
 from nab.plugins import register
 
-import re
-
 
 class FileSource(register.Entry):
 
@@ -14,10 +12,25 @@ class FileSource(register.Entry):
 
     def find(self, entry):
         """
-        Return a list of files.Torrent objects matching the given ShowElem.
+        Return a list of files that match the given ShowElem.
 
         Most plugins should probably extend Searcher, which abstracts away
         some of this behaviour to simple searching for strings.
+
+        Args:
+            entry (ShowElem)
+
+        Returns ([dict]):
+            A list of search results.
+            Each result should be of the form:
+            {
+                'filename': str,
+                'url': str (optional),
+                'magnet': str (optional),
+                'seeds': int (optional)
+            }
+
+            A result must contain one or both of 'url' and 'magnet'.
         """
         raise NotImplementedError()
 
@@ -65,37 +78,28 @@ class Searcher(FileSource):
         self.search_by = search_by or ["show", "season", "episode"]
         self.match_by = match_by or ["show", "season", "episode"]
 
-    def search(self, terms):
+    def search(self, term):
         """
         Search using the given search term.
 
-        Return a list of torrents.
+        Args:
+            term (str)
+
+        Returns ([dict]):
+            A list of search results.
+            Each result should be of the form:
+            {
+                'filename': str,
+                'url': str (optional),
+                'magnet': str (optional),
+                'seeds': int (optional)
+            }
+
+            A result must contain one or both of 'url' and 'magnet'.
         """
         raise NotImplementedError()
 
     def _search_all(self, s_terms, entry):
-
-        def valid_file(f):
-            self.__class__.log.debug('Checking file %s' % f.filename)
-
-            # title must not contain bad words!
-            badwords = ["raw", "internal"]
-            for tag in f.tags:
-                if tag in badwords:
-                    return False
-                # no tags that are just numbers (avoiding obscure files)
-                if re.match(r"\d+$", tag):
-                    return False
-
-            # there must be at least one seeder
-            if f.seeds is not None and f.seeds == 0:
-                return False
-
-            match = entry.match(f)
-            if match:
-                self.__class__.log.debug('Valid file!')
-            return match
-
         # search under every title
         files = []
         for term in s_terms:
@@ -103,14 +107,29 @@ class Searcher(FileSource):
             results = self.search(term)
             files += results
 
-        return filter(valid_file, files)
+        return files
 
     def find(self, entry):
         """
-        Return a list of torrents matching the given ShowElem.
+        Return a list of files matching the given ShowElem.
 
         If this Searcher does not support matching this particular ShowElem,
         returns an empty list.
+
+        Args:
+            entry (ShowElem)
+
+        Returns ([dict]):
+            A list of search results.
+            Each result should be of the form:
+            {
+                'filename': str,
+                'url': str (optional),
+                'magnet': str (optional),
+                'seeds': int (optional)
+            }
+
+            A result must contain one or both of 'url' and 'magnet'.
         """
         # Only search for things this searcher supports
         for m in self.match_by:

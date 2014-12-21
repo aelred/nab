@@ -52,9 +52,10 @@ class DownloadManager:
             self._downloader().download(torrent)
         except exception.PluginError:
             # unsuccessful, silently continue
-            pass
+            self._log.warning('Failed to download torrent')
         else:
             # successful, record downloaded file
+            self._log.debug('Successfully started torrent download')
             self._downloads[torrent] = entry
             # mark this entry's episodes as no longer wanted
             for episode in entry.epwanted:

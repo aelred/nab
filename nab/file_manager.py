@@ -4,6 +4,7 @@ import time
 
 from nab import downloader
 from nab import exception
+from nab import files
 
 
 class FileManager:
@@ -51,24 +52,41 @@ class FileManager:
             return best
         return None
 
+    def _is_valid_file(self, f, entry):
+        # no 'bad' tags
+        bad_tags = ['raw', 'internal']
+
+        for tag in f.tags:
+            if tag in bad_tags:
+                return False
+
+        # must have at least one seeder
+        if f.seeds is not None and f.seeds == 0:
+            return False
+
+        # must match given entry
+        return entry.match(f)
+
     def _find_all_files(self, entry):
         # only search for aired shows
         if not entry.has_aired():
             return None
 
         self._log.info("Searching for %s" % entry)
-        files = []
+        results = []
         try:
             for source in self._sources():
                 source.__class__.log.debug("Searching in %s" % source)
-                files += source.find(entry)
+
+                for result in source.find(entry):
+                    results.append(files.Torrent(**result))
         except exception.PluginError:
             return None
 
-        if not files:
+        if not results:
             self._log.info("No file found for %s" % entry)
 
-        return files
+        return [r for r in results if self._is_valid_file(r, entry)]
 
     def find_file(self, entry, reschedule):
         """
