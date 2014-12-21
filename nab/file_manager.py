@@ -2,19 +2,17 @@
 import math
 import time
 
-from nab import log
 from nab import downloader
 from nab import exception
 
 
-_log = log.log.getChild("files")
-
-
 class FileManager:
 
-    def __init__(self, scheduler, config):
+    def __init__(self, file_log, scheduler, config, download_manager):
         self._scheduler = scheduler
         self._config = config
+        self._download_manager = download_manager
+        self._log = file_log
         self._scheduler.tasks['find_file'] = self.find_file
 
     def _sources(self):
@@ -22,9 +20,6 @@ class FileManager:
 
     def _filters(self):
         return self._config.config['files']['filters']
-
-    def _downloader(self):
-        return self._config.config['downloader'][0]
 
     def _schedule_find(self, entry):
         if entry.aired is None:
@@ -42,17 +37,17 @@ class FileManager:
         self._scheduler.add(delay, "find_file", entry, True)
 
     def _rank_file(self, f):
-        _log.debug(f.filename)
+        self._log.debug(f.filename)
         rank = sum(filt.filter(f) for filt in self._filters())
-        _log.debug(rank)
+        self._log.debug(rank)
         return rank
 
     def _best_file(self, files):
         if files:
-            _log.debug("Finding best file:")
+            self._log.debug("Finding best file:")
             best = max(files, key=lambda f: self._rank_file(f))
-            _log.debug("Best file found:")
-            _log.debug(best.filename)
+            self._log.debug("Best file found:")
+            self._log.debug(best.filename)
             return best
         return None
 
@@ -61,7 +56,7 @@ class FileManager:
         if not entry.has_aired():
             return None
 
-        _log.info("Searching for %s" % entry)
+        self._log.info("Searching for %s" % entry)
         files = []
         try:
             for source in self._sources():
@@ -71,7 +66,7 @@ class FileManager:
             return None
 
         if not files:
-            _log.info("No file found for %s" % entry)
+            self._log.info("No file found for %s" % entry)
 
         return files
 
@@ -90,8 +85,7 @@ class FileManager:
             f = self._best_file(self._find_all_files(entry))
             if f:
                 try:
-                    downloader.download(self._downloader(), entry, f,
-                                        self._config.options.test)
+                    self._download_manager.download(entry, f)
                 except downloader.DownloadException:
                     pass  # reschedule download
                 else:
@@ -111,7 +105,7 @@ class FileManager:
 
     def find_files(self, shows):
         """ Find torrents for all wanted episodes in the list of shows. """
-        _log.info("Finding files")
+        self._log.info("Finding files")
 
         for sh in sorted(shows.values(), key=lambda sh: sh.aired,
                          reverse=True):

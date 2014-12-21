@@ -6,9 +6,7 @@ from optparse import OptionParser
 from shutil import copyfile
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import appdirs
 
-from nab import log
 from nab.plugins import shows
 from nab.plugins import databases
 from nab.plugins import filesources
@@ -23,8 +21,6 @@ _CONFIG_PLUGIN_PATHS = {
     downloaders.Downloader: (('downloader',),)
 }
 
-_CONFIG_PATH = appdirs.user_config_dir('nab')
-
 
 class Config(FileSystemEventHandler):
 
@@ -35,13 +31,12 @@ class Config(FileSystemEventHandler):
     If the base files are modified, a reload is automatically scheduled.
     """
 
-    def __init__(self, scheduler, path=_CONFIG_PATH):
-        # create log
-        self._log = log.log.getChild("config")
+    def __init__(self, config_dir, config_log, scheduler):
+        self._log = config_log
 
         # read config files
-        self._accounts_file = os.path.join(path, 'accounts.yaml')
-        self._config_file = os.path.join(path, 'config.yaml')
+        self._accounts_file = os.path.join(config_dir, 'accounts.yaml')
+        self._config_file = os.path.join(config_dir, 'config.yaml')
         self.load()
 
         # parse command line options
@@ -49,7 +44,7 @@ class Config(FileSystemEventHandler):
 
         # watch config directory
         self._observer = Observer()
-        self._observer.schedule(self, path)
+        self._observer.schedule(self, config_dir)
 
         # set scheduler task to point to this object
         self._scheduler = scheduler

@@ -2,7 +2,7 @@
 
 import time
 
-from nab import register
+from nab.plugins import register
 from nab import scheduler
 from nab import files
 

@@ -1,6 +1,6 @@
 """ File source and filter plugins for finding and filtering torrent files. """
 
-from nab import register
+from nab.plugins import register
 
 import re
 
@@ -59,7 +59,7 @@ class Searcher(FileSource):
                 A list specifying whether this plugin can search by 'show',
                 'season' or 'episode'. Defaults to all three.
             match_by ([str]):
-                A list specifying what this plugin can match (i.e. what torrents
+                A list stating what this plugin can match (i.e. what torrents
                 it can return). Same options and defaults as search_by.
         """
         self.search_by = search_by or ["show", "season", "episode"]
@@ -141,4 +141,3 @@ class Searcher(FileSource):
 
         # get results
         return self._search_all(s_terms, entry)
-

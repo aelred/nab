@@ -1,15 +1,9 @@
 """ Module for managing TV shows. """
 import yaml
-import os
-import appdirs
 
-from nab import log
 from nab import exception
 from nab import show_elem
 from nab import show
-
-_log = log.log.getChild("show")
-shows_file = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
 
 
 class ShowTree(show_elem.ShowParentElem):
@@ -21,11 +15,12 @@ class ShowTree(show_elem.ShowParentElem):
         ShowTree -> Show -> Season -> Episode
     """
 
-    def __init__(self):
+    def __init__(self, shows_file):
         """ Create ShowTree, automatically loading from yaml file. """
+        self._shows_file = shows_file
         show_elem.ShowParentElem.__init__(self)
         try:
-            with file(shows_file, 'r') as f:
+            with open(self._shows_file, 'r') as f:
                 self.update(ShowTree.from_yaml(yaml.load(f), show.Show, self))
         except IOError:
             pass  # no shows.yaml file, doesn't matter!
@@ -42,7 +37,7 @@ class ShowTree(show_elem.ShowParentElem):
 
     def save(self):
         """ Save ShowTree to yaml file. """
-        yaml.safe_dump(self.to_yaml(), file(shows_file, 'w'))
+        yaml.safe_dump(self.to_yaml(), open(self._shows_file, 'w'))
 
     def to_yaml(self):
         """ Return yaml representation of ShowTree. """
@@ -56,8 +51,9 @@ class ShowTree(show_elem.ShowParentElem):
 
 class ShowManager:
 
-    def __init__(self, config):
+    def __init__(self, show_log, config):
         self._config = config
+        self._log = show_log
 
     def _following(self):
         return self._config.config['shows']['following']
@@ -73,7 +69,7 @@ class ShowManager:
 
     def get_shows(self):
         """ Get shows from all ShowSources. """
-        _log.info("Getting shows")
+        self._log.info("Getting shows")
 
         # get wanted shows from 'following' list
         titles = []
@@ -132,7 +128,7 @@ class ShowManager:
             'following' plugins, then it is kept as 'wanted', but if any
             of the 'filter' plugins filter it out, it is removed.
         """
-        _log.info("Filtering shows")
+        self._log.info("Filtering shows")
 
         # get owned/watched info for all episodes
         sources = self._following() + self._library()
@@ -144,7 +140,7 @@ class ShowManager:
                             ep.owned = True
                             break
                     except exception.PluginError:
-                        _log.info("Unknown ")
+                        self._log.info("Unknown ")
                 for source in sources:
                     if source.is_watched(ep):
                         ep.watched = True
@@ -157,9 +153,9 @@ class ShowManager:
                 ep.wanted = False
             return
 
-        _log.info("Found %s show(s)" % len(shows))
+        self._log.info("Found %s show(s)" % len(shows))
 
-        _log.info("Applying filters")
+        self._log.info("Applying filters")
 
         # first filter using show sources and permissive filtering
         self._apply_filters(shows, self._following(), True)
@@ -167,6 +163,6 @@ class ShowManager:
         # filter using show filters and strict filtering (meet all criteria)
         self._apply_filters(shows, self._filters(), False)
 
-        _log.info("Found %s needed episode(s)" % len(shows.epwanted))
+        self._log.info("Found %s needed episode(s)" % len(shows.epwanted))
         for ep in shows.epwanted:
-            _log.info(ep)
+            self._log.info(ep)

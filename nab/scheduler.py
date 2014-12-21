@@ -1,16 +1,9 @@
 """ Module for the scheduler, that can run functions at certain times. """
 import time
 import threading
-import log
 import heapq
 from collections import deque
 import yaml
-import appdirs
-import os
-
-_log = log.log.getChild("scheduler")
-
-_SCHEDULE_FILE = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
 
 
 class _SchedQueue:
@@ -130,8 +123,11 @@ class Scheduler:
     concurrency issues.
     """
 
-    def __init__(self, shows):
+    def __init__(self, scheduler_log, schedule_file, shows):
         """ Create a new scheduler. """
+        self._log = scheduler_log
+        self._schedule_file = schedule_file
+
         self.queue = _SchedQueueTimed('timed')
         self.queue_asap = _SchedQueue('asap')
         self.queue_lazy = _SchedQueue('lazy')
@@ -161,7 +157,7 @@ class Scheduler:
 
     def load(self):
         """ Load scheduler events from the schedule yaml file. """
-        with file(_SCHEDULE_FILE, 'r') as f:
+        with open(self._schedule_file, 'r') as f:
             yml = yaml.load(f)
             if not yml:
                 # yaml file is invalid
@@ -184,7 +180,7 @@ class Scheduler:
 
     def save(self):
         """ Save scheduler events to the schedule yaml file. """
-        yaml.safe_dump(self.to_yaml(), file(_SCHEDULE_FILE, 'w'))
+        yaml.safe_dump(self.to_yaml(), open(self._schedule_file, 'w'))
 
     def _save_decision(self):
         if time.time() - self._last_save > 1.0 and self._save_invalidate:
@@ -195,13 +191,13 @@ class Scheduler:
     def start(self):
         """ Start the scheduler in a thread and return. """
         if self._stop_flag:
-            _log.debug("Starting")
+            self._log.debug("Starting")
             self._stop_flag = False
             threading.Thread(target=self._run).start()
 
     def stop(self):
         """ Tell the scheduler to stop running after the task is complete. """
-        _log.debug("Setting stop flag")
+        self._log.debug("Setting stop flag")
         self._stop_flag = True
 
     def _wait_next(self):
@@ -229,8 +225,8 @@ class Scheduler:
 
             action, argument = task
 
-            _log.debug("Executing scheduled task %s%s"
-                       % (action, tuple(argument)))
+            self._log.debug("Executing scheduled task %s%s"
+                            % (action, tuple(argument)))
 
             self.tasks[action](*self._decode_argument(argument))
             self._save_invalidate = True
@@ -239,7 +235,7 @@ class Scheduler:
         # save state when stopping scheduler
         self.save()
 
-        _log.debug("Stopping")
+        self._log.debug("Stopping")
 
     def _encode_argument(self, argument):
         new_arguments = []
@@ -281,8 +277,8 @@ class Scheduler:
 
         with self._qlock:
             if queue.push(dtime, action, argument):
-                _log.debug("Scheduling %s%s on %s%s"
-                           % (action, tuple(argument), queue.name, tstr))
+                self._log.debug("Scheduling %s%s on %s%s"
+                                % (action, tuple(argument), queue.name, tstr))
                 self._save_invalidate = True
                 self._save_decision()
             self._qlock.notify()

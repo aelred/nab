@@ -7,14 +7,17 @@ from nab import scheduler
 from nab import server
 from nab import log
 from nab import downloader
+from nab import renamer
 import nab.plugins.shows
 import nab.plugins.databases
 import nab.plugins.filesources
 import nab.plugins.downloaders
-from nab.plugins.downloaders import libtorrent_downloader
 
 import os
 import logging
+import appdirs
+import traceback
+import sys
 
 _PLUGIN_TYPES = (
     nab.plugins.shows.ShowSource,
@@ -25,6 +28,11 @@ _PLUGIN_TYPES = (
     nab.plugins.downloaders.Downloader
 )
 
+_SHOWS_FILE = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
+_CONFIG_DIR = appdirs.user_config_dir('nab')
+_LOG_FILE = os.path.join(appdirs.user_log_dir('nab'), 'log.txt')
+_SCHEDULE_FILE = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
+
 
 class _Nab:
 
@@ -32,17 +40,29 @@ class _Nab:
 
     def __init__(self):
         """ Initialize nab. """
-        self.shows = show_manager.ShowTree()
-        self.scheduler = scheduler.Scheduler(self.shows)
-        self.config = config.Config(self.scheduler)
+        self.logger = log.Logger(_LOG_FILE)
 
-        self.show_manager = show_manager.ShowManager(self.config)
-        self.file_manager = file_manager.FileManager(
-            self.scheduler, self.config)
+        # handle exceptions here in logger
+        sys.excepthook = self._handle_exception
 
-        self.show_manager = show_manager.ShowManager(self.config)
+        # load all plugins
+        plugins.load(self.logger.get_child('plugin'))
+
+        self.shows = show_manager.ShowTree(_SHOWS_FILE)
+        self.scheduler = scheduler.Scheduler(
+            self.logger.get_child('scheduler'), _SCHEDULE_FILE, self.shows)
+        self.config = config.Config(
+            _CONFIG_DIR, self.logger.get_child('config'), self.scheduler)
+        self.renamer = renamer.Renamer(self.logger.get_child('renamer'),
+                                       self.scheduler, self.config, self.shows)
+
+        self.show_manager = show_manager.ShowManager(
+            self.logger.get_child('show'), self.config)
+        self.download_manager = downloader.DownloadManager(
+            self.logger.get_child('download'), self.scheduler, self.config)
         self.file_manager = file_manager.FileManager(
-            self.scheduler, self.config)
+            self.logger.get_child('file'), self.scheduler, self.config,
+            self.download_manager)
 
         # set scheduler tasks to point to this object
         self.scheduler.tasks["update_shows"] = self._update_shows
@@ -54,7 +74,7 @@ class _Nab:
             log_level = logging.DEBUG
         else:
             log_level = logging.INFO
-        log.set_level(log_level)
+        self.logger.set_level(log_level)
 
         if self.config.options.clean:
             _clean()
@@ -73,6 +93,11 @@ class _Nab:
                 except AttributeError:
                     pass
                 del self.config
+
+    def _handle_exception(self, *exception):
+        " Pass exception to nab log. """
+        log = self.logger.get_child('error')
+        log.exception(''.join(traceback.format_exception(*exception)))
 
     def _start(self):
         """ Start nabbing shows. """
@@ -118,7 +143,7 @@ class _Nab:
     def _check_downloads(self):
         # every 15 seconds
         self.scheduler.add(15, "check_downloads")
-        downloader.check_downloads(self.downloader(), self.scheduler)
+        self.download_manager.check_downloads()
 
     def _show_plugins(self):
         """ Display information about plugins. """
@@ -145,13 +170,14 @@ class _Nab:
 
 def _clean():
     # clean up schedule, show and libtorrent files, start fresh
+    from nab.plugins.downloaders import libtorrent_downloader
     try:
-        os.remove(show_manager.shows_file)
+        os.remove(_SHOWS_FILE)
     except OSError:
         # file may not exist
         pass
     try:
-        os.remove(scheduler._SCHEDULE_FILE)
+        os.remove(_SCHEDULE_FILE)
     except OSError:
         pass
     try:

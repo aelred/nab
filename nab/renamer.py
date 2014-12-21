@@ -4,18 +4,16 @@ import os.path
 import shutil
 import string
 
-from nab import log
 from nab import files
-
-_log = log.log.getChild("renamer")
 
 
 class Renamer:
 
-    def __init__(self, scheduler, config, shows):
+    def __init__(self, renamer_log, scheduler, config, shows):
         self._scheduler = scheduler
         self._config = config
         self._shows = shows
+        self._log = renamer_log
         self._scheduler.tasks['rename_file'] = self.rename_file
 
     def _videos_path(self):
@@ -69,7 +67,7 @@ class Renamer:
             try:
                 os.makedirs(dest_dir)
             except OSError as e:
-                _log.warning(
+                self._log.warning(
                     "Error creating directory %s: %s" % (dest_dir, str(e)))
                 return False
 
@@ -79,7 +77,7 @@ class Renamer:
             else:
                 shutil.move(origin, dest)
         except IOError, e:
-            _log.error(str(e))
+            self._log.error(str(e))
             return False
         else:
             return True
@@ -93,18 +91,18 @@ class Renamer:
         f = files.File(os.path.basename(path))
 
         # must be a video file
-        if f.ext not in files.video_exts + files.sub_exts:
-            _log.debug("Ignoring non-video file %s" % f)
+        if f.ext not in files.VIDEO_EXTS + files.SUB_EXTS:
+            self._log.debug("Ignoring non-video file %s" % f)
             return
 
         # check if this is a video file (as oppposed to e.g. a subtitle file)
-        is_video = f.ext in files.video_exts
+        is_video = f.ext in files.VIDEO_EXTS
 
         if "sample" in f.filename.lower():
-            _log.debug("Ignoring sample file %s" % f)
+            self._log.debug("Ignoring sample file %s" % f)
             return
 
-        _log.debug("File created %s" % f)
+        self._log.debug("File created %s" % f)
 
         # look for a matching episode
         episode = self._find_episode(f)
@@ -122,17 +120,17 @@ class Renamer:
             episode = self._find_episode(f)
 
         if episode is None:
-            _log.warning("No match found for %s" % f)
+            self._log.warning("No match found for %s" % f)
             return
 
-        _log.debug("%s matches %s" % (f, episode))
+        self._log.debug("%s matches %s" % (f, episode))
 
         dest = self._new_name(f, episode)
 
-        _log.info("Moving %s to %s" % (f, dest))
+        self._log.info("Moving %s to %s" % (f, dest))
 
         if self._move_file(path, dest):
-            _log.info("Successfully moved %s" % f)
+            self._log.info("Successfully moved %s" % f)
 
             # mark episode as owned
             if is_video:

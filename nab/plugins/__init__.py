@@ -3,17 +3,23 @@ import os
 import sys
 import importlib
 
-from nab import log
+from nab.plugins import databases, filesources, shows, downloaders
 
 _loaded = False
 
 
-def load():
+def load(plugin_log):
     """ Import all plugins in folder. Will only run once.  """
     global _loaded
     if _loaded:
         return
-    log.log.debug("Loading plugins")
+
+    for base in [databases.Database, filesources.FileSource,
+                 filesources.FileFilter, shows.ShowSource, shows.ShowFilter,
+                 downloaders.Downloader]:
+        base.init(plugin_log)
+
+    plugin_log.debug("Loading plugins")
     _loaded = True
 
     for folder, sub, files in os.walk("nab/plugins/"):
@@ -21,5 +27,5 @@ def load():
         for f in files:
             fname, ext = os.path.splitext(f)
             if ext == '.py' and fname != "__init__":
-                log.log.debug(fname)
+                plugin_log.debug(fname)
                 importlib.import_module(fname)

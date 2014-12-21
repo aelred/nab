@@ -7,15 +7,12 @@ import urllib
 import os
 from urlparse import urlparse
 
-from nab import downloader
-from nab import log
-
 app = Flask('nab')
 init_holster(app)
 
 _nab = None
 
-_static = os.path.join(os.path.dirname(__file__), 'static')
+_STATIC = os.path.join(os.path.dirname(__file__), 'static')
 
 
 def init(nab_):
@@ -23,7 +20,7 @@ def init(nab_):
     global _nab
     _nab = nab_
 
-    banners = os.path.join(_static, 'banners')
+    banners = os.path.join(_STATIC, 'banners')
     if not os.path.exists(banners):
         os.makedirs(banners)
 
@@ -42,7 +39,7 @@ def index():
 @app.route('/log')
 def log_():
     """ Return log file in plain text. """
-    response = make_response(file(log.log_file).read())
+    response = make_response(_nab.logger.get_log_text())
     response.headers['content-type'] = 'text/plain'
     return response
 
@@ -125,7 +122,7 @@ def access_config_path(config_data, path, config_set=None):
 
 
 def _down_yaml(download):
-    entry = downloader.get_downloads()[download]
+    entry = _nab.download_manager.get_downloads()[download]
     return {
         'id': download.id,
         'filename': download.filename,
@@ -146,13 +143,14 @@ def _down_yaml(download):
 @app.holster('/downloads', methods=['GET'])
 def downloads():
     """ Return list of all downloads. """
-    return map(_down_yaml, downloader.get_downloads())
+    return map(_down_yaml, _nab.download_manager.get_downloads())
 
 
 @app.holster('/downloads/<string:down_id>', methods=['GET'])
 def download(down_id):
     """ Return information on a particular download ID. """
-    down = next(d for d in downloader.get_downloads() if d.id == down_id)
+    down = next(d for d in _nab.download_manager.get_downloads()
+                if d.id == down_id)
     return _down_yaml(down)
 
 

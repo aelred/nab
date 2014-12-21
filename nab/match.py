@@ -3,14 +3,13 @@ import re
 import unidecode
 import difflib
 
-wordswap = {
+_WORDSWAP = {
     "&": "and",
     "the": ""
 }
-wordswap_p = re.compile(r'( |^)(' + '|'.join(map(re.escape, wordswap)) +
-                        r')( |$)',
-                        re.IGNORECASE)
-charswap = {
+_WORDSWAP_P = re.compile(r'( |^)(' + '|'.join(map(re.escape, _WORDSWAP)) +
+                         r')( |$)', re.IGNORECASE)
+_CHARSWAP = {
     "`": "'",
     "_": " ",
     "@": "",
@@ -23,8 +22,7 @@ charswap = {
     "+": "",
     "'": ""
 }
-charswap_p = re.compile('|'.join(map(re.escape, charswap)),
-                        re.IGNORECASE)
+_CHARSWAP_P = re.compile('|'.join(map(re.escape, _CHARSWAP)), re.IGNORECASE)
 
 
 def format_filename(fname):
@@ -33,11 +31,11 @@ def format_filename(fname):
     if isinstance(formatted, unicode):
         formatted = unidecode.unidecode(fname)  # remove accented characters
     # perform any replacements from conversion dictionary
-    formatted = wordswap_p.sub(
-        lambda x: " " + wordswap[x.group(2).lower()] + " ",
+    formatted = _WORDSWAP_P.sub(
+        lambda x: " " + _WORDSWAP[x.group(2).lower()] + " ",
         formatted)
-    formatted = charswap_p.sub(lambda x: charswap[x.group().lower()],
-                               formatted)
+    formatted = _CHARSWAP_P.sub(lambda x: _CHARSWAP[x.group().lower()],
+                                formatted)
     formatted = re.sub(' +', ' ', formatted)  # squash repeated spaces
     formatted = formatted.lower().strip()  # title case and strip whitespace
     return formatted
@@ -50,7 +48,7 @@ def format_title(title):
     return formatted
 
 
-junk = ":-[]@~., \t"
+_JUNK = ":-[]@~., \t"
 
 
 def comp(a, b, ignore=[]):
@@ -64,7 +62,7 @@ def comp(a, b, ignore=[]):
     for ig in ignore:
         a = a.replace(ig.lower(), "")
         b = b.replace(ig.lower(), "")
-    return difflib.SequenceMatcher(lambda c: c in junk, a, b).ratio()
+    return difflib.SequenceMatcher(lambda c: c in _JUNK, a, b).ratio()
 
 
 def closest_match(title, matches):

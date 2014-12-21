@@ -1,6 +1,6 @@
 """ Database plugins for finding extra show data. """
 
-from nab import register
+from nab.plugins import register
 
 
 class Database(register.Entry):
@@ -78,4 +78,3 @@ class Database(register.Entry):
         The default implementation will return an empty list.
         """
         return []
-

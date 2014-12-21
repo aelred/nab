@@ -4,10 +4,10 @@ import re
 from nab import match
 
 
-video_exts = ['mpg', 'mpe', 'mpeg', 'mp2v', 'm2v', 'm2s', 'avi', 'mov', 'qt',
+VIDEO_EXTS = ('mpg', 'mpe', 'mpeg', 'mp2v', 'm2v', 'm2s', 'avi', 'mov', 'qt',
               'asf', 'asx', 'wmv', 'wmx', 'rm', 'ram', 'rmvb', 'mp4', '3gp',
-              'ogm', 'flv', 'mkv', 'ts', 'm4v']
-sub_exts = ['srt', 'sub', 'smi']
+              'ogm', 'flv', 'mkv', 'ts', 'm4v')
+SUB_EXTS = ('srt', 'sub', 'smi')
 
 
 class File(object):
@@ -179,7 +179,7 @@ class File(object):
 
     @staticmethod
     def _split_ext(title):
-        ext_re = r"(.*?)\s+\.?(%s)$" % '|'.join(video_exts + sub_exts)
+        ext_re = r"(.*?)\s+\.?(%s)$" % '|'.join(VIDEO_EXTS + SUB_EXTS)
         match = re.match(ext_re, title, re.I)
         if match:
             return {"title": match.group(1), "ext": match.group(2)}

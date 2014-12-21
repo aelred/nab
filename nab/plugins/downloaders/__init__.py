@@ -1,6 +1,6 @@
 """ Downloader plugins for downloading torrents. """
 
-from nab import register
+from nab.plugins import register
 
 
 class Downloader(register.Entry):
@@ -23,7 +23,7 @@ class Downloader(register.Entry):
         raise NotImplementedError()
 
     def get_progress(self, torrent):
-        """ Return download progress of this torrent as a float from 0 to 1. """
+        """ Return download progress as a float from 0 to 1. """
         raise NotImplementedError()
 
     def get_downspeed(self, torrent):
@@ -49,5 +49,3 @@ class Downloader(register.Entry):
     def get_files(self, torrent):
         """ Return a list of absolute paths to files in this torrent. """
         raise NotImplementedError()
-
-

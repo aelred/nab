@@ -1,6 +1,6 @@
 """ Handles TV shows. """
 import re
-from nab import show_elem, match, database, season
+from nab import show_elem, match, season
 
 
 class Show(show_elem.ShowParentElem, show_elem.ShowElem):
@@ -74,8 +74,43 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         self.ids = dict(self.ids.items() + other.ids.items())
 
     def update_data(self, databases):
-        """ Get new data from databases for this show. """
-        database.get_data(self, databases)
+        """ Retrieve and add data for a show from database plugins. """
+        # get all titles for show
+        for db in databases:
+            self.titles.update(db.get_show_titles(self))
+
+        # get if should use absolute numbering
+        for db in databases:
+            if db.get_show_absolute_numbering(self):
+                self.absolute = True
+                break
+
+        # get ids of show
+        for db in databases:
+            self.ids = dict(self.ids.items() + db.get_show_ids(self).items())
+
+        # get banner for show
+        for db in databases:
+            self.banner = db.get_banner(self)
+            if self.banner:
+                break
+
+        # get seasons for show
+        for db in databases:
+            for se in db.get_seasons(self):
+                # get episodes for season
+                for episode in db.get_episodes(se):
+                    if episode.num in se:
+                        se[episode.num].merge(episode)
+                    else:
+                        se[episode.num] = episode
+
+                if se.num in self:
+                    self[se.num].merge(se)
+                else:
+                    self[se.num] = se
+
+        self.format()
 
     def to_yaml(self):
         """ Return a yaml representation of this show. """

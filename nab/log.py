@@ -1,39 +1,34 @@
 """ Module to manage logging. """
 import logging
 import logging.handlers
-import appdirs
-import os
-
-log_dir = appdirs.user_log_dir('nab')
-log_file = os.path.join(log_dir, 'log.txt')
-
-_stream_handler = logging.StreamHandler()
 
 
-def _init():
-    log = logging.getLogger("nab")
-    log.setLevel(logging.DEBUG)
-    log.propagate = False
-    formatter = logging.Formatter('%(asctime)s: %(levelname)s:\t'
-                                  '%(name)s:\t%(message)s')
+class Logger:
 
-    # create log directory
-    try:
-        os.makedirs(log_dir)
-    except OSError:
-        pass
+    def __init__(self, log_file):
 
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_file, maxBytes=1024*1024, backupCount=5)
-    file_handler.setFormatter(formatter)
-    log.addHandler(file_handler)
+        self._log_file = log_file
+        self._log = logging.getLogger('nab')
+        self._log.setLevel(logging.DEBUG)
+        self._log.propagate = False
+        formatter = logging.Formatter('%(asctime)s: %(levelname)s:\t'
+                                      '%(name)s:\t%(message)s')
 
-    _stream_handler.setLevel(logging.INFO)
-    _stream_handler.setFormatter(formatter)
-    log.addHandler(_stream_handler)
-    return log
-log = _init()
+        file_handler = logging.handlers.RotatingFileHandler(
+            self._log_file, maxBytes=1024*1024, backupCount=5)
+        file_handler.setFormatter(formatter)
+        self._log.addHandler(file_handler)
 
+        self._stream_handler = logging.StreamHandler()
+        self._stream_handler.setLevel(logging.INFO)
+        self._stream_handler.setFormatter(formatter)
+        self._log.addHandler(self._stream_handler)
 
-def set_level(log_level):
-    _stream_handler.setLevel(log_level)
+    def set_level(self, log_level):
+        self._stream_handler.setLevel(log_level)
+
+    def get_child(self, name):
+        return self._log.getChild(name)
+
+    def get_log_text(self):
+        return open(self._log_file).read()

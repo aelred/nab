@@ -1,10 +1,6 @@
-"""
-Module for classes with a register that registers subclasses.
+""" Module for plugin base class. """
+import nab.plugins
 
-These classes are mostly used for plugins in nab.
-"""
-from nab import log
-from nab import plugins
 import inspect
 
 
@@ -16,14 +12,14 @@ class Register:
         """ Initialize lookup table as empty. """
         self.table = {}
 
-    def load(self, cfg, settings=None, accounts=None):
+    def load(self, plugin_log, cfg, settings=None, accounts=None):
         """
         Load plugins from part of a config file.
 
         Given a yaml-style list of plugins from a config file, load the plugins
         in that list with the given parameters.
         """
-        plugins.load()
+        nab.plugins.load(plugin_log)
         results = []
 
         # handle case where given entry is just a string
@@ -37,7 +33,7 @@ class Register:
         except AttributeError:
             # iterate on list
             for entry in cfg:
-                results += self.load(entry, settings, accounts)
+                results += self.load(plugin_log, entry, settings, accounts)
         else:
             # iterate on dictionary
             for entry, params in cfg.iteritems():
@@ -61,7 +57,7 @@ class Register:
                 try:
                     plugin_class = self.table[entry]
                 except KeyError:
-                    log.log.error("No plugin named %s" % entry)
+                    plugin_log.error("No plugin named %s" % entry)
                     continue
 
                 # check if plugin requires config settings passed in
@@ -94,19 +90,24 @@ class Entry(object):
         return self._type
 
     @classmethod
+    def init(cls, plugin_log):
+        """ Call on plugin base classes only. """
+        cls._logger = plugin_log
+
+    @classmethod
     def register(cls, name, req_settings=False, req_account=False):
         """ Register a new subclass under the given name. """
         cls._register.table[name] = cls
         cls.name = name
         cls.req_settings = req_settings
         cls.req_account = req_account
-        cls.log = log.log.getChild(name)
+        cls.log = cls._logger.getChild(name)
         cls.log.debug("Found plugin")
 
     @classmethod
     def get_all(cls, cfg, settings=None, accounts=None):
         """ Return loaded plugins from a given config file part. """
-        return cls._register.load(cfg, settings, accounts)
+        return cls._register.load(cls._logger, cfg, settings, accounts)
 
     @classmethod
     def list_entries(cls):
