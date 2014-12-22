@@ -56,6 +56,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
                 newtitles.add("%s" % yearmatch.group(1))
         self.titles.update(newtitles)
 
+        show_elem.ShowElem.format(self)
         show_elem.ShowParentElem.format(self)
 
         # remove any titles that conflict with season titles past season 1
@@ -86,7 +87,8 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
         # get ids of show
         for db in databases:
-            self.ids = dict(self.ids.items() + db.get_show_ids(**args()).items())
+            self.ids = dict(self.ids.items() +
+                            db.get_show_ids(**args()).items())
 
         # get banner for show
         for db in databases:

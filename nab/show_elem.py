@@ -50,6 +50,8 @@ class ShowElem(object):
         # Set a title if one not yet set
         if self.title is None and len(self.titles):
             self.title = next(iter(self.titles))
+        if self.title not in self.titles:
+            self.titles.add(self.title)
 
     def __eq__(self, other):
         """ Return true if ids are equal. """

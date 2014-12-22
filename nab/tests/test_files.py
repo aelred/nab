@@ -1,6 +1,8 @@
 import unittest
 from nab.files import File
 from nab.show import Show
+from nab.plugins.databases import tvdb
+from nab.plugins.databases import anidb
 
 # fields: ext, group, tags
 #         episode, season
@@ -122,36 +124,41 @@ file_tests = [
 class TestFile(unittest.TestCase):
 
     def test_file(self):
+        databases = [tvdb.TVDB(), anidb.Anidb()]
+
         for filename, data in file_tests:
-            f = File(filename)
-            print filename
-            print f.__dict__
+            self._test_example(databases, filename, data)
 
-            for name, value in data.iteritems():
-                if name == 'tags':
-                    # if tags, make sure there are no MISSING tags
-                    # extra tags are acceptable and unavoidable
-                    for tag in value:
-                        print "Asserting %s in tags" % tag
-                        self.assertIn(tag, f.__dict__[name])
-                elif name == 'entry':
-                    # lookup the details for this show
-                    # and find out if it's a match
-                    title = value[0]
-                    show = Show(title)
+    def _test_example(self, databases, filename, data):
+        f = File(filename)
+        print filename
+        print f.__dict__
 
-                    entry = show
-                    # iterate to individual seasons/episodes
-                    for index in value[1:]:
-                        entry = entry[index]
+        for name, value in data.iteritems():
+            if name == 'tags':
+                # if tags, make sure there are no MISSING tags
+                # extra tags are acceptable and unavoidable
+                for tag in value:
+                    print "Asserting %s in tags" % tag
+                    self.assertIn(tag, f.__dict__[name])
+            elif name == 'entry':
+                # lookup the details for this show
+                # and find out if it's a match
+                title = value[0]
+                show = Show(databases, title)
 
-                    # test if this matches
-                    print "Asserting matches %s" % entry
-                    self.assertTrue(entry.match(f))
+                entry = show
+                # iterate to individual seasons/episodes
+                for index in value[1:]:
+                    entry = entry[index]
 
-                else:
-                    print "Asserting %s = %s" % (name, value)
-                    self.assertEquals(f.__dict__[name], value)
+                # test if this matches
+                print "Asserting matches %s" % entry
+                self.assertTrue(entry.match(f))
+
+            else:
+                print "Asserting %s = %s" % (name, value)
+                self.assertEquals(f.__dict__[name], value)
 
 if __name__ == '__main__':
     unittest.main()

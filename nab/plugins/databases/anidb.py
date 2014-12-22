@@ -208,12 +208,9 @@ def _find_seasons(entry):
     # sort series by start date for correct season numbers
     seasons = sorted(seasons, key=_startdate)
 
-    # eliminate entries earlier than requested season
-    entry_index = seasons.index(entry)
-
     Anidb.log.debug("Seasons found for %s" % entry.title)
 
-    return seasons[entry_index:]
+    return seasons
 
 
 def _find_specials(entry):
@@ -325,7 +322,12 @@ class Anidb(Database):
             return []
 
         seasons = _find_seasons(data)
-        return seasons[season_num - 1].titles
+        try:
+            return seasons[season_num - 1].titles
+        except IndexError:
+            Anidb.log.debug('No season %s found for %s'
+                            % (season_num, show_titles))
+            return []
 
     # OBSOLETE
     def _add_data(self, sh):

@@ -60,7 +60,7 @@ class _Nab:
             _clean()
 
         self.shows = show_manager.ShowTree(_SHOWS_FILE)
-        self.scheduler = scheduler.Scheduler(
+        self.scheduler = scheduler.NabScheduler(
             self.logger.get_child('scheduler'), _SCHEDULE_FILE, self.shows)
         self.config = config.Config(
             _CONFIG_DIR, self.logger.get_child('config'), self.scheduler)
@@ -70,16 +70,10 @@ class _Nab:
         self.show_manager = show_manager.ShowManager(
             self.logger.get_child('show'), self.config)
         self.download_manager = downloader.DownloadManager(
-            self.logger.get_child('download'), self.scheduler, self.config,
-            self.options)
+            self.logger.get_child('download'), self.config, self.options)
         self.file_manager = file_manager.FileManager(
             self.logger.get_child('file'), self.scheduler, self.config,
             self.download_manager)
-
-        # set scheduler tasks to point to this object
-        self.scheduler.tasks["update_shows"] = self._update_shows
-        self.scheduler.tasks["refresh"] = self._refresh
-        self.scheduler.tasks["check_downloads"] = self._check_downloads
 
         if self.options.plugin:
             self._show_plugins()
@@ -107,13 +101,13 @@ class _Nab:
 
         # add command to refresh data
         # if command is already scheduled, this will be ignored
-        self.scheduler.add_asap("refresh")
+        self.scheduler(self._refresh)('asap')
 
         # schedule first refresh of show data a week from now
-        self.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+        self.scheduler(self._update_shows)('timed', 60 * 60 * 24 * 7)
 
         # add command to check download progress
-        self.scheduler.add_asap("check_downloads")
+        self.scheduler(self._check_downloads)('asap')
 
         # start scheduler
         self.scheduler.start()
@@ -124,13 +118,13 @@ class _Nab:
     def _update_shows(self):
         """ Update data for all shows. """
         # reschedule to refresh show data in a week's time
-        self.scheduler.add(60 * 60 * 24 * 7, "update_shows")
+        self.scheduler(self._update_shows)('timed', 60 * 60 * 24 * 7)
         self.shows.update_data(self.config.config['databases'])
 
     def _refresh(self):
         """ Refresh list of shows and find files for any wanted episodes. """
         # reschedule to get data every hour
-        self.scheduler.add(60 * 60, "refresh")
+        self.scheduler(self._refresh)('timed', 60 * 60)
 
         # add all shows
         for show in self.show_manager.get_shows():
@@ -144,8 +138,9 @@ class _Nab:
 
     def _check_downloads(self):
         # every 15 seconds
-        self.scheduler.add(15, "check_downloads")
-        self.download_manager.check_downloads()
+        self.scheduler(self._check_downloads)('timed', 15)
+        for path in self.download_manager.check_downloads():
+            self.scheduler(self.renamer.rename_file)('asap', path)
 
     def _show_plugins(self):
         """ Display information about plugins. """

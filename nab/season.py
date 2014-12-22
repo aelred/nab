@@ -48,11 +48,13 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
             return {'show_titles': self.show.titles, 'show_ids': self.show.ids,
                     'season_num': self.num}
 
-        for db in databases:
-            self.titles.update(db.get_season_titles(**args()))
+        # special season has no titles
+        if self.num != 0:
+            for db in databases:
+                self.titles.update(db.get_season_titles(**args()))
 
-        num_episodes = max(
-            [db.get_num_episodes(**args()) for db in databases] + [0])
+        num_episodes = max([db.get_num_episodes(**args()) for db in databases]
+                           + [0])
 
         for ep_num in range(1, num_episodes + 1):
             if ep_num not in self:

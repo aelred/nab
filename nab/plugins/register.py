@@ -2,6 +2,7 @@
 import nab.plugins
 
 import inspect
+import logging
 
 
 class Register:
@@ -84,6 +85,9 @@ class Register:
 class Entry(object):
 
     """ The plugin base class with methods to register subclasses. """
+
+    # default logger
+    _logger = logging.Logger('nab.plugins')
 
     @classmethod
     def type(cls):

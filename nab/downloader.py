@@ -17,10 +17,9 @@ class DownloadException(Exception):
 
 class DownloadManager:
 
-    def __init__(self, download_log, scheduler, config, options):
+    def __init__(self, download_log, config, options):
         self._log = download_log
         self._downloads = {}
-        self._scheduler = scheduler
         self._config = config
         self._options = options
 
@@ -63,12 +62,18 @@ class DownloadManager:
                 episode.wanted = False
 
     def check_downloads(self):
-        """ Check downloads to see if any have completed. """
+        """
+        Check downloads to see if any have completed.
+
+        Returns ([str]):
+            List of paths to completed files.
+        """
+        paths = []
         for d in list(self._downloads):
             if self._downloader().is_completed(d):
-                for path in sorted(self._downloader().get_files(d)):
-                    self._scheduler.add_asap("rename_file", path)
-                    del self._downloads[d]
+                paths += sorted(self._downloader().get_files(d))
+                del self._downloads[d]
+        return paths
 
     def get_downloads(self):
         """

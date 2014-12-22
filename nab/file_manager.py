@@ -14,7 +14,6 @@ class FileManager:
         self._config = config
         self._download_manager = download_manager
         self._log = file_log
-        self._scheduler.tasks['find_file'] = self.find_file
 
     def _sources(self):
         return self._config.config['files']['sources']
@@ -35,7 +34,7 @@ class FileManager:
         else:
             delay = -time_since_aired  # nab as soon as it airs
 
-        self._scheduler.add(delay, "find_file", entry, True)
+        self._scheduler(self.find_file)('timed', delay, entry, True)
 
     def _rank_file(self, f):
         self._log.debug(f.filename)
@@ -117,7 +116,8 @@ class FileManager:
             for child in sorted(entry.values(),
                                 key=lambda c: c.aired, reverse=True):
                 if len(child.epwanted):
-                    self._scheduler.add_lazy("find_file", child, reschedule)
+                    self._scheduler(self.find_file)(
+                        'lazy', child, reschedule)
         except AttributeError:
             pass
 
@@ -128,4 +128,4 @@ class FileManager:
         for sh in sorted(shows.values(), key=lambda sh: sh.aired,
                          reverse=True):
             if len(sh.epwanted):
-                self._scheduler.add_lazy("find_file", sh, True)
+                self._scheduler(self.find_file)('lazy', sh, True)

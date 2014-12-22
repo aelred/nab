@@ -80,7 +80,7 @@ class TVDB(Database):
         data = _show_get(show_titles, show_ids)
         try:
             ep = data[season_num][ep_num]
-        except (KeyError, TypeError):
+        except (TypeError, tvdb_api.tvdb_episodenotfound):
             return []  # no such episode found
 
         return [ep['episodename']]
@@ -89,7 +89,7 @@ class TVDB(Database):
         data = _show_get(show_titles, show_ids)
         try:
             ep = data[season_num][ep_num]
-        except (KeyError, TypeError):
+        except (TypeError, tvdb_api.tvdb_episodenotfound):
             return None  # no such episode found
 
         airstr = ep['firstaired']

@@ -14,7 +14,6 @@ class Renamer:
         self._config = config
         self._shows = shows
         self._log = renamer_log
-        self._scheduler.tasks['rename_file'] = self.rename_file
 
     def _videos_path(self):
         return self._config.config['settings']['videos']
@@ -137,4 +136,4 @@ class Renamer:
                 episode.owned = True
         else:
             # retry again later
-            self._scheduler.add(5 * 60, "rename_file", path)
+            self._scheduler(self.rename_file)('timed', 5 * 60, path)

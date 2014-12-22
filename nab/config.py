@@ -45,8 +45,6 @@ class Config(FileSystemEventHandler):
 
         # set scheduler task to point to this object
         self._scheduler = scheduler
-        self._scheduler.tasks["load_config"] = self.load
-        self._scheduler.tasks["set_config"] = self.set_config
 
     def load(self):
         """ Reload config files. """
@@ -68,12 +66,12 @@ class Config(FileSystemEventHandler):
 
         if event.src_path == self._config_file or dest == self._config_file:
             self._log.info('Change detected in config.yaml, scheduling reload')
-            self._scheduler.add_asap('load_config')
+            self._scheduler(self._load_config)('asap')
         if (event.src_path == self._accounts_file
            or dest == self._accounts_file):
             self._log.info('Change detected in accounts.yaml, '
                            'scheduling reload')
-            self._scheduler.add_asap('load_config')
+            self._scheduler(self._load_config)('asap')
 
     def _load_config(self, path):
         """ Return contents of config file, creating it if it don't exist. """
