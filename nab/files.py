@@ -32,6 +32,24 @@ class File(object):
         """
         Create a File object from the given filename.
 
+        >>> f = File('[PublicHD] Parks.and.Recreation.S06E21E22'
+        ...          '.720p.HDTV.X264-DIMENSION.mkv')
+        >>> f.filename
+        '[PublicHD] Parks.and.Recreation.S06E21E22...'
+        >>> f.title
+        'parks and recreation'
+        >>> f.season, f.serange
+        (6, 6)
+        >>> f.episode, f.eprange
+        (21, 22)
+        >>> f.eptitle
+        >>> f.ext
+        'mkv'
+        >>> f.group
+        'dimension'
+        >>> '720p' in f.tags and 'hdtv' in f.tags and 'x264' in f.tags
+        True
+
         Args:
             filename (str)
             format_filename (bool, True):
@@ -239,7 +257,12 @@ class File(object):
         return {"title": title, "tags": tags}
 
     def __str__(self):
-        """ Return filename. """
+        """
+        Return filename.
+
+        >>> str(File('JoJos Bizarre Adventure (2012)'))
+        'JoJos Bizarre Adventure (2012)'
+        """
         return self.filename
 
 
@@ -251,7 +274,16 @@ class Torrent(File):
         """
         Create a torrent from the given filename and optional links.
 
-        Torrents should provide either a url, magnet link or both.
+        >>> t_url = Torrent('My File', url='http://...', seeds=10)
+        >>> t_mag = Torrent('My File', magnet='magnet:?xt=urn:sha1:...')
+        >>> t_both = Torrent('My File', url='http://...',
+        ...                  magnet='magnet:?xt=urn:sha1:...')
+
+        Must provide either a url or magnet link:
+        >>> Torrent('Cool File')
+        Traceback (most recent call last):
+            ...
+        ValueError: Must specify a url or magnet link
 
         Args:
             filename (str):
@@ -264,6 +296,10 @@ class Torrent(File):
                 Number of seeds.
         """
         File.__init__(self, filename)
+
+        if url is None and magnet is None:
+            raise ValueError('Must specify a url or magnet link')
+
         self.url = url
         self.magnet = magnet
         self.seeds = seeds
@@ -274,7 +310,14 @@ class Torrent(File):
         return self.url or self.magnet
 
     def __str__(self):
-        """ Return representation including number of seeds. """
+        """
+        Return representation including number of seeds.
+
+        >>> str(File('My File', url='http://...')
+        My File
+        >>> str(File('My File', magnet='magnet:?xt=urn:sha1:...', seeds=5))
+        My File (5 seeds)
+        """
         if self.seeds:
             return "%s (%d seeds)" % (self.filename, self.seeds)
         else:

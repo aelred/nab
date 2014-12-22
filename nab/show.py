@@ -44,7 +44,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         """ A probably-unique ID describing this episode. """
         return (re.sub(r'\W+', '', self.title),)
 
-    def format(self):
+    def _format(self):
         """ Format data in this show to make it easier to process. """
         # for all titles, remove bracketed year info
         # e.g. Archer (2009) -> Archer, Archer 2009, Archer (2009)
@@ -56,8 +56,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
                 newtitles.add("%s" % yearmatch.group(1))
         self.titles.update(newtitles)
 
-        show_elem.ShowElem.format(self)
-        show_elem.ShowParentElem.format(self)
+        show_elem.ShowElem._format(self)
 
         # remove any titles that conflict with season titles past season 1
         for se in self:
@@ -107,7 +106,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
             else:
                 self[se_num].update_data(databases)
 
-        self.format()
+        self._format()
 
     def to_yaml(self):
         """ Return a yaml representation of this show. """

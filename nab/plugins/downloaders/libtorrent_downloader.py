@@ -49,6 +49,8 @@ class Libtorrent(Downloader):
         """
         Create a libtorrent downloader.
 
+        A singleton - I'm sorry, good design practices!
+
         Args:
             ratio (float): The upload:download target before deleting files.
             ports: ([int]): List of ports to use.
@@ -104,7 +106,13 @@ class Libtorrent(Downloader):
         self.session.resume()
 
     def download(self, torrent):
-        """ Download the specified torrent. """
+        """
+        Download the specified torrent.
+
+        >>> from nab.files import Torrent
+        >>> torrent = Torrent('My file', 'http://...')
+        >>> lt.download(torrent)
+        """
         self._add_torrent(torrent)
         self._save_state()
 

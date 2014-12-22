@@ -62,6 +62,8 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
             else:
                 self[ep_num].update_data(databases)
 
+        self._format()
+
     def to_yaml(self):
         """ Return a yaml representation of this season. """
         return {

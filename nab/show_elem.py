@@ -45,7 +45,7 @@ class ShowElem(object):
 
         return False
 
-    def format(self):
+    def _format(self):
         """ Format this ShowElem to be easier to process. """
         # Set a title if one not yet set
         if self.title is None and len(self.titles):
@@ -109,11 +109,6 @@ class ShowParentElem(dict):
     def episodes(self):
         """ All child episodes in order. """
         return list(chain(*[self[child].episodes for child in sorted(self)]))
-
-    def format(self):
-        """ Format all children. """
-        for child in self.itervalues():
-            child.format()
 
     def to_yaml(self):
         """ Return yaml representation of this ShowParentElem. """

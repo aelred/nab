@@ -136,6 +136,8 @@ class Episode(show_elem.ShowElem):
                 else:
                     self.aired = max(aired, self.aired)
 
+        self._format()
+
     def to_yaml(self):
         """ Return a yaml representation of this episode. """
         return {

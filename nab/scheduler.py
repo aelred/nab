@@ -108,27 +108,27 @@ class Scheduler:
     A scheduler class that lets you schedule functions.
 
     Example usage:
-    >>> my_scheduler = Scheduler()
+    >>> sched = Scheduler()
 
     Register a function with the scheduler:
     >>> def func(foo):
     ...     print foo
     ...
-    >>> sched_func = my_scheduler.register(func)
+    >>> sched_func = sched.register(func)
 
     Schedule some events:
     >>> import time
-    >>> sched_func('asap', 'Hello World!')
     >>> sched_func('lazy', 'Did I miss anything?')
     >>> sched_func('timed', 3, "Where's everybody gone?")
-    >>> my_scheduler.start()
+    >>> sched_func('asap', 'Hello World!')
+    >>> sched.start()
     Hello World!
     Did I miss anything?
     >>> time.sleep(4)
     Where's everybody gone?
 
     'Schedule-ize' functions with the decorator:
-    >>> @my_scheduler
+    >>> @sched
     ... def countdown(n):
     ...     print n
     ...     if n == 0:
@@ -137,7 +137,7 @@ class Scheduler:
     ...         countdown('timed', 1, n-1)
     ...
 
-    An event can even schedule additional events:
+    An event can schedule additional events or itself:
     >>> countdown('asap', 3)
     >>> time.sleep(4)
     3
@@ -145,28 +145,20 @@ class Scheduler:
     1
     0
     Lift off!
-    >>> my_scheduler.stop()
 
-    Events can be scheduled to run 'ASAP', 'lazy' or timed.
-    ASAP events occur before any lazy or timed events.
-    Lazy events occur before timed events
-    Timed events occur after the time specified.
+    Stop the scheduler:
+    >>> sched.stop()
 
     Events are functions, which must be registered before they can be run.
-    To register a function, call scheduler.register(func) or scheduler(func).
+    To register a function, call scheduler.register(func) or scheduler(func),
+    or decorate the function with the scheduler.
 
-    scheduler.register(func) and scheduler(func) will return a
-    'schedulable' version of the function whose first argument is the type of
-    event ('timed', 'lazy' or 'asap'). If 'timed' is chosen then the next
-    argument must be a delay measured in seconds.
+    These both return a 'schedulable' version of the function which can be
+    called to schedule the event. The first argument of the new function is
+    the type of event ('timed', 'lazy' or 'asap'). If 'timed' is
+    chosen then the next argument must be a delay measured in seconds.
 
-    These scheduler functions return straight after scheduling their event,
-    so there is no way to wait for completion or return values.
-
-    A scheduler can also decorate functions, making them instantly
-    'schedule' functions.
-
-    Event parameters must be hashable. There are additional functions
+    Event arguments must be hashable. There are additional functions
     encode_arguments and decode_arguments that can be overriden to convert
     arguments into hashable or more concise representations.
 
@@ -217,11 +209,28 @@ class Scheduler:
         self._stop_flag = True
 
     def __call__(self, f):
-        """ Transform the given function into a scheduled function. """
+        """
+        Register and transform the given function into a scheduled function.
+
+        See Scheduler.register for details.
+        """
         return self.register(f)
 
     def register(self, f):
-        """ Transform the given function into a scheduled function. """
+        """
+        Register and transform the given function into a scheduled function.
+
+        The resulting function can be called to schedule the function.
+        The first parameter of the resulting function gives the type of
+        scheduling to use:
+
+        'asap':  Occur before any lazy or timed events.
+        'lazy':  Occur before timed events.
+        'timed': Occur after the time in seconds given in the second argument.
+
+        This also allows the scheduler object to decorate functions and
+        automagically make them schedule functions.
+        """
         self._tasks[f.__name__] = f
 
         def inner(sched_type, *args):
@@ -234,7 +243,11 @@ class Scheduler:
         return inner
 
     def start(self):
-        """ Start the scheduler in a thread and return. """
+        """
+        Start the scheduler in a separate thread.
+
+        The scheduler can be stopped by calling Scheduler.stop.
+        """
         if self._stop_flag:
             # load state when starting scheduler
             if self._scheduler_file is not None:
@@ -247,7 +260,11 @@ class Scheduler:
             threading.Thread(target=self._run).start()
 
     def stop(self):
-        """ Tell the scheduler to stop running after the task is complete. """
+        """
+        Stop the scheduler.
+
+        The scheduler will stop only after the current running event finishes.
+        """
         self._log_debug("Setting stop flag")
         self._stop_flag = True
 
@@ -279,9 +296,19 @@ class Scheduler:
         yaml.safe_dump(self._to_yaml(), open(self._scheduler_file, 'w'))
 
     def encode_arguments(self, arguments):
+        """
+        Encode the given arguments to a hashable, concise representation.
+
+        Override this in subclasses if necessary.
+        """
         return arguments
 
     def decode_arguments(self, arguments):
+        """
+        Decode the given encoded arguments to their original representation.
+
+        Override this in subclasses if necessary.
+        """
         return arguments
 
     def _to_yaml(self):
@@ -293,6 +320,7 @@ class Scheduler:
             }
 
     def _save_decision(self):
+        """ Decide whether to save the scheduler state to file. """
         if self._scheduler_file is None:
             # No file set
             return
@@ -303,6 +331,7 @@ class Scheduler:
             self._last_save = time.time()
 
     def _wait_next(self):
+        """ Wait util the next event and return it. """
         while not self._stop_flag:
             # acquire queue lock
             with self._qlock:
@@ -318,6 +347,7 @@ class Scheduler:
         return None
 
     def _run(self):
+        """ Run the scheduler. """
         while not self._stop_flag:
             task = self._wait_next()
 
@@ -341,6 +371,7 @@ class Scheduler:
         self._log_debug("Stopping")
 
     def _add(self, queue, delay, action, arguments):
+        """ Add event to the given queue. """
         arguments = self.encode_arguments(arguments)
 
         if delay is None:
@@ -371,6 +402,7 @@ class Scheduler:
         self._add(self.queue_lazy, None, action, arguments)
 
     def _log_debug(self, message):
+        """ Log a debug message, if a logger exists. """
         try:
             self._log.debug(message)
         except AttributeError:
