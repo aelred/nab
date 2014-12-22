@@ -75,6 +75,10 @@ class _Nab:
             self.logger.get_child('file'), self.scheduler, self.config,
             self.download_manager)
 
+        self._refresh_sched = self.scheduler(self._refresh)
+        self._update_shows_sched = self.scheduler(self._update_shows)
+        self._check_downloads_sched = self.scheduler(self._check_downloads)
+
         if self.options.plugin:
             self._show_plugins()
         else:
@@ -101,13 +105,13 @@ class _Nab:
 
         # add command to refresh data
         # if command is already scheduled, this will be ignored
-        self.scheduler(self._refresh)('asap')
+        self._refresh_sched('asap')
 
         # schedule first refresh of show data a week from now
-        self.scheduler(self._update_shows)('timed', 60 * 60 * 24 * 7)
+        self._update_shows_sched('timed', 60 * 60 * 24 * 7)
 
         # add command to check download progress
-        self.scheduler(self._check_downloads)('asap')
+        self._check_downloads_sched('asap')
 
         # start scheduler
         self.scheduler.start()
@@ -118,13 +122,13 @@ class _Nab:
     def _update_shows(self):
         """ Update data for all shows. """
         # reschedule to refresh show data in a week's time
-        self.scheduler(self._update_shows)('timed', 60 * 60 * 24 * 7)
+        self._update_shows_sched('timed', 60 * 60 * 24 * 7)
         self.shows.update_data(self.config.config['databases'])
 
     def _refresh(self):
         """ Refresh list of shows and find files for any wanted episodes. """
         # reschedule to get data every hour
-        self.scheduler(self._refresh)('timed', 60 * 60)
+        self._refresh_sched('timed', 60 * 60)
 
         # add all shows
         for show in self.show_manager.get_shows():
@@ -138,9 +142,10 @@ class _Nab:
 
     def _check_downloads(self):
         # every 15 seconds
-        self.scheduler(self._check_downloads)('timed', 15)
+        self._check_downloads_sched('timed', 15)
         for path in self.download_manager.check_downloads():
-            self.scheduler(self.renamer.rename_file)('asap', path)
+            # schedule rename file
+            self.renamer.rename_file(path)
 
     def _show_plugins(self):
         """ Display information about plugins. """

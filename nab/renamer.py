@@ -10,10 +10,10 @@ from nab import files
 class Renamer:
 
     def __init__(self, renamer_log, scheduler, config, shows):
-        self._scheduler = scheduler
         self._config = config
         self._shows = shows
         self._log = renamer_log
+        self._rename_file_sched = scheduler(self._rename_file)
 
     def _videos_path(self):
         return self._config.config['settings']['videos']
@@ -82,6 +82,9 @@ class Renamer:
             return True
 
     def rename_file(self, path):
+        self._rename_file_sched('asap', path)
+
+    def _rename_file(self, path):
         """ Rename and move the video file on the given path. """
         # must be a file
         if not os.path.isfile(path):
@@ -136,4 +139,4 @@ class Renamer:
                 episode.owned = True
         else:
             # retry again later
-            self._scheduler(self.rename_file)('timed', 5 * 60, path)
+            self._rename_file_sched('timed', 5 * 60, path)

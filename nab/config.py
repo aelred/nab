@@ -37,18 +37,20 @@ class Config(FileSystemEventHandler):
         # read config files
         self._accounts_file = os.path.join(config_dir, 'accounts.yaml')
         self._config_file = os.path.join(config_dir, 'config.yaml')
-        self.load()
+
+        self._log.info('Reloading config and accounts files')
+        self._load_config()
+        self._load_accounts()
 
         # watch config directory
         self._observer = Observer()
         self._observer.schedule(self, config_dir)
 
-        # set scheduler task to point to this object
-        self._scheduler = scheduler
+        self._load_config_sched = scheduler(self._load_config)
+        self._load_accounts_sched = scheduler(self._load_accounts)
 
-    def load(self):
+    def _load(self):
         """ Reload config files. """
-        self._log.info('Reloading config and accounts files')
         self.accounts = self._load_accounts(self._accounts_file)
         self.config = self._load_config(self._config_file)
 
@@ -66,21 +68,21 @@ class Config(FileSystemEventHandler):
 
         if event.src_path == self._config_file or dest == self._config_file:
             self._log.info('Change detected in config.yaml, scheduling reload')
-            self._scheduler(self._load_config)('asap')
+            self._load_config_sched('asap')
         if (event.src_path == self._accounts_file
            or dest == self._accounts_file):
             self._log.info('Change detected in accounts.yaml, '
                            'scheduling reload')
-            self._scheduler(self._load_config)('asap')
+            self._load_accounts_sched('asap')
 
-    def _load_config(self, path):
+    def _load_config(self):
         """ Return contents of config file, creating it if it don't exist. """
-        if not os.path.exists(path):
+        if not os.path.exists(self._config_file):
             self._log.info("Creating default config file")
-            copyfile("config_default.yaml", path)
+            copyfile("config_default.yaml", self._config_file)
 
         self._log.info("Loading config file")
-        conf = yaml.load(open(path, "r"))
+        conf = yaml.load(open(self._config_file, "r"))
         settings = conf["settings"]
 
         # find and create directories in settings
@@ -134,14 +136,13 @@ class Config(FileSystemEventHandler):
                 subtree[path[-1]] = entry_type.get_all(
                     subtree[path[-1]], settings, self.accounts)
 
-        return conf
+        self.config = conf
 
-    def _load_accounts(self, path):
+    def _load_accounts(self):
         """ Return contents of accounts file,
         creating it if it doesn't exist. """
         self._log.info("Loading accounts file")
-        acc = yaml.load(open(path, "a+"))
-        return acc
+        self.account = yaml.load(open(self._accounts_file, "a+"))
 
 
 def parse_options():
