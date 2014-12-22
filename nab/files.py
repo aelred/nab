@@ -32,10 +32,13 @@ class File(object):
         """
         Create a File object from the given filename.
 
-        If format_filename is set, the filename is formatted to remove
-        capital leters and common non-alphanumeric characters. This improves
-        recognition, but means the resulting attributes such as 'title' will
-        be lower case and have missing punctuation.
+        Args:
+            filename (str)
+            format_filename (bool, True):
+                If true, the filename is formatted to remove capital leters and
+                common non-alphanumeric characters. This improves recognition,
+                but means the resulting attributes such as 'title' will be
+                lower case and have missing punctuation.
         """
         self.filename = filename
 
@@ -248,11 +251,17 @@ class Torrent(File):
         """
         Create a torrent from the given filename and optional links.
 
-        Torrent objects are usually created in FileSource plugins when
-        returning search results.
-
         Torrents should provide either a url, magnet link or both.
-        The seed parameter should give number of seeds and is optional.
+
+        Args:
+            filename (str):
+                Filename or title identifying the torrent.
+            url (str, None):
+                URL to the torrent.
+            magnet (str, None):
+                Magnet link for this torrent.
+            seeds (str, None):
+                Number of seeds.
         """
         File.__init__(self, filename)
         self.url = url
@@ -281,4 +290,3 @@ class Torrent(File):
             return self.id == other.id
         except AttributeError:
             return False
-
