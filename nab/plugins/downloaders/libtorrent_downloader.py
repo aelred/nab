@@ -241,7 +241,8 @@ class Libtorrent(Downloader):
                     continue
 
                 # delete files when over ratio and completed
-                if ratio >= self.ratio and h.status().is_finished:
+                if (ratio >= self.ratio and
+                   self.is_completed(self.downloads[h])):
                     self._remove_torrent(self.downloads[h])
                     self.log.debug(
                         "%s reached seed ratio, deleting." % h.name())
