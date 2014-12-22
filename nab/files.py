@@ -313,10 +313,10 @@ class Torrent(File):
         """
         Return representation including number of seeds.
 
-        >>> str(File('My File', url='http://...')
-        My File
-        >>> str(File('My File', magnet='magnet:?xt=urn:sha1:...', seeds=5))
-        My File (5 seeds)
+        >>> str(Torrent('My File', url='http://...'))
+        'My File'
+        >>> str(Torrent('My File', magnet='magnet:?xt=urn:sha1:...', seeds=5))
+        'My File (5 seeds)'
         """
         if self.seeds:
             return "%s (%d seeds)" % (self.filename, self.seeds)

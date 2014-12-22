@@ -139,7 +139,7 @@ class Scheduler:
 
     An event can schedule additional events or itself:
     >>> countdown('asap', 3)
-    >>> time.sleep(4)
+    >>> time.sleep(5)
     3
     2
     1
