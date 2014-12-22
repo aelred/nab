@@ -85,10 +85,10 @@ class Entry(object):
 
     """ The plugin base class with methods to register subclasses. """
 
-    @property
-    def type(self):
+    @classmethod
+    def type(cls):
         """ The type of this entry. """
-        return self._type
+        return cls._type
 
     @classmethod
     def init(cls, plugin_log):

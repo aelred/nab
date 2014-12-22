@@ -45,15 +45,11 @@ class ShowElem(object):
 
         return False
 
-    def merge(self, other):
-        """ Merge data from another ShowElem into this ShowElem. """
-        if self.title is None:
-            self.title = other.title
-        self.titles.update(other.titles)
-
     def format(self):
         """ Format this ShowElem to be easier to process. """
-        pass
+        # Set a title if one not yet set
+        if self.title is None and len(self.titles):
+            self.title = next(iter(self.titles))
 
     def __eq__(self, other):
         """ Return true if ids are equal. """
@@ -74,14 +70,6 @@ class ShowParentElem(dict):
     def __init__(self):
         """ Create a new ShowParentElem. """
         dict.__init__(self)
-
-    def merge(self, other):
-        """ Merge data from another ShowParentElem into this ShowParentElem. """
-        for key in other:
-            if key in self:
-                self[key].merge(other[key])
-            else:
-                self[key] = other[key]
 
     @property
     def epwanted(self):

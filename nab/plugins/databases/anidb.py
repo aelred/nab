@@ -13,7 +13,6 @@ import appdirs
 import os
 
 from nab.plugins.databases import Database
-from nab.season import Season
 from nab.match import format_title, comp
 
 
@@ -293,38 +292,40 @@ class Anidb(Database):
         if not _init_flag:
             _init()
 
-    def _show_get(self, show):
+    def _show_get(self, show_titles):
         # add data about other titles for this show
-        Anidb.log.debug("Getting data for %s" % show)
-        try:
-            return _entries(show.title)[0]
-        except IndexError:
-            Anidb.log.debug("Couldn't find %s" % show)
-            return None
+        Anidb.log.debug("Getting data for %s" % show_titles)
+        for title in reversed(sorted(show_titles, key=len)):
+            try:
+                return _entries(title)[0]
+            except IndexError:
+                pass
 
-    def get_show_titles(self, show):
+        # no result found
+        Anidb.log.debug("Couldn't find %s" % show_titles)
+        return None
+
+    def get_show_titles(self, show_titles, show_ids):
         """ Add data about other titles for this show. """
-        data = self._show_get(show)
+        data = self._show_get(show_titles)
         if data is None:
             return []
         return data.titles
 
-    def get_show_absolute_numbering(self, show):
+    def get_show_absolute_numbering(self, show_titles, show_ids):
         """ If this show is on anidb, return true. """
-        if self._show_get(show) is not None:
+        if self._show_get(show_titles) is not None:
             return True
         else:
             return False
 
-    def get_seasons(self, show):
-        """ Get additional titles for show seasons. """
-        data = self._show_get(show)
+    def get_season_titles(self, show_titles, show_ids, season_num):
+        data = self._show_get(show_titles)
         if data is None:
             return []
 
         seasons = _find_seasons(data)
-        return [Season(show, num, se.title, se.titles)
-                for num, se in enumerate(seasons, 1)]
+        return seasons[season_num - 1].titles
 
     # OBSOLETE
     def _add_data(self, sh):

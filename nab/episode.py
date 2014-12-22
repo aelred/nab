@@ -6,7 +6,8 @@ class Episode(show_elem.ShowElem):
 
     """ A TV show episode, part of a collection of ShowElem classes.  """
 
-    def __init__(self, season, num, title, aired, titles=None):
+    def __init__(self, databases, season, num,
+                 title=None, aired=None, titles=None):
         """
         Create a TV episode for a season.
 
@@ -23,6 +24,9 @@ class Episode(show_elem.ShowElem):
         self.watched = False
         self.wanted = True
         self.aired = aired
+
+        # automatically get episode data from database
+        self.update_data(databases)
 
     @property
     def type(self):
@@ -114,21 +118,23 @@ class Episode(show_elem.ShowElem):
         if self.season.num == 0:
             return True
 
-    def merge(self, episode):
-        """ Merge data from another episode into this one. """
-        if episode.owned:
-            self.owned = True
-        if episode.watched:
-            self.watched = True
-        if episode.wanted:
-            self.wanted = True
+    def update_data(self, databases):
+        """ Retrieve and add data for an episode from database plugins. """
 
-        # take earliest existent airdate
-        if (episode.aired is not None and
-           (self.aired is None or episode.aired < self.aired)):
-            self.aired = episode.aired
+        def args():
+            return {'show_titles': self.show.titles, 'show_ids': self.show.ids,
+                    'season_num': self.season.num, 'ep_num': self.num}
 
-        show_elem.ShowElem.merge(self, episode)
+        for db in databases:
+            # Get titles
+            self.titles.update(db.get_episode_titles(**args()))
+            # Get airtime, taking latest found
+            aired = db.get_episode_aired(**args())
+            if aired is not None:
+                if self.aired is None:
+                    self.aired = aired
+                else:
+                    self.aired = max(aired, self.aired)
 
     def to_yaml(self):
         """ Return a yaml representation of this episode. """
@@ -144,7 +150,8 @@ class Episode(show_elem.ShowElem):
     @staticmethod
     def from_yaml(yml, num, season):
         """ Create an episode from the given yaml representation. """
-        ep = Episode(season, num, yml["title"], yml["aired"], yml["titles"])
+        ep = Episode([], season, num, yml["title"], yml["aired"],
+                     yml["titles"])
         ep.owned = yml["owned"]
         ep.watched = yml["watched"]
         ep.wanted = yml["wanted"]

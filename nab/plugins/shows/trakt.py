@@ -4,8 +4,6 @@ from itertools import groupby
 
 from nab.plugins.shows import ShowSource
 from nab.plugins.databases import Database
-from nab.season import Season
-from nab.episode import Episode
 from nab.exception import PluginError
 
 
@@ -41,23 +39,24 @@ class Trakt:
         except requests.exceptions.ConnectionError:
             raise PluginError(self, 'Error connecting to trakt')
 
-    def get_data(self, show):
-        if "tvdb" in show.ids:
+    def get_data(self, show_titles, show_ids):
+        if "tvdb" in show_ids:
             # use tvdb id to look up
-            tvdb_id = show.ids["tvdb"]
+            tvdb_id = int(show_ids["tvdb"])
             if tvdb_id in show_data:
                 return show_data[tvdb_id]
 
         else:
             # search for longest names first (avoid searching for initials)
-            for title in reversed(sorted(show.titles, key=len)):
+            for title in reversed(sorted(show_titles, key=len)):
                 try:
                     results = self._cget("/search/shows.json/%s" %
                                          self._account['api'],
                                          params={"query": title, "limit": 1})
                 except ValueError:
                     raise PluginError(
-                        self, 'Error decoding trakt search data for %s' % show)
+                        self, 'Error decoding trakt search data for %s' %
+                        show_titles)
 
                 if results:
                     tvdb_id = results[0]["tvdb_id"]
@@ -71,7 +70,7 @@ class Trakt:
                            % (self._account['api'], tvdb_id))
         except ValueError:
             raise PluginError(self, 'Error decoding trakt show data for %s'
-                                    % show)
+                                    % show_titles)
 
         show_data[tvdb_id] = j
         return j
@@ -104,7 +103,7 @@ class TraktSource(ShowSource, Trakt):
         return [shd["title"] for shd in shows_data]
 
     def is_watched(self, episode):
-        shd = self.get_data(episode.show)
+        shd = self.get_data(episode.show.titles, episode.show.ids)
         if not shd:
             return False
 
@@ -118,7 +117,7 @@ class TraktSource(ShowSource, Trakt):
             return False
 
     def is_owned(self, episode):
-        shd = self.get_data(episode.show)
+        shd = self.get_data(episode.show.titles, episode.show.ids)
         if not shd:
             return False
 
@@ -136,29 +135,33 @@ TraktSource.register("trakt", req_account=True)
 
 class TraktDB(Database, Trakt):
 
-    def get_show_titles(self, show):
-        return [self.get_data(show)["title"]]
+    def get_show_titles(self, show_titles, show_ids):
+        return [self.get_data(show_titles, show_ids)["title"]]
 
-    def get_show_ids(self, show):
-        return {"tvdb": self.get_data(show)["tvdb_id"]}
+    def get_show_ids(self, show_titles, show_ids):
+        return {"tvdb": str(self.get_data(show_titles, show_ids)["tvdb_id"])}
 
-    def get_seasons(self, show):
-        return [Season(show, sed["season"])
-                for sed in self.get_data(show)["seasons"]]
+    def get_num_seasons(self, show_titles, show_ids):
+        seasons = self.get_data(show_titles, show_ids)['seasons']
+        return max(se['season'] for se in seasons)
 
-    def get_episodes(self, season):
-        data = self.get_data(season.show)["seasons"]
-        sed = next(se for se in data if se["season"] == season.num)
+    def get_num_episodes(self, show_titles, show_ids, season_num):
+        seasons = self.get_data(show_titles, show_ids)['seasons']
+        season = next(se for se in seasons if se['season'] == season_num)
+        return max(ep['episode'] for ep in season['episodes'])
 
-        episodes = []
+    def get_episode_titles(self, show_titles, show_ids, season_num, ep_num):
+        seasons = self.get_data(show_titles, show_ids)['seasons']
+        season = next(se for se in seasons if se['season'] == season_num)
+        episode = next(ep for ep in season['episodes']
+                       if ep['episode'] == ep_num)
+        return [episode['title']]
 
-        for epd in sed["episodes"]:
-            ep = Episode(season, epd["episode"],
-                         epd["title"], epd["first_aired_utc"])
-            if ep.aired == 0:
-                ep.aired = None
-            episodes.append(ep)
-
-        return episodes
+    def get_episode_aired(self, show_titles, show_ids, season_num, ep_num):
+        seasons = self.get_data(show_titles, show_ids)['seasons']
+        season = next(se for se in seasons if se['season'] == season_num)
+        episode = next(ep for ep in season['episodes']
+                       if ep['episode'] == ep_num)
+        return episode['first_aired_utc']
 
 TraktDB.register("trakt", req_account=True)

@@ -39,9 +39,6 @@ class Config(FileSystemEventHandler):
         self._config_file = os.path.join(config_dir, 'config.yaml')
         self.load()
 
-        # parse command line options
-        self.options, self.args = self._load_options()
-
         # watch config directory
         self._observer = Observer()
         self._observer.schedule(self, config_dir)
@@ -74,7 +71,8 @@ class Config(FileSystemEventHandler):
             self._scheduler.add_asap('load_config')
         if (event.src_path == self._accounts_file
            or dest == self._accounts_file):
-            self._log.info('Change detected in accounts.yaml, scheduling reload')
+            self._log.info('Change detected in accounts.yaml, '
+                           'scheduling reload')
             self._scheduler.add_asap('load_config')
 
     def _load_config(self, path):
@@ -115,7 +113,8 @@ class Config(FileSystemEventHandler):
 
         def format_path(path):
             """ Format user directory in path. """
-            path = path.format(user=os.getenv('USERPROFILE') or os.getenv('HOME'))
+            path = path.format(user=os.getenv('USERPROFILE') or
+                               os.getenv('HOME'))
             return case_insensitive(path)
 
         settings["downloads"] = format_path(settings["downloads"])
@@ -140,17 +139,17 @@ class Config(FileSystemEventHandler):
         return conf
 
     def _load_accounts(self, path):
-        """ Return contents of accounts file, creating it if it doesn't exist. """
+        """ Return contents of accounts file,
+        creating it if it doesn't exist. """
         self._log.info("Loading accounts file")
         acc = yaml.load(open(path, "a+"))
         return acc
 
-    def _load_options(self):
-        """ Return option parser options. """
-        parser = OptionParser()
-        parser.add_option("-t", "--test", action="store_true", default=False)
-        parser.add_option("-p", "--plugin", action="store_true", default=False)
-        parser.add_option("-c", "--clean", action="store_true", default=False)
-        parser.add_option("-d", "--debug", action="store_true", default=False)
-        return parser.parse_args()
 
+def parse_options():
+    parser = OptionParser()
+    parser.add_option("-t", "--test", action="store_true", default=False)
+    parser.add_option("-p", "--plugin", action="store_true", default=False)
+    parser.add_option("-c", "--clean", action="store_true", default=False)
+    parser.add_option("-d", "--debug", action="store_true", default=False)
+    return parser.parse_args()

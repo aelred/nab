@@ -142,11 +142,6 @@ class Scheduler:
         self._stop_flag = True
         self._shows = shows
 
-        try:
-            self.load()
-        except (IOError, ValueError):
-            pass
-
     def to_yaml(self):
         """ Return a yaml representation of the scheduler. """
         return {
@@ -191,6 +186,11 @@ class Scheduler:
     def start(self):
         """ Start the scheduler in a thread and return. """
         if self._stop_flag:
+            # load state when starting scheduler
+            try:
+                self.load()
+            except (IOError, ValueError):
+                pass
             self._log.debug("Starting")
             self._stop_flag = False
             threading.Thread(target=self._run).start()

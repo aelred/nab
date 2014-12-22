@@ -6,7 +6,7 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
 
     """ A TV season, part of a collection of ShowElem classes. """
 
-    def __init__(self, show, num, title=None, titles=None):
+    def __init__(self, databases, show, num, title=None, titles=None):
         """
         Create a season for a TV show.
 
@@ -23,6 +23,9 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
         show_elem.ShowElem.__init__(self, show, title, titles)
         self.num = num
 
+        # automatically get season data from database
+        self.update_data(databases)
+
     @property
     def type(self):
         """ Type of show element. """
@@ -38,10 +41,24 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
         """ A probably-unique ID describing this season. """
         return self.show.id + (self.num,)
 
-    def merge(self, season):
-        """ Merge data from another season into this one. """
-        show_elem.ShowParentElem.merge(self, season)
-        show_elem.ShowElem.merge(self, season)
+    def update_data(self, databases):
+        """ Retrieve and add data for a season from database plugins. """
+
+        def args():
+            return {'show_titles': self.show.titles, 'show_ids': self.show.ids,
+                    'season_num': self.num}
+
+        for db in databases:
+            self.titles.update(db.get_season_titles(**args()))
+
+        num_episodes = max(
+            [db.get_num_episodes(**args()) for db in databases] + [0])
+
+        for ep_num in range(1, num_episodes + 1):
+            if ep_num not in self:
+                self[ep_num] = episode.Episode(databases, self, ep_num)
+            else:
+                self[ep_num].update_data(databases)
 
     def to_yaml(self):
         """ Return a yaml representation of this season. """
@@ -54,7 +71,7 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
     @staticmethod
     def from_yaml(yml, num, show):
         """ Create a season from the given yaml representation. """
-        season = Season(show, num, yml["title"], yml["titles"])
+        season = Season([], show, num, yml["title"], yml["titles"])
         season.update(
             show_elem.ShowParentElem.from_yaml(
                 yml["episodes"], episode.Episode, season))

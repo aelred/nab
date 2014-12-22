@@ -40,13 +40,24 @@ class _Nab:
 
     def __init__(self):
         """ Initialize nab. """
+        self.options, self.args = config.parse_options()
         self.logger = log.Logger(_LOG_FILE)
+
+        # Begin logging
+        if self.options.debug:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.INFO
+        self.logger.set_level(log_level)
 
         # handle exceptions here in logger
         sys.excepthook = self._handle_exception
 
         # load all plugins
         plugins.load(self.logger.get_child('plugin'))
+
+        if self.options.clean:
+            _clean()
 
         self.shows = show_manager.ShowTree(_SHOWS_FILE)
         self.scheduler = scheduler.Scheduler(
@@ -59,7 +70,8 @@ class _Nab:
         self.show_manager = show_manager.ShowManager(
             self.logger.get_child('show'), self.config)
         self.download_manager = downloader.DownloadManager(
-            self.logger.get_child('download'), self.scheduler, self.config)
+            self.logger.get_child('download'), self.scheduler, self.config,
+            self.options)
         self.file_manager = file_manager.FileManager(
             self.logger.get_child('file'), self.scheduler, self.config,
             self.download_manager)
@@ -69,17 +81,7 @@ class _Nab:
         self.scheduler.tasks["refresh"] = self._refresh
         self.scheduler.tasks["check_downloads"] = self._check_downloads
 
-        # Begin logging
-        if self.config.options.debug:
-            log_level = logging.DEBUG
-        else:
-            log_level = logging.INFO
-        self.logger.set_level(log_level)
-
-        if self.config.options.clean:
-            _clean()
-
-        if self.config.options.plugin:
+        if self.options.plugin:
             self._show_plugins()
         else:
             try:
@@ -147,18 +149,15 @@ class _Nab:
 
     def _show_plugins(self):
         """ Display information about plugins. """
-        # load plugins
-        plugins.load()
-
-        if not self.config.args:
+        if not self.args:
             # list all plugins
             for plugin_type in _PLUGIN_TYPES:
-                print plugin_type.type
+                print plugin_type.type()
                 for entry in plugin_type.list_entries():
                     print "\t" + entry.name
         else:
             # show data for given plugins
-            for arg in self.config.args:
+            for arg in self.args:
                 for plugin_type in _PLUGIN_TYPES:
                     for entry in plugin_type.list_entries():
                         if entry.name == arg:

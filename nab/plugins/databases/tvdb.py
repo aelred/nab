@@ -4,8 +4,6 @@ import tvdb_api
 import time
 
 from nab.plugins.databases import Database
-from nab.season import Season
-from nab.episode import Episode
 
 _t = tvdb_api.Tvdb()
 
@@ -15,13 +13,13 @@ def _show_search(term):
     return _t.search(term)
 
 
-def _show_get(show):
+def _show_get(show_titles, show_ids):
     try:
-        if "tvdb" in show.ids:
-            return _t[int(show.ids["tvdb"])]
+        if "tvdb" in show_ids:
+            return _t[int(show_ids["tvdb"])]
 
         # search for longest names first (avoid searching for initials)
-        for title in reversed(sorted(show.titles, key=len)):
+        for title in reversed(sorted(show_titles, key=len)):
             result = _show_search(title)
             if len(result):
                 return _t[int(result[0]["id"])]
@@ -30,7 +28,7 @@ def _show_get(show):
         # also deals with KeyError bug in tvdb API
         pass
 
-    TVDB.log.debug("Couldn't find %s" % show)
+    TVDB.log.debug("Couldn't find %s" % show_titles)
     return None
 
 
@@ -38,9 +36,9 @@ class TVDB(Database):
 
     """ Uses thetvdb to get up-to-date TV show info. """
 
-    def get_show_titles(self, show):
+    def get_show_titles(self, show_titles, show_ids):
         """ Return titles for the specified show. """
-        data = _show_get(show)
+        data = _show_get(show_titles, show_ids)
         if data is None:
             return []
 
@@ -52,47 +50,56 @@ class TVDB(Database):
 
         return titles
 
-    def get_show_ids(self, show):
+    def get_show_ids(self, show_titles, show_ids):
         """ Return thetvdb id for the specified show. """
-        data = _show_get(show)
+        data = _show_get(show_titles, show_ids)
         if data is None:
             return {}
-        return {"tvdb": data["id"]}
+        else:
+            return {"tvdb": str(data["id"])}
 
-    def get_banner(self, show):
+    def get_banner(self, show_titles, show_ids):
         """ Return thetvdb show banner url. """
-        return _show_get(show)['banner']
+        return _show_get(show_titles, show_ids)['banner']
 
-    def get_seasons(self, show):
-        """ Return season data for the specified show. """
-        data = _show_get(show)
+    def get_num_seasons(self, show_titles, show_ids):
+        data = _show_get(show_titles, show_ids)
         if data is None:
-            return []
+            return None
+        else:
+            return max(data.keys())
 
-        return [Season(show, senum) for senum in data]
+    def get_num_episodes(self, show_titles, show_ids, season_num):
+        data = _show_get(show_titles, show_ids)
+        if data is None or season_num not in data:
+            return None
+        else:
+            return max(data[season_num].keys())
 
-    def get_episodes(self, season):
-        """ Return episode data for the specified season. """
-        data = _show_get(season.show)[season.num]
-        if data is None:
-            return []
+    def get_episode_titles(self, show_titles, show_ids, season_num, ep_num):
+        data = _show_get(show_titles, show_ids)
+        try:
+            ep = data[season_num][ep_num]
+        except (KeyError, TypeError):
+            return []  # no such episode found
 
-        episodes = []
-        for epnum in data:
-            airstr = data[epnum]["firstaired"]
-            if airstr is not None:
-                try:
-                    aired = time.mktime(time.strptime(airstr, "%Y-%m-%d"))
-                except OverflowError:
-                    aired = 0  # Doctor Who is REALLY old
-            else:
-                aired = None
+        return [ep['episodename']]
 
-            title = data[epnum]["episodename"]
+    def get_episode_aired(self, show_titles, show_ids, season_num, ep_num):
+        data = _show_get(show_titles, show_ids)
+        try:
+            ep = data[season_num][ep_num]
+        except (KeyError, TypeError):
+            return None  # no such episode found
 
-            if title:
-                # only add titled episodes
-                episodes.append(Episode(season, epnum, title, aired))
+        airstr = ep['firstaired']
 
-        return episodes
+        if airstr is not None:
+            try:
+                return time.mktime(time.strptime(airstr, '%Y-%m-%d'))
+            except OverflowError:
+                return 0  # Doctor Who is REALLY old
+        else:
+            return None
+
 TVDB.register("tvdb")

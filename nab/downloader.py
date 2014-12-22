@@ -17,17 +17,18 @@ class DownloadException(Exception):
 
 class DownloadManager:
 
-    def __init__(self, download_log, scheduler, config):
+    def __init__(self, download_log, scheduler, config, options):
         self._log = download_log
         self._downloads = {}
         self._scheduler = scheduler
         self._config = config
+        self._options = options
 
     def _downloader(self):
         return self._config.config['downloader'][0]
 
     def _test(self):
-        return self._config.options.test
+        return self._options.test
 
     def download(self, entry, torrent):
         """

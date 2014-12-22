@@ -67,48 +67,43 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
                 if ft in map(match.format_title, self[se].titles):
                     self.titles.remove(t)
 
-    def merge(self, other):
-        """ Merge data from another show into this one. """
-        show_elem.ShowParentElem.__merge__(self, other)
-        show_elem.ShowElem.__merge__(self, other)
-        self.ids = dict(self.ids.items() + other.ids.items())
-
     def update_data(self, databases):
         """ Retrieve and add data for a show from database plugins. """
+
+        # convenience function for passing arguments
+        def args():
+            return {'show_titles': self.titles, 'show_ids': self.ids}
+
         # get all titles for show
         for db in databases:
-            self.titles.update(db.get_show_titles(self))
+            self.titles.update(db.get_show_titles(**args()))
 
         # get if should use absolute numbering
         for db in databases:
-            if db.get_show_absolute_numbering(self):
+            if db.get_show_absolute_numbering(**args()):
                 self.absolute = True
                 break
 
         # get ids of show
         for db in databases:
-            self.ids = dict(self.ids.items() + db.get_show_ids(self).items())
+            self.ids = dict(self.ids.items() + db.get_show_ids(**args()).items())
 
         # get banner for show
         for db in databases:
-            self.banner = db.get_banner(self)
+            self.banner = db.get_banner(**args())
             if self.banner:
                 break
 
-        # get seasons for show
-        for db in databases:
-            for se in db.get_seasons(self):
-                # get episodes for season
-                for episode in db.get_episodes(se):
-                    if episode.num in se:
-                        se[episode.num].merge(episode)
-                    else:
-                        se[episode.num] = episode
+        # get num seasons
+        num_seasons = max([db.get_num_seasons(**args()) for db in databases] +
+                          [0])
 
-                if se.num in self:
-                    self[se.num].merge(se)
-                else:
-                    self[se.num] = se
+        # start from zero to include specials season
+        for se_num in range(num_seasons + 1):
+            if se_num not in self:
+                self[se_num] = season.Season(databases, self, se_num)
+            else:
+                self[se_num].update_data(databases)
 
         self.format()
 
