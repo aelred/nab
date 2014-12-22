@@ -14,38 +14,55 @@ class Downloader(register.Entry):
     _register = register.Register()
     _type = "downloader"
 
-    def download(self, torrent):
-        """ Start downloading the given torrent. """
+    def download_url(self, tid, url):
+        """
+        Start downloading using the given torrent url.
+
+        Args:
+            tid (str):
+                A unique ID identifying this torrent.
+            url (str)
+        """
         raise NotImplementedError()
 
-    def get_size(self, torrent):
-        """ Return the total size in bytes of this torrent. """
-        raise NotImplementedError()
+    def download_magnet(self, magnet):
+        """
+        Start downloading using the given magnet link.
 
-    def get_progress(self, torrent):
-        """ Return download progress as a float from 0 to 1. """
-        raise NotImplementedError()
+        Args:
+            tid (str):
+                A unique ID identifying this torrent.
+            magnet (str)
+        """
 
-    def get_downspeed(self, torrent):
-        """ Return download speed in bytes per second of this torrent. """
-        raise NotImplementedError()
+    def get_download_status(self, tid):
+        """
+        Return download data from the given torrent ID.
 
-    def get_upspeed(self, torrent):
-        """ Return upload speed in bytes per second of this torrent. """
-        raise NotImplementedError()
+        Args:
+            tid (str):
+                A unique ID identifying this torrent.
 
-    def get_num_seeds(self, torrent):
-        """ Return the number of seeds for this torrent. """
-        raise NotImplementedError()
+        Returns (dict):
+            Dictionary, including any of the following fields:
+                - size (int): size of torrent in bytes
+                - progress (float): progress of torrent, between 0.0 and 1.0
+                - downspeed (int): download speed in bytes per second
+                - upspeed (int): upload speed in bytes per second
+                - num_seeds (int): number of seeds
+                - num_peers (int): number of peers
+                - completed (bool): if torrent is completed
+        """
 
-    def get_num_peers(self, torrent):
-        """ Return the number of peers for this torrent. """
-        raise NotImplementedError()
+    def get_files(self, tid):
+        """
+        Return a list of absolute paths to files in this torrent.
 
-    def is_completed(self, torrent):
-        """ Return whether this torrent has completed downloading. """
-        raise NotImplementedError()
+        Args:
+            tid (str):
+                A unique ID identifying this torrent.
 
-    def get_files(self, torrent):
-        """ Return a list of absolute paths to files in this torrent. """
+        Returns ([str]):
+            List of absolute paths to files in this torrent.
+        """
         raise NotImplementedError()

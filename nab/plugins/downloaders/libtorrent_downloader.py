@@ -93,9 +93,9 @@ class Libtorrent(Downloader):
             with file(libtorrent_file) as f:
                 data = yaml.load(f)
                 for torrent in data['torrents']:
-                    self._add_torrent(torrent['torrent'])
-                    self.upload_total[torrent['torrent']] = torrent['up']
-                    self.download_total[torrent['torrent']] = torrent['down']
+                    self._add_torrent(torrent['tid'])
+                    self.upload_total[torrent['tid']] = torrent['up']
+                    self.download_total[torrent['tid']] = torrent['down']
 
                 self.session.load_state(data['state'])
         except IOError:
@@ -105,52 +105,66 @@ class Libtorrent(Downloader):
 
         self.session.resume()
 
-    def download(self, torrent):
-        """
-        Download the specified torrent.
-
-        >>> from nab.files import Torrent
-        >>> torrent = Torrent('My file', 'http://...')
-        >>> lt.download(torrent)
-        """
-        self._add_torrent(torrent)
-        self._save_state()
-
-    def get_size(self, torrent):
-        """ Get the size of the torrent. """
+    def download_url(self, tid, url):
+        # download torrent file
+        handle, path = tempfile.mkstemp('.torrent')
+        request = urllib2.Request(url)
+        request.add_header('Accept-encoding', 'gzip')
         try:
-            i = self.files[torrent].get_torrent_info()
+            response = urllib2.urlopen(request)
+        except urllib2.URLError:
+            raise PluginError(self, "Error downloading torrent file")
+        if response.info().get('Content-encoding') == 'gzip':
+            buf = StringIO(response.read())
+            f = gzip.GzipFile(fileobj=buf)
+        os.write(handle, f.read())
+        os.close(handle)
+        torrent_info = lt.torrent_info(path)
+
+        self._download(tid, torrent_info)
+
+        # delete torrent file
+        os.remove(path)
+
+    def download_magnet(self, tid, magnet):
+        # use magnet link
+        infohash = re.search(r"\burn:btih:([A-F\d]+)\b", magnet).group()
+        torrent_info = lt.torrent_info(infohash)
+        self._download(tid, torrent_info)
+
+    def get_download_status(self, tid):
+        status = self.files[tid].status()
+
+        data = {
+            'progress': status.progress,
+            'downspeed': status.download_rate,
+            'upspeed': status.upload_rate,
+            'num_seeds': status.num_seeds,
+            'num_peers': status.num_peers,
+            'completed': status.state in _completed_states
+        }
+
+        try:
+            info = self.files[tid].get_torrent_info()
         except RuntimeError:
             # caused if no metadata acquired
-            return 0
+            return {}
         else:
-            return i.total_size()
+            data['size'] = info.total_size()
 
-    def get_progress(self, torrent):
-        """ Get the download progress of the torrent. """
-        return self.files[torrent].status().progress
+        return data
 
-    def get_downspeed(self, torrent):
-        """ Get the download speed of the torrent. """
-        return self.files[torrent].status().download_rate
-
-    def get_upspeed(self, torrent):
-        """ Get the upload speed of the torrent. """
-        return self.files[torrent].status().upload_rate
-
-    def get_num_seeds(self, torrent):
-        """ Get number of seeds for this torrent. """
-        return self.files[torrent].status().num_seeds
-
-    def get_num_peers(self, torrent):
-        """ Get number of peers for this torrent. """
-        return self.files[torrent].status().num_peers
+    def get_files(self, tid):
+        """ Return the files in the torrent. """
+        handle = self.files[tid]
+        files = handle.get_torrent_info().files()
+        return [os.path.join(handle.save_path(), f.path) for f in files]
 
     def _save_state(self):
         # write new state to file
         state = {
             'state': self.session.save_state(0x0ff),
-            'torrents': [{'torrent': f,
+            'torrents': [{'tid': f,
                           'up': self._get_upload_total(f),
                           'down': self._get_download_total(f)}
                          for f, h in self.files.iteritems()]
@@ -158,77 +172,44 @@ class Libtorrent(Downloader):
         with file(libtorrent_file, 'w') as f:
             yaml.dump(state, f)
 
-    def is_completed(self, torrent):
-        """ Return if the torrent has finished downloading. """
-        return self.files[torrent].status().state in _completed_states
-
-    def get_files(self, torrent):
-        """ Return the files in the torrent. """
-        handle = self.files[torrent]
-        files = handle.get_torrent_info().files()
-        return [os.path.join(handle.save_path(), f.path) for f in files]
-
-    def _get_ratio(self, torrent):
+    def _get_ratio(self, tid):
         try:
-            return (float(self._get_upload_total(torrent)) /
-                    float(self._get_download_total(torrent)))
+            return (float(self._get_upload_total(tid)) /
+                    float(self._get_download_total(tid)))
         except ZeroDivisionError:
             return 0.0
 
-    def _get_upload_total(self, torrent):
-        return (self.upload_total[torrent] +
-                self.files[torrent].status().all_time_upload)
+    def _get_upload_total(self, tid):
+        return (self.upload_total[tid] +
+                self.files[tid].status().all_time_upload)
 
-    def _get_download_total(self, torrent):
-        return (self.download_total[torrent] +
-                self.files[torrent].status().all_time_download)
+    def _get_download_total(self, tid):
+        return (self.download_total[tid] +
+                self.files[tid].status().all_time_download)
 
-    def _add_torrent(self, torrent):
-        if torrent in self.files:
+    def _add_torrent(self, tid, torrent_info):
+        if tid in self.files:
             # silently return if already downloading
             return
 
-        if torrent.url:
-            # download torrent file
-            handle, path = tempfile.mkstemp('.torrent')
-            request = urllib2.Request(torrent.url)
-            request.add_header('Accept-encoding', 'gzip')
-            try:
-                response = urllib2.urlopen(request)
-            except urllib2.URLError:
-                raise PluginError(self, "Error downloading torrent file")
-            if response.info().get('Content-encoding') == 'gzip':
-                buf = StringIO(response.read())
-                f = gzip.GzipFile(fileobj=buf)
-            os.write(handle, f.read())
-            os.close(handle)
-            ti = lt.torrent_info(path)
-        else:
-            # use magnet link
-            infohash = re.search(r"\burn:btih:([A-F\d]+)\b",
-                                 torrent.magnet).group()
-            ti = lt.torrent_info(infohash)
-
         handle = self.session.add_torrent({
-            'save_path': self.folder, 'ti': ti})
+            'save_path': self.folder, 'ti': torrent_info})
 
-        if torrent.url:
-            # delete torrent file
-            os.remove(path)
+        self.downloads[handle] = tid
+        self.files[tid] = handle
+        self.upload_total[tid] = 0
+        self.download_total[tid] = 0
 
-        self.downloads[handle] = torrent
-        self.files[torrent] = handle
-        self.upload_total[torrent] = 0
-        self.download_total[torrent] = 0
+        self._save_state()
 
-    def _remove_torrent(self, torrent):
-        handle = self.files[torrent]
+    def _remove_torrent(self, tid):
+        handle = self.files[tid]
         # 1 == delete files
         self.session.remove_torrent(handle, 1)
         del self.downloads[handle]
-        del self.files[torrent]
-        del self.upload_total[torrent]
-        del self.download_total[torrent]
+        del self.files[tid]
+        del self.upload_total[tid]
+        del self.download_total[tid]
 
     def _watch_thread(self):
         while True:
@@ -250,7 +231,7 @@ class Libtorrent(Downloader):
 
                 # delete files when over ratio and completed
                 if (ratio >= self.ratio and
-                   self.is_completed(self.downloads[h])):
+                   self.get_download_status(self.downloads[h])['completed']):
                     self._remove_torrent(self.downloads[h])
                     self.log.debug(
                         "%s reached seed ratio, deleting." % h.name())

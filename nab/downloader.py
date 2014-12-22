@@ -49,7 +49,11 @@ class DownloadManager:
                 "Nab is in test mode, no downloading allowed")
 
         try:
-            self._downloader().download(torrent)
+            if torrent.url:
+                self._downloader().download_url(torrent.id, torrent.url)
+            else:
+                self._downloader().download_magnet(torrent.id,
+                                                   torrent.magnet)
         except exception.PluginError:
             # unsuccessful, silently continue
             self._log.warning('Failed to download torrent')
@@ -70,7 +74,7 @@ class DownloadManager:
         """
         paths = []
         for d in list(self._downloads):
-            if self._downloader().is_completed(d):
+            if self._downloader().get_download_status()['completed']:
                 paths += sorted(self._downloader().get_files(d))
                 del self._downloads[d]
         return paths
