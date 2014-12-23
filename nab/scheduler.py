@@ -180,7 +180,7 @@ class Scheduler(object):
         Create a new scheduler.
 
         >>> Scheduler()
-        <nab.scheduler.Scheduler instance at 0x...>
+        <nab.scheduler.Scheduler object at 0x...>
 
         Args:
             scheduler_file (str, None):
