@@ -45,7 +45,7 @@ class Libtorrent(Downloader):
                 cls, *args, **kwargs)
         return cls._instance
 
-    def __init__(self, settings, ratio=2.0, ports=[6881, 6891]):
+    def __init__(self, settings, options, args, ratio=2.0, ports=[6881, 6891]):
         """
         Create a libtorrent downloader.
 
@@ -89,19 +89,28 @@ class Libtorrent(Downloader):
         self._progress_ticker = 0
 
         # reload persistent data
-        try:
-            with file(libtorrent_file) as f:
-                data = yaml.load(f)
-                for torrent in data['torrents']:
-                    self._add_torrent(torrent['tid'])
-                    self.upload_total[torrent['tid']] = torrent['up']
-                    self.download_total[torrent['tid']] = torrent['down']
-
-                self.session.load_state(data['state'])
-        except IOError:
-            self.log.debug("libtorrent.yaml not found")
+        if options.clean:
+            # if 'clean' option enabled, then remove libtorrent file
+            try:
+                os.remove(libtorrent_file)
+            except OSError:
+                self.log.debug('Failed to remove libtorrent.yaml')
+            else:
+                self.log.debug('Removed litorrent.yaml')
         else:
-            self.log.debug("Loaded from libtorrent.yaml")
+            try:
+                with file(libtorrent_file) as f:
+                    data = yaml.load(f)
+                    for torrent in data['torrents']:
+                        self._add_torrent(torrent['tid'])
+                        self.upload_total[torrent['tid']] = torrent['up']
+                        self.download_total[torrent['tid']] = torrent['down']
+
+                    self.session.load_state(data['state'])
+            except IOError:
+                self.log.debug("libtorrent.yaml not found")
+            else:
+                self.log.debug("Loaded from libtorrent.yaml")
 
         self.session.resume()
 
@@ -253,4 +262,4 @@ class Libtorrent(Downloader):
 
                 p = self.session.pop_alert()
 
-Libtorrent.register('libtorrent', req_settings=True)
+Libtorrent.register('libtorrent', req_settings=True, req_options=True)

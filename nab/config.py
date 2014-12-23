@@ -122,6 +122,8 @@ class Config(FileSystemEventHandler):
                 os.makedirs(dir_)
 
         # load any plugins on paths in config
+        options, args = parse_options()
+
         for entry_type, paths in _CONFIG_PLUGIN_PATHS.items():
             for path in paths:
                 subtree = conf
@@ -129,7 +131,7 @@ class Config(FileSystemEventHandler):
                     subtree = conf[node]
                 # replace parts of config data with loaded plugin
                 subtree[path[-1]] = entry_type.get_all(
-                    subtree[path[-1]], settings, self.accounts)
+                    subtree[path[-1]], settings, self.accounts, options, args)
 
         self.config = conf
 

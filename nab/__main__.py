@@ -138,8 +138,7 @@ class _Nab:
 
 
 def _clean():
-    # clean up schedule, show and libtorrent files, start fresh
-    from nab.plugins.downloaders import libtorrent_downloader
+    # clean up schedule and show files, start fresh
     try:
         os.remove(_SHOWS_FILE)
     except OSError:
@@ -147,10 +146,6 @@ def _clean():
         pass
     try:
         os.remove(_SCHEDULE_FILE)
-    except OSError:
-        pass
-    try:
-        os.remove(libtorrent_downloader.libtorrent_file)
     except OSError:
         pass
 

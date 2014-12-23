@@ -13,7 +13,7 @@ class Register:
         """ Initialize lookup table as empty. """
         self.table = {}
 
-    def load(self, cfg, settings=None, accounts=None):
+    def load(self, cfg, settings=None, accounts=None, options=None, args=None):
         """
         Load plugins from part of a config file.
 
@@ -74,6 +74,13 @@ class Register:
                         raise ValueError('No account given for plugin %s'
                                          % plugin_class.name)
 
+                # check if plugin requires command line options
+                if plugin_class.req_options:
+                    if options is None or args is None:
+                        raise ValueError('No command line options given.')
+                    param_dict['options'] = options
+                    param_dict['args'] = args
+
                 _LOG.debug('Starting plugin %s' % plugin_class.name)
                 plugin = plugin_class(*param_list, **param_dict)
                 results.append(plugin)
@@ -94,19 +101,22 @@ class Entry(object):
         return cls._type
 
     @classmethod
-    def register(cls, name, req_settings=False, req_account=False):
+    def register(cls, name, req_settings=False, req_account=False,
+                 req_options=False):
         """ Register a new subclass under the given name. """
         cls._register.table[name] = cls
         cls.name = name
         cls.req_settings = req_settings
         cls.req_account = req_account
+        cls.req_options = req_options
         cls.log = cls._logger.getChild(name)
         cls.log.debug("Found plugin")
 
     @classmethod
-    def get_all(cls, cfg, settings=None, accounts=None):
+    def get_all(cls, cfg, settings=None, accounts=None,
+                options=None, args=None):
         """ Return loaded plugins from a given config file part. """
-        return cls._register.load(cfg, settings, accounts)
+        return cls._register.load(cfg, settings, accounts, options, args)
 
     @classmethod
     def list_entries(cls):
