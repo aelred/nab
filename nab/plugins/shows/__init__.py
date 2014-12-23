@@ -14,7 +14,7 @@ class ShowFilter(register.Entry):
 
     def filter_show(self, show):
         """
-        Return true if this show should be filtered (unwanted).
+        Return if this show is wanted.
 
         Implementation optional, default returns true.
         """
@@ -22,7 +22,7 @@ class ShowFilter(register.Entry):
 
     def filter_season(self, season):
         """
-        Return true if this season should be filtered (unwanted).
+        Return if this season is wanted.
 
         Implementation optional, default returns true.
         """
@@ -30,7 +30,7 @@ class ShowFilter(register.Entry):
 
     def filter_episode(self, episode):
         """
-        Return true if this episode should be filtered (unwanted).
+        Return if this episode is wanted.
 
         Implementation optional, default returns true.
         """
@@ -103,7 +103,7 @@ class ShowSource(register.Entry):
 
     def filter_show(self, show):
         """
-        Return true if this show should be filtered (unwanted).
+        Return if this show is wanted.
 
         Implementation optional, default returns True.
         """
@@ -111,7 +111,7 @@ class ShowSource(register.Entry):
 
     def filter_season(self, season):
         """
-        Return true if this season should be filtered (unwanted).
+        Return if this season is wanted.
 
         Implementation optional, default delegates to filter_show.
         """
@@ -119,7 +119,7 @@ class ShowSource(register.Entry):
 
     def filter_episode(self, episode):
         """
-        Return true if this episode should be filtered (unwanted).
+        Return if this episode is wanted.
 
         Implementation optional, default delegates to filter_season.
         """
