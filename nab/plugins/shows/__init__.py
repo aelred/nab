@@ -3,7 +3,6 @@
 import time
 
 from nab.plugins import register
-from nab import scheduler
 from nab import files
 
 
@@ -137,4 +136,6 @@ class ShowSource(register.Entry):
 
         # tell nab to refresh and look up data again
         self.log.info("Refresh triggered")
-        scheduler.scheduler.add_lazy("refresh")
+        # TODO Reimplement scheduling refresh
+        self.log.warning("REFRESH NOT IMPLEMENTED")
+        # scheduler.scheduler.add_lazy("refresh")
