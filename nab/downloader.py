@@ -7,19 +7,6 @@ import logging
 _LOG = logging.getLogger(__name__)
 
 
-class DownloadException(Exception):
-
-    """
-    Exception raised within nab when a download cannot be completed.
-
-    Plugins should not raise this, but instead raise nab.exception.PluginError.
-    """
-
-    def __init__(self, msg):
-        """ Set message on this exception. """
-        Exception.__init__(self, msg)
-
-
 class DownloadManager:
 
     def __init__(self, scheduler, config, options, shows):
@@ -53,7 +40,7 @@ class DownloadManager:
         _LOG.info('For "%s" downloading %s' % (entry, torrent))
         _LOG.debug(torrent.url)
         if self._test():
-            raise DownloadException(
+            raise exception.DownloadException(
                 "Nab is in test mode, no downloading allowed")
 
         try:
@@ -64,7 +51,7 @@ class DownloadManager:
                                                    torrent.magnet)
         except exception.PluginError:
             # unsuccessful, raise exception
-            raise DownloadException('Failed to download torrent')
+            raise exception.DownloadException('Failed to download torrent')
         else:
             # successful, record downloaded file
             _LOG.debug('Successfully started torrent download')

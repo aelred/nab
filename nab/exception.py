@@ -13,3 +13,16 @@ class PluginError(Exception):
     def __str__(self):
         """ Return the message associated with this error. """
         return self.msg
+
+
+class DownloadException(Exception):
+
+    """
+    Exception raised within nab when a download cannot be completed.
+
+    Plugins should not raise this, but instead raise nab.exception.PluginError.
+    """
+
+    def __init__(self, msg):
+        """ Set message on this exception. """
+        Exception.__init__(self, msg)

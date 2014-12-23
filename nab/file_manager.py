@@ -3,7 +3,6 @@ import math
 import time
 import logging
 
-from nab import downloader
 from nab import exception
 from nab import files
 
@@ -105,7 +104,7 @@ class FileManager:
             if f:
                 try:
                     self._download_manager.download(entry, f)
-                except downloader.DownloadException:
+                except exception.DownloadException:
                     pass  # reschedule download
                 else:
                     return  # succesful, return
