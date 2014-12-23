@@ -123,20 +123,14 @@ def access_config_path(config_data, path, config_set=None):
 
 def _down_yaml(download):
     entry = _nab.download_manager.get_downloads()[download]
-    return {
-        'id': download.id,
-        'filename': download.filename,
-        'size': _nab.downloader().get_size(download),
-        'progress': _nab.downloader().get_progress(download),
-        'downspeed': _nab.downloader().get_downspeed(download),
-        'upspeed': _nab.downloader().get_upspeed(download),
-        'num_seeds': _nab.downloader().get_num_seeds(download),
-        'num_peers': _nab.downloader().get_num_peers(download),
-        'url': download.url,
-        'magnet': download.magnet,
-        'entry': entry.id,
-        'show': entry.id[0]
-    }
+    status = _nab.downloader().get_download_status(download.id)
+    status['id'] = download.id
+    status['filename'] = download.filename
+    status['url'] = download.url
+    status['magnet'] = download.magnet
+    status['entry'] = entry.id
+    status['show'] = entry.id[0]
+    return status
 
 
 # RESTful downloads interface
