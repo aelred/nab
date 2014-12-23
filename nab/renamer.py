@@ -12,10 +12,9 @@ _LOG = logging.getLogger(__name__)
 
 class Renamer:
 
-    def __init__(self, scheduler, config, shows):
+    def __init__(self, config, shows):
         self._config = config
         self._shows = shows
-        self._rename_file_sched = scheduler(self._rename_file)
 
     def _videos_path(self):
         return self._config.config['settings']['videos']
@@ -84,9 +83,6 @@ class Renamer:
             return True
 
     def rename_file(self, path):
-        self._rename_file_sched('asap', path)
-
-    def _rename_file(self, path):
         """ Rename and move the video file on the given path. """
         # must be a file
         if not os.path.isfile(path):

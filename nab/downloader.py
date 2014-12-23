@@ -13,7 +13,9 @@ class DownloadManager:
         self._downloads = {}
         self._config = config
         self._options = options
-        self._renamer = renamer.Renamer(scheduler, config, shows)
+
+        renamer_ = renamer.Renamer(config, shows)
+        self._rename_file_sched = scheduler(renamer_.rename_file)
 
         self._check_downloads_sched = scheduler(self._check_downloads)
         self._check_downloads_sched('asap')
@@ -72,7 +74,7 @@ class DownloadManager:
                 del self._downloads[d]
 
         for path in paths:
-            self._renamer.rename_file(path)
+            self._rename_file_sched('asap', path)
 
     def get_downloads(self):
         """
