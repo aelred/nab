@@ -105,9 +105,9 @@ class ShowSource(register.Entry):
         """
         Return true if this show should be filtered (unwanted).
 
-        Implementation optional, default returns False.
+        Implementation optional, default returns True.
         """
-        return False
+        return True
 
     def filter_season(self, season):
         """
