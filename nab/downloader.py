@@ -21,7 +21,7 @@ class DownloadManager:
         self._check_downloads_sched('asap')
 
     def _downloader(self):
-        return self._config.config['downloader'][0]
+        return self._config.config['downloader']
 
     def _test(self):
         return self._options.test

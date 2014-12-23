@@ -130,6 +130,11 @@ class Config(FileSystemEventHandler):
                 subtree[path[-1]] = entry_type.get_all(
                     subtree[path[-1]], settings, self.accounts, options, args)
 
+        # there must be only one downloader
+        if len(conf['downloader']) != 1:
+            raise ValueError('Must be exactly one downloader')
+        conf['downloader'] = conf['downloader'][0]
+
         self.config = conf
 
     def _load_accounts(self):

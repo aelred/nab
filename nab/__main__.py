@@ -134,7 +134,7 @@ class _Nab:
                             print entry.help_text() + "\n"
 
     def downloader(self):
-        return self.config.config['downloader'][0]
+        return self.config.config['downloader']
 
 
 def _clean():
