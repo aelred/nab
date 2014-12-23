@@ -1,6 +1,10 @@
 """ Handles downloader plugins and downloads. """
 from nab import exception
 
+import logging
+
+_LOG = logging.getLogger(__name__)
+
 
 class DownloadException(Exception):
 
@@ -17,8 +21,7 @@ class DownloadException(Exception):
 
 class DownloadManager:
 
-    def __init__(self, download_log, config, options):
-        self._log = download_log
+    def __init__(self, config, options):
         self._downloads = {}
         self._config = config
         self._options = options
@@ -42,8 +45,8 @@ class DownloadManager:
         if torrent in self._downloads:
             return
 
-        self._log.info('For "%s" downloading %s' % (entry, torrent))
-        self._log.debug(torrent.url)
+        _LOG.info('For "%s" downloading %s' % (entry, torrent))
+        _LOG.debug(torrent.url)
         if self._test():
             raise DownloadException(
                 "Nab is in test mode, no downloading allowed")
@@ -59,7 +62,7 @@ class DownloadManager:
             raise DownloadException('Failed to download torrent')
         else:
             # successful, record downloaded file
-            self._log.debug('Successfully started torrent download')
+            _LOG.debug('Successfully started torrent download')
             self._downloads[torrent] = entry
             # mark this entry's episodes as no longer wanted
             for episode in entry.epwanted:

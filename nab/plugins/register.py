@@ -4,6 +4,8 @@ import nab.plugins
 import inspect
 import logging
 
+_LOG = logging.getLogger(__name__)
+
 
 class Register:
 
@@ -13,14 +15,14 @@ class Register:
         """ Initialize lookup table as empty. """
         self.table = {}
 
-    def load(self, plugin_log, cfg, settings=None, accounts=None):
+    def load(self, cfg, settings=None, accounts=None):
         """
         Load plugins from part of a config file.
 
         Given a yaml-style list of plugins from a config file, load the plugins
         in that list with the given parameters.
         """
-        nab.plugins.load(plugin_log)
+        nab.plugins.load()
         results = []
 
         # handle case where given entry is just a string
@@ -34,7 +36,7 @@ class Register:
         except AttributeError:
             # iterate on list
             for entry in cfg:
-                results += self.load(plugin_log, entry, settings, accounts)
+                results += self.load(entry, settings, accounts)
         else:
             # iterate on dictionary
             for entry, params in cfg.iteritems():
@@ -58,7 +60,7 @@ class Register:
                 try:
                     plugin_class = self.table[entry]
                 except KeyError:
-                    plugin_log.error("No plugin named %s" % entry)
+                    _LOG.error("No plugin named %s" % entry)
                     continue
 
                 # check if plugin requires config settings passed in
@@ -75,7 +77,7 @@ class Register:
                         raise ValueError('No account given for plugin %s'
                                          % plugin_class.name)
 
-                plugin_log.debug('Starting plugin %s' % plugin_class.name)
+                _LOG.debug('Starting plugin %s' % plugin_class.name)
                 plugin = plugin_class(*param_list, **param_dict)
                 results.append(plugin)
 
@@ -87,17 +89,12 @@ class Entry(object):
     """ The plugin base class with methods to register subclasses. """
 
     # default logger
-    _logger = logging.Logger('nab.plugins')
+    _logger = logging.Logger(__name__.split('.')[0])
 
     @classmethod
     def type(cls):
         """ The type of this entry. """
         return cls._type
-
-    @classmethod
-    def init(cls, plugin_log):
-        """ Call on plugin base classes only. """
-        cls._logger = plugin_log
 
     @classmethod
     def register(cls, name, req_settings=False, req_account=False):
@@ -112,7 +109,7 @@ class Entry(object):
     @classmethod
     def get_all(cls, cfg, settings=None, accounts=None):
         """ Return loaded plugins from a given config file part. """
-        return cls._register.load(cls._logger, cfg, settings, accounts)
+        return cls._register.load(cfg, settings, accounts)
 
     @classmethod
     def list_entries(cls):

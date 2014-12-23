@@ -4,9 +4,12 @@ import threading
 import heapq
 from collections import deque
 import yaml
+import logging
+
+_LOG = logging.getLogger(__name__)
 
 
-class _SchedQueue:
+class _SchedQueue(object):
 
     def __init__(self, name):
         self._set = set()
@@ -103,7 +106,7 @@ class _SchedQueueTimed(_SchedQueue):
         return action, arguments
 
 
-class Scheduler:
+class Scheduler(object):
     """
     A scheduler class that lets you schedule functions.
 
@@ -172,27 +175,19 @@ class Scheduler:
     that will run as soon as the scheduler starts.
     """
 
-    def __init__(self, scheduler_log=None, scheduler_file=None):
+    def __init__(self, scheduler_file=None):
         """
         Create a new scheduler.
 
         >>> Scheduler()
         <nab.scheduler.Scheduler instance at 0x...>
 
-        >>> import logging
-        >>> Scheduler(logging.Logger('scheduler'))
-        <nab.scheduler.Scheduler instance at 0x...>
-
         Args:
-            scheduler_log (logging.Logger, None):
-                Logger for logging scheduling events.
-                Leave as default for no logging.
             scheduler_file (str, None):
                 Path to a (not necessarily existing) schedule file.
                 This file will be used to save and load the state of the
                 scheduler. Leave as default for no saving and loading state.
         """
-        self._log = scheduler_log
         self._scheduler_file = scheduler_file
 
         self.queue = _SchedQueueTimed('timed')
@@ -255,7 +250,7 @@ class Scheduler:
                     self.load()
                 except (IOError, ValueError):
                     pass
-            self._log_debug("Starting")
+            _LOG.debug("Starting")
             self._stop_flag = False
             threading.Thread(target=self._run).start()
 
@@ -265,7 +260,7 @@ class Scheduler:
 
         The scheduler will stop only after the current running event finishes.
         """
-        self._log_debug("Setting stop flag")
+        _LOG.debug("Setting stop flag")
         self._stop_flag = True
 
     def load(self):
@@ -357,8 +352,8 @@ class Scheduler:
 
             action, arguments = task
 
-            self._log_debug("Executing scheduled task %s%s"
-                            % (action, tuple(arguments)))
+            _LOG.debug("Executing scheduled task %s%s"
+                       % (action, tuple(arguments)))
 
             self._tasks[action](*self.decode_arguments(arguments))
             self._save_invalidate = True
@@ -368,7 +363,7 @@ class Scheduler:
         if self._scheduler_file is not None:
             self.save()
 
-        self._log_debug("Stopping")
+        _LOG.debug("Stopping")
 
     def _add(self, queue, delay, action, arguments):
         """ Add event to the given queue. """
@@ -383,8 +378,8 @@ class Scheduler:
 
         with self._qlock:
             if queue.push(dtime, action, arguments):
-                self._log_debug("Scheduling %s%s on %s%s"
-                                % (action, tuple(arguments), queue.name, tstr))
+                _LOG.debug("Scheduling %s%s on %s%s"
+                           % (action, tuple(arguments), queue.name, tstr))
                 self._save_invalidate = True
                 self._save_decision()
             self._qlock.notify()
@@ -401,20 +396,13 @@ class Scheduler:
         """ Add a task to the scheduler which will run after ASAP tasks. """
         self._add(self.queue_lazy, None, action, arguments)
 
-    def _log_debug(self, message):
-        """ Log a debug message, if a logger exists. """
-        try:
-            self._log.debug(message)
-        except AttributeError:
-            pass
 
-
-class NabScheduler:
+class NabScheduler(Scheduler):
 
     """ Scheduler for nab that encodes and decodes ShowElems. """
 
-    def __init__(self, scheduler_log, scheduler_file, shows):
-        self.super(scheduler_log, scheduler_file)
+    def __init__(self, scheduler_file, shows):
+        Scheduler.__init__(self, scheduler_file)
         self._shows = shows
 
     def encode_arguments(self, arguments):

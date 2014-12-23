@@ -1,18 +1,20 @@
 """ Module handling finding torrent files. """
 import math
 import time
+import logging
 
 from nab import downloader
 from nab import exception
 from nab import files
 
+_LOG = logging.getLogger(__name__)
+
 
 class FileManager:
 
-    def __init__(self, file_log, scheduler, config, download_manager):
+    def __init__(self, scheduler, config, download_manager):
         self._config = config
         self._download_manager = download_manager
-        self._log = file_log
         self._find_file_sched = scheduler(self.find_file)
 
     def _sources(self):
@@ -37,17 +39,17 @@ class FileManager:
         self._find_file_sched('timed', delay, entry, True)
 
     def _rank_file(self, f):
-        self._log.debug(f.filename)
+        _LOG.debug(f.filename)
         rank = sum(filt.filter(f) for filt in self._filters())
-        self._log.debug(rank)
+        _LOG.debug(rank)
         return rank
 
     def _best_file(self, files):
         if files:
-            self._log.debug("Finding best file:")
+            _LOG.debug("Finding best file:")
             best = max(files, key=lambda f: self._rank_file(f))
-            self._log.debug("Best file found:")
-            self._log.debug(best.filename)
+            _LOG.debug("Best file found:")
+            _LOG.debug(best.filename)
             return best
         return None
 
@@ -71,7 +73,7 @@ class FileManager:
         if not entry.has_aired():
             return None
 
-        self._log.info("Searching for %s" % entry)
+        _LOG.info("Searching for %s" % entry)
         results = []
         try:
             for source in self._sources():
@@ -83,7 +85,7 @@ class FileManager:
             return None
 
         if not results:
-            self._log.info("No file found for %s" % entry)
+            _LOG.info("No file found for %s" % entry)
 
         return [r for r in results if self._is_valid_file(r, entry)]
 
@@ -122,7 +124,7 @@ class FileManager:
 
     def find_files(self, shows):
         """ Find torrents for all wanted episodes in the list of shows. """
-        self._log.info("Finding files")
+        _LOG.info("Finding files")
 
         for sh in sorted(shows.values(), key=lambda sh: sh.aired,
                          reverse=True):

@@ -1,9 +1,12 @@
 """ Module for managing TV shows. """
 import yaml
+import logging
 
 from nab import exception
 from nab import show_elem
 from nab import show
+
+_LOG = logging.getLogger(__name__)
 
 
 class ShowTree(show_elem.ShowParentElem):
@@ -51,9 +54,8 @@ class ShowTree(show_elem.ShowParentElem):
 
 class ShowManager:
 
-    def __init__(self, show_log, config):
+    def __init__(self, config):
         self._config = config
-        self._log = show_log
 
     def _following(self):
         return self._config.config['shows']['following']
@@ -69,7 +71,7 @@ class ShowManager:
 
     def get_shows(self):
         """ Get shows from all ShowSources. """
-        self._log.info("Getting shows")
+        _LOG.info("Getting shows")
 
         # get wanted shows from 'following' list
         titles = []
@@ -128,7 +130,7 @@ class ShowManager:
             'following' plugins, then it is kept as 'wanted', but if any
             of the 'filter' plugins filter it out, it is removed.
         """
-        self._log.info("Filtering shows")
+        _LOG.info("Filtering shows")
 
         # get owned/watched info for all episodes
         sources = self._following() + self._library()
@@ -140,7 +142,7 @@ class ShowManager:
                             ep.owned = True
                             break
                     except exception.PluginError:
-                        self._log.info("Unknown ")
+                        _LOG.info("Unknown ")
                 for source in sources:
                     if source.is_watched(ep):
                         ep.watched = True
@@ -153,9 +155,9 @@ class ShowManager:
                 ep.wanted = False
             return
 
-        self._log.info("Found %s show(s)" % len(shows))
+        _LOG.info("Found %s show(s)" % len(shows))
 
-        self._log.info("Applying filters")
+        _LOG.info("Applying filters")
 
         # first filter using show sources and permissive filtering
         self._apply_filters(shows, self._following(), True)
@@ -163,6 +165,6 @@ class ShowManager:
         # filter using show filters and strict filtering (meet all criteria)
         self._apply_filters(shows, self._filters(), False)
 
-        self._log.info("Found %s needed episode(s)" % len(shows.epwanted))
+        _LOG.info("Found %s needed episode(s)" % len(shows.epwanted))
         for ep in shows.epwanted:
-            self._log.info(ep)
+            _LOG.info(ep)

@@ -33,6 +33,8 @@ _CONFIG_DIR = appdirs.user_config_dir('nab')
 _LOG_FILE = os.path.join(appdirs.user_log_dir('nab'), 'log.txt')
 _SCHEDULE_FILE = os.path.join(appdirs.user_data_dir('nab'), 'schedule.yaml')
 
+_LOG = logging.getLogger(__name__)
+
 
 class _Nab:
 
@@ -41,39 +43,35 @@ class _Nab:
     def __init__(self):
         """ Initialize nab. """
         self.options, self.args = config.parse_options()
-        self.logger = log.Logger(_LOG_FILE)
+        self.log_manager = log.LogManager(_LOG_FILE)
 
         # Begin logging
         if self.options.debug:
             log_level = logging.DEBUG
         else:
             log_level = logging.INFO
-        self.logger.set_level(log_level)
+        self.log_manager.set_level(log_level)
 
         # handle exceptions here in logger
+        self._excepthook = sys.excepthook
         sys.excepthook = self._handle_exception
 
         # load all plugins
-        plugins.load(self.logger.get_child('plugin'))
+        plugins.load()
 
         if self.options.clean:
             _clean()
 
         self.shows = show_manager.ShowTree(_SHOWS_FILE)
-        self.scheduler = scheduler.NabScheduler(
-            self.logger.get_child('scheduler'), _SCHEDULE_FILE, self.shows)
-        self.config = config.Config(
-            _CONFIG_DIR, self.logger.get_child('config'), self.scheduler)
-        self.renamer = renamer.Renamer(self.logger.get_child('renamer'),
-                                       self.scheduler, self.config, self.shows)
+        self.scheduler = scheduler.NabScheduler(_SCHEDULE_FILE, self.shows)
+        self.config = config.Config(_CONFIG_DIR, self.scheduler)
+        self.renamer = renamer.Renamer(self.scheduler, self.config, self.shows)
 
-        self.show_manager = show_manager.ShowManager(
-            self.logger.get_child('show'), self.config)
-        self.download_manager = downloader.DownloadManager(
-            self.logger.get_child('download'), self.config, self.options)
+        self.show_manager = show_manager.ShowManager(self.config)
+        self.download_manager = downloader.DownloadManager(self.config,
+                                                           self.options)
         self.file_manager = file_manager.FileManager(
-            self.logger.get_child('file'), self.scheduler, self.config,
-            self.download_manager)
+            self.scheduler, self.config, self.download_manager)
 
         self._refresh_sched = self.scheduler(self._refresh)
         self._update_shows_sched = self.scheduler(self._update_shows)
@@ -96,8 +94,9 @@ class _Nab:
 
     def _handle_exception(self, *exception):
         " Pass exception to nab log. """
-        log = self.logger.get_child('error')
-        log.exception(''.join(traceback.format_exception(*exception)))
+        _LOG.exception(''.join(traceback.format_exception(*exception)))
+        # pass to python exception handler
+        self._excepthook(*exception)
 
     def _start(self):
         """ Start nabbing shows. """

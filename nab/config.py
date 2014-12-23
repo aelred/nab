@@ -6,11 +6,14 @@ from optparse import OptionParser
 from shutil import copyfile
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import logging
 
 from nab.plugins import shows
 from nab.plugins import databases
 from nab.plugins import filesources
 from nab.plugins import downloaders
+
+_LOG = logging.getLogger(__name__)
 
 _CONFIG_PLUGIN_PATHS = {
     shows.ShowSource: (('shows', 'library'), ('shows', 'following')),
@@ -31,32 +34,25 @@ class Config(FileSystemEventHandler):
     If the base files are modified, a reload is automatically scheduled.
     """
 
-    def __init__(self, config_dir, config_log, scheduler):
-        self._log = config_log
-
+    def __init__(self, config_dir, scheduler):
         # read config files
         self._accounts_file = os.path.join(config_dir, 'accounts.yaml')
         self._config_file = os.path.join(config_dir, 'config.yaml')
 
-        self._log.info('Reloading config and accounts files')
-        self._load_config()
+        _LOG.info('Reloading config and accounts files')
         self._load_accounts()
+        self._load_config()
 
         # watch config directory
         self._observer = Observer()
         self._observer.schedule(self, config_dir)
 
-        self._load_config_sched = scheduler(self._load_config)
         self._load_accounts_sched = scheduler(self._load_accounts)
-
-    def _load(self):
-        """ Reload config files. """
-        self.accounts = self._load_accounts(self._accounts_file)
-        self.config = self._load_config(self._config_file)
+        self._load_config_sched = scheduler(self._load_config)
 
     def set_config(self, new_config):
         """ Replace config file with new config file. """
-        self._log.info('Changing config file')
+        _LOG.info('Changing config file')
         yaml.safe_dump(new_config, open(self._config_file, 'w'))
 
     def on_any_event(self, event):
@@ -67,21 +63,20 @@ class Config(FileSystemEventHandler):
             dest = None
 
         if event.src_path == self._config_file or dest == self._config_file:
-            self._log.info('Change detected in config.yaml, scheduling reload')
+            _LOG.info('Change detected in config.yaml, scheduling reload')
             self._load_config_sched('asap')
         if (event.src_path == self._accounts_file
            or dest == self._accounts_file):
-            self._log.info('Change detected in accounts.yaml, '
-                           'scheduling reload')
+            _LOG.info('Change detected in accounts.yaml, scheduling reload')
             self._load_accounts_sched('asap')
 
     def _load_config(self):
-        """ Return contents of config file, creating it if it don't exist. """
+        """ Load config file, creating it if it don't exist. """
         if not os.path.exists(self._config_file):
-            self._log.info("Creating default config file")
+            _LOG.info("Creating default config file")
             copyfile("config_default.yaml", self._config_file)
 
-        self._log.info("Loading config file")
+        _LOG.info("Loading config file")
         conf = yaml.load(open(self._config_file, "r"))
         settings = conf["settings"]
 
@@ -123,7 +118,7 @@ class Config(FileSystemEventHandler):
         dirs = [settings["downloads"]] + settings["videos"]
         for dir_ in dirs:
             if not os.path.exists(dir_):
-                self._log.info("Creating directory %s" % dir_)
+                _LOG.info("Creating directory %s" % dir_)
                 os.makedirs(dir_)
 
         # load any plugins on paths in config
@@ -139,10 +134,9 @@ class Config(FileSystemEventHandler):
         self.config = conf
 
     def _load_accounts(self):
-        """ Return contents of accounts file,
-        creating it if it doesn't exist. """
-        self._log.info("Loading accounts file")
-        self.account = yaml.load(open(self._accounts_file, "a+"))
+        """ Load accounts file, creating it if it doesn't exist. """
+        _LOG.info("Loading accounts file")
+        self.accounts = yaml.load(open(self._accounts_file, "a+"))
 
 
 def parse_options():
