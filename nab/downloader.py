@@ -23,9 +23,6 @@ class DownloadManager:
     def _downloader(self):
         return self._config.config['downloader']
 
-    def _test(self):
-        return self._options.test
-
     def download(self, entry, torrent):
         """
         Download the given torrent for the given entry.
@@ -41,7 +38,7 @@ class DownloadManager:
 
         _LOG.info('For "%s" downloading %s' % (entry, torrent))
         _LOG.debug(torrent.url)
-        if self._test():
+        if self._options.test:
             raise exception.DownloadException(
                 "Nab is in test mode, no downloading allowed")
 
