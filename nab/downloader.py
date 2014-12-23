@@ -1,5 +1,6 @@
 """ Handles downloader plugins and downloads. """
 from nab import exception
+from nab import renamer
 
 import logging
 
@@ -21,10 +22,14 @@ class DownloadException(Exception):
 
 class DownloadManager:
 
-    def __init__(self, config, options):
+    def __init__(self, scheduler, config, options, shows):
         self._downloads = {}
         self._config = config
         self._options = options
+        self._renamer = renamer.Renamer(scheduler, config, shows)
+
+        self._check_downloads_sched = scheduler(self._check_downloads)
+        self._check_downloads_sched('asap')
 
     def _downloader(self):
         return self._config.config['downloader'][0]
@@ -68,19 +73,19 @@ class DownloadManager:
             for episode in entry.epwanted:
                 episode.wanted = False
 
-    def check_downloads(self):
-        """
-        Check downloads to see if any have completed.
+    def _check_downloads(self):
+        """ Check downloads to see if any have completed. """
+        # every 15 seconds
+        self._check_downloads_sched('timed', 15)
 
-        Returns ([str]):
-            List of paths to completed files.
-        """
         paths = []
         for d in list(self._downloads):
-            if self._downloader().get_download_status()['completed']:
-                paths += sorted(self._downloader().get_files(d))
+            if self._downloader().get_download_status(d.id)['completed']:
+                paths += sorted(self._downloader().get_files(d.id))
                 del self._downloads[d]
-        return paths
+
+        for path in paths:
+            self._renamer.rename_file(path)
 
     def get_downloads(self):
         """

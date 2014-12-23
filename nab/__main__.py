@@ -6,7 +6,6 @@ from nab import scheduler
 from nab import server
 from nab import log
 from nab import downloader
-from nab import renamer
 import nab.plugins.shows
 import nab.plugins.databases
 import nab.plugins.filesources
@@ -61,17 +60,15 @@ class _Nab:
         self.shows = show_manager.ShowTree(_SHOWS_FILE)
         self.scheduler = scheduler.NabScheduler(_SCHEDULE_FILE, self.shows)
         self.config = config.Config(_CONFIG_DIR, self.scheduler)
-        self.renamer = renamer.Renamer(self.scheduler, self.config, self.shows)
 
         self.show_manager = show_manager.ShowManager(self.config)
-        self.download_manager = downloader.DownloadManager(self.config,
-                                                           self.options)
+        self.download_manager = downloader.DownloadManager(
+            self.scheduler, self.config, self.options, self.shows)
         self.file_manager = file_manager.FileManager(
             self.scheduler, self.config, self.download_manager)
 
         self._refresh_sched = self.scheduler(self._refresh)
         self._update_shows_sched = self.scheduler(self._update_shows)
-        self._check_downloads_sched = self.scheduler(self._check_downloads)
 
         if self.options.plugin:
             self._show_plugins()
@@ -105,9 +102,6 @@ class _Nab:
         # schedule first refresh of show data a week from now
         self._update_shows_sched('timed', 60 * 60 * 24 * 7)
 
-        # add command to check download progress
-        self._check_downloads_sched('asap')
-
         # start scheduler
         self.scheduler.start()
 
@@ -134,13 +128,6 @@ class _Nab:
 
         # write data to file for backup purposes
         self.shows.save()
-
-    def _check_downloads(self):
-        # every 15 seconds
-        self._check_downloads_sched('timed', 15)
-        for path in self.download_manager.check_downloads():
-            # schedule rename file
-            self.renamer.rename_file(path)
 
     def _show_plugins(self):
         """ Display information about plugins. """
