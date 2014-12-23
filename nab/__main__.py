@@ -2,7 +2,6 @@
 from nab import show_manager
 from nab import file_manager
 from nab import config
-from nab import plugins
 from nab import scheduler
 from nab import server
 from nab import log
@@ -55,9 +54,6 @@ class _Nab:
         # handle exceptions here in logger
         self._excepthook = sys.excepthook
         sys.excepthook = self._handle_exception
-
-        # load all plugins
-        plugins.load()
 
         if self.options.clean:
             _clean()

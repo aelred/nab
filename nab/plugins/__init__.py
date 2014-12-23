@@ -9,7 +9,7 @@ _loaded = False
 _LOG = logging.getLogger(__name__)
 
 
-def load():
+def _load():
     """ Import all plugins in folder. Will only run once.  """
     global _loaded
     if _loaded:
@@ -25,3 +25,4 @@ def load():
             if ext == '.py' and fname != "__init__":
                 _LOG.debug(fname)
                 importlib.import_module(fname)
+_load()

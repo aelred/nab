@@ -1,6 +1,4 @@
 """ Module for plugin base class. """
-import nab.plugins
-
 import inspect
 import logging
 
@@ -22,7 +20,6 @@ class Register:
         Given a yaml-style list of plugins from a config file, load the plugins
         in that list with the given parameters.
         """
-        nab.plugins.load()
         results = []
 
         # handle case where given entry is just a string
