@@ -3,7 +3,6 @@
 import time
 
 from nab.plugins import register
-from nab import files
 
 
 class ShowFilter(register.Entry):
@@ -106,15 +105,15 @@ class ShowSource(register.Entry):
         """
         Return true if this show should be filtered (unwanted).
 
-        Implementation optional, default filters shows not in get_shows().
+        Implementation optional, default returns False.
         """
-        return any(show.match(files.File(t)) for t in self.get_cached_shows())
+        return False
 
     def filter_season(self, season):
         """
         Return true if this season should be filtered (unwanted).
 
-        Implementation optional, default filters seasons not in get_shows().
+        Implementation optional, default delegates to filter_show.
         """
         return self.filter_show(season.show)
 
@@ -122,9 +121,9 @@ class ShowSource(register.Entry):
         """
         Return true if this episode should be filtered (unwanted).
 
-        Implementation optional, default filters episodes not in get_shows().
+        Implementation optional, default delegates to filter_season.
         """
-        return self.filter_show(episode.show)
+        return self.filter_season(episode.season)
 
     def trigger_refresh(self):
         """
