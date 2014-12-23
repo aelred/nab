@@ -121,7 +121,7 @@ class Libtorrent(Downloader):
         os.close(handle)
         torrent_info = lt.torrent_info(path)
 
-        self._download(tid, torrent_info)
+        self._add_torrent(tid, torrent_info)
 
         # delete torrent file
         os.remove(path)
@@ -130,7 +130,7 @@ class Libtorrent(Downloader):
         # use magnet link
         infohash = re.search(r"\burn:btih:([A-F\d]+)\b", magnet).group()
         torrent_info = lt.torrent_info(infohash)
-        self._download(tid, torrent_info)
+        self._add_torrent(tid, torrent_info)
 
     def get_download_status(self, tid):
         status = self.files[tid].status()
