@@ -55,8 +55,8 @@ class DownloadManager:
                 self._downloader().download_magnet(torrent.id,
                                                    torrent.magnet)
         except exception.PluginError:
-            # unsuccessful, silently continue
-            self._log.warning('Failed to download torrent')
+            # unsuccessful, raise exception
+            raise DownloadException('Failed to download torrent')
         else:
             # successful, record downloaded file
             self._log.debug('Successfully started torrent download')
