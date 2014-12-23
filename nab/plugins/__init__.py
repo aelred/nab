@@ -4,6 +4,18 @@ import sys
 import importlib
 import logging
 
+from . import shows
+from . import databases
+from . import filesources
+from . import downloaders
+
+PLUGIN_TYPES = (
+    shows.ShowSource, shows.ShowFilter,
+    databases.Database,
+    filesources.FileSource, filesources.FileFilter,
+    downloaders.Downloader
+)
+
 _LOG = logging.getLogger(__name__)
 
 

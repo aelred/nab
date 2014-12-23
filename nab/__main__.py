@@ -6,25 +6,13 @@ from nab import scheduler
 from nab import server
 from nab import log
 from nab import downloader
-import nab.plugins.shows
-import nab.plugins.databases
-import nab.plugins.filesources
-import nab.plugins.downloaders
+from nab import plugins
 
 import os
 import logging
 import appdirs
 import traceback
 import sys
-
-_PLUGIN_TYPES = (
-    nab.plugins.shows.ShowSource,
-    nab.plugins.databases.Database,
-    nab.plugins.shows.ShowFilter,
-    nab.plugins.filesources.FileSource,
-    nab.plugins.filesources.FileFilter,
-    nab.plugins.downloaders.Downloader
-)
 
 _SHOWS_FILE = os.path.join(appdirs.user_data_dir('nab'), 'shows.yaml')
 _CONFIG_DIR = appdirs.user_config_dir('nab')
@@ -133,14 +121,14 @@ class _Nab:
         """ Display information about plugins. """
         if not self.args:
             # list all plugins
-            for plugin_type in _PLUGIN_TYPES:
+            for plugin_type in plugins.PLUGIN_TYPES:
                 print plugin_type.type()
                 for entry in plugin_type.list_entries():
                     print "\t" + entry.name
         else:
             # show data for given plugins
             for arg in self.args:
-                for plugin_type in _PLUGIN_TYPES:
+                for plugin_type in plugins.PLUGIN_TYPES:
                     for entry in plugin_type.list_entries():
                         if entry.name == arg:
                             print entry.help_text() + "\n"
