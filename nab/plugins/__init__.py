@@ -4,16 +4,15 @@ import sys
 import importlib
 import logging
 
-from . import shows
-from . import databases
-from . import filesources
-from . import downloaders
+from .shows import ShowSource
+from .shows import ShowFilter
+from .databases import Database
+from .filesources import FileSource
+from .filesources import FileFilter
+from .downloaders import Downloader
 
 PLUGIN_TYPES = (
-    shows.ShowSource, shows.ShowFilter,
-    databases.Database,
-    filesources.FileSource, filesources.FileFilter,
-    downloaders.Downloader
+    ShowSource, ShowFilter, Database, FileSource, FileFilter, Downloader
 )
 
 _LOG = logging.getLogger(__name__)

@@ -8,20 +8,17 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import logging
 
-from nab.plugins import shows
-from nab.plugins import databases
-from nab.plugins import filesources
-from nab.plugins import downloaders
+from nab import plugins
 
 _LOG = logging.getLogger(__name__)
 
 _CONFIG_PLUGIN_PATHS = {
-    shows.ShowSource: (('shows', 'library'), ('shows', 'following')),
-    shows.ShowFilter: (('shows', 'filters'),),
-    databases.Database: (('databases',),),
-    filesources.FileSource: (('files', 'sources'),),
-    filesources.FileFilter: (('files', 'filters'),),
-    downloaders.Downloader: (('downloader',),)
+    plugins.ShowSource: (('shows', 'library'), ('shows', 'following')),
+    plugins.ShowFilter: (('shows', 'filters'),),
+    plugins.Database: (('databases',),),
+    plugins.FileSource: (('files', 'sources'),),
+    plugins.FileFilter: (('files', 'filters'),),
+    plugins.Downloader: (('downloader',),)
 }
 
 
