@@ -4,19 +4,12 @@ import sys
 import importlib
 import logging
 
-_loaded = False
-
 _LOG = logging.getLogger(__name__)
 
 
 def _load():
-    """ Import all plugins in folder. Will only run once.  """
-    global _loaded
-    if _loaded:
-        return
-
+    """ Import all plugins in folder. """
     _LOG.debug("Loading plugins")
-    _loaded = True
 
     for folder, sub, files in os.walk("nab/plugins/"):
         sys.path.insert(0, folder)
