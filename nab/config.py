@@ -39,15 +39,13 @@ class Config(FileSystemEventHandler):
         self.config = {}
 
         _LOG.info('Reloading config and accounts files')
-        self._load_accounts()
-        self._load_config()
+        self._load()
 
         # watch config directory
         self._observer = Observer()
         self._observer.schedule(self, config_dir)
 
-        self._load_accounts_sched = scheduler(self._load_accounts)
-        self._load_config_sched = scheduler(self._load_config)
+        self._load_sched = scheduler(self._load)
 
     def set_config(self, new_config):
         """ Replace config file with new config file. """
@@ -61,13 +59,18 @@ class Config(FileSystemEventHandler):
         except AttributeError:
             dest = None
 
+        # load both files on reload because config relies on accounts
         if event.src_path == self._config_file or dest == self._config_file:
             _LOG.info('Change detected in config.yaml, scheduling reload')
-            self._load_config_sched('asap')
+            self._load_sched('asap')
         if (event.src_path == self._accounts_file
            or dest == self._accounts_file):
             _LOG.info('Change detected in accounts.yaml, scheduling reload')
-            self._load_accounts_sched('asap')
+            self._load_sched('asap')
+
+    def _load(self):
+        self._load_accounts()
+        self._load_config()
 
     def _load_config(self):
         """ Load config file, creating it if it don't exist. """
