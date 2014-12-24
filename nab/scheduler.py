@@ -155,11 +155,12 @@ class Scheduler(object):
     Events can be repeated at intervals:
     >>> sched_func('repeat', 5, 'DING')
     >>> sched_func('drepeat', 2, 'tick tock')
-    >>> time.sleep(6.5)
+    >>> time.sleep(8)
     DING
     tick tock
     tick tock
     DING
+    ...
 
     Stop the scheduler:
     >>> sched.stop()
