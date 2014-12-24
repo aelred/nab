@@ -66,7 +66,7 @@ files:
     # EZTV torrent, good for high-quality, recent, single-episode torrents.
     - feed:
         name: EZTV
-        url: https://ezrss.it/search/index.php?simple&show_name={s}&show_name_exact=true&mode=rss
+        url: http://ezrss.it/search/index.php?simple&show_name={s}&show_name_exact=true&mode=rss
         search_by:
           - show
 
