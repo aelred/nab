@@ -154,7 +154,7 @@ class TestFile(unittest.TestCase):
 
                 # test if this matches
                 print "Asserting matches %s" % entry
-                self.assertTrue(entry.match(f))
+                self.assertTrue(entry.match(filename))
 
             else:
                 print "Asserting %s = %s" % (name, value)

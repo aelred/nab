@@ -1,5 +1,8 @@
 """ Handles TV show seasons. """
-from nab import show_elem, match, episode
+from nab import show_elem
+from nab import match
+from nab import episode
+from nab import files
 
 
 class Season(show_elem.ShowParentElem, show_elem.ShowElem):
@@ -123,8 +126,9 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
                                            self.episodes[-1].absolute))
         return terms
 
-    def match(self, f, total=True):
+    def match(self, name, total=True, format_name=True):
         """ Return true if the given File object matches this season. """
+        f = files.File(name, format_name)
         # if this is a total match, there must be no episode number
         if total and f.episode is not None:
             # if using absolute numbering, see if this file matches
@@ -135,7 +139,8 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
             except IndexError:
                 pass  # there are no episodes in this season
             else:
-                if (self.show.absolute and self.show.match(f, False) and
+                if (self.show.absolute and
+                   self.show.match(name, False, format_name) and
                    f.episode == start and f.eprange == start + len(self) - 1):
                     return True
 
@@ -146,7 +151,7 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
         titles = map(match.format_title, self.titles)
 
         return ((f.title in titles and f.season is None) or
-                (self.show.match(f, False) and
+                (self.show.match(name, False, format_name) and
                  f.season == self.num and f.serange == self.num))
 
     def __str__(self):

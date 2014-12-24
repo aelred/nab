@@ -5,6 +5,7 @@ import logging
 from nab import exception
 from nab import show_elem
 from nab import show
+from nab import files
 
 _LOG = logging.getLogger(__name__)
 
@@ -65,17 +66,18 @@ class ShowManager:
         _LOG.info("Getting shows")
 
         # get wanted shows from 'following' list
-        titles = []
+        names = []
         for source in self.following:
             source.__class__.log.info("Searching show source %s" % source)
             try:
-                titles += source.get_cached_shows()
+                names += source.get_cached_shows()
             except exception.PluginError:
                 # errors are printed, but keep running
                 # shows will be looked up again in an hour
                 pass
 
-        return [show.Show(self.databases, title) for title in titles]
+        return [show.Show(self.databases, files.File(name, False).title)
+                for name in names]
 
     def _filter_entry(self, entry, filter_funcs, permissive):
         wanted = not permissive

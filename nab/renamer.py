@@ -17,9 +17,9 @@ class Renamer:
         self.settings = settings
         self._shows = shows
 
-    def _find_episode(self, file_):
+    def _find_episode(self, name):
         for ep in self._shows.episodes:
-            if ep.match(file_):
+            if ep.match(name):
                 return ep
         return None
 
@@ -85,24 +85,25 @@ class Renamer:
         if not os.path.isfile(path):
             return True
 
-        f = files.File(os.path.basename(path))
+        name = os.path.basename(path)
+        ext = os.path.splitext(name)[1]
 
         # must be a video file
-        if f.ext not in files.VIDEO_EXTS + files.SUB_EXTS:
-            _LOG.debug("Ignoring non-video file %s" % f)
+        if ext not in files.VIDEO_EXTS + files.SUB_EXTS:
+            _LOG.debug("Ignoring non-video file %s" % name)
             return True
 
         # check if this is a video file (as oppposed to e.g. a subtitle file)
-        is_video = f.ext in files.VIDEO_EXTS
+        is_video = ext in files.VIDEO_EXTS
 
-        if "sample" in f.filename.lower():
-            _LOG.debug("Ignoring sample file %s" % f)
+        if "sample" in name.lower():
+            _LOG.debug("Ignoring sample file %s" % name)
             return True
 
-        _LOG.debug("File created %s" % f)
+        _LOG.debug("File created %s" % name)
 
         # look for a matching episode
-        episode = self._find_episode(f)
+        episode = self._find_episode(name)
 
         # if no match, try again with parent directories prefixed
         parent = path
@@ -113,21 +114,21 @@ class Renamer:
             parent = nparent
 
             pname = os.path.basename(parent)
-            f = files.File(" ".join([pname, f.filename]))
-            episode = self._find_episode(f)
+            name = " ".join([pname, name])
+            episode = self._find_episode(name)
 
         if episode is None:
-            _LOG.warning("No match found for %s" % f)
+            _LOG.warning("No match found for %s" % name)
             return False
 
-        _LOG.debug("%s matches %s" % (f, episode))
+        _LOG.debug("%s matches %s" % (name, episode))
 
-        dest = self._new_name(f, episode)
+        dest = self._new_name(name, episode)
 
-        _LOG.info("Moving %s to %s" % (f, dest))
+        _LOG.info("Moving %s to %s" % (name, dest))
 
         if self._move_file(path, dest):
-            _LOG.info("Successfully moved %s" % f)
+            _LOG.info("Successfully moved %s" % name)
 
             # mark episode as owned
             if is_video:

@@ -1,5 +1,4 @@
 from nab.plugins.shows import ShowSource
-from nab.files import File
 
 import appdirs
 import os
@@ -19,25 +18,18 @@ class Watchlist(ShowSource):
         # create a handler that watches the watchlist file
         WatchlistFileHandler(self)
 
-    def entries(self):
-        entries = []
-        with file(watchlist_file, 'a+', 0o664) as f:
-            for line in list(f) + self.config_entries:
-                entry = File(line.rstrip(), False)
-                entries.append(entry)
-        return entries
-
     def get_shows(self):
-        return [entry.title for entry in self.entries()]
+        with file(watchlist_file, 'a+', 0o664) as f:
+            return [line.rstrip() for line in list(f) + self.config_entries]
 
     def is_owned(self, ep):
         return False
 
     def filter_episode(self, ep):
-        for entry in self.entries():
-            if (ep.match(entry) or
-               ep.season.match(entry) or
-               ep.show.match(entry)):
+        for entry in self.get_shows():
+            if (ep.match(entry, format_name=False) or
+               ep.season.match(entry, format_name=False) or
+               ep.show.match(entry, format_name=False)):
                 return True
         return False
 

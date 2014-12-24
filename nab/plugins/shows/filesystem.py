@@ -2,7 +2,6 @@ import os
 import re
 
 from nab.plugins.shows import ShowSource
-from nab.files import File
 
 
 class FileSystem(ShowSource):
@@ -64,7 +63,7 @@ class FileSystem(ShowSource):
         """
         dirs = []
         for p, d in self.dirs:
-            if show.match(File(d), False):
+            if show.match(d, False):
                 dirs.append(d)
         return dirs
 
@@ -84,7 +83,7 @@ class FileSystem(ShowSource):
             # else, search files individually for matching episode
             match = None
             for f in self.files[d]:
-                if ep.match(File(f)):
+                if ep.match(f):
                     match = f
                     break
 

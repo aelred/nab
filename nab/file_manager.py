@@ -61,7 +61,7 @@ class FileManager:
             return False
 
         # must match given entry
-        return entry.match(f)
+        return entry.match(f.filename)
 
     def _find_all_files(self, entry):
         # only search for aired shows

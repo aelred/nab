@@ -1,5 +1,7 @@
 """ Handles TV show episodes. """
-from nab import show_elem, match
+from nab import show_elem
+from nab import match
+from nab import files
 
 
 class Episode(show_elem.ShowElem):
@@ -213,8 +215,9 @@ class Episode(show_elem.ShowElem):
                               for et in n["eptitles"] if et != ""]
         return terms
 
-    def match(self, f, total=True):
-        """ Return true if the given File object matches this episode. """
+    def match(self, name, total=True, format_name=True):
+        """ Return true if the given string matches this episode. """
+        f = files.File(name, format_name)
         # match by title if a special
         if self.season.num == 0:
             titles = [" ".join([match.format_title(t), self.title])
@@ -223,12 +226,12 @@ class Episode(show_elem.ShowElem):
 
         # match by absolute number if using absolute numbering or season 1
         if ((self.show.absolute or self.season.num == 1) and f.season is None
-           and self.show.match(f, False)
+           and self.show.match(name, False, format_name)
            and self.absolute >= f.episode and self.absolute <= f.eprange):
             return True
 
         # match if season matches and episode matches
-        return (self.season.match(f, False)
+        return (self.season.match(name, False, format_name)
                 and self.num >= f.episode and self.num <= f.eprange)
 
     def __str__(self):

@@ -1,6 +1,9 @@
 """ Handles TV shows. """
 import re
-from nab import show_elem, match, season
+from nab import show_elem
+from nab import match
+from nab import season
+from nab import files
 
 
 class Show(show_elem.ShowParentElem, show_elem.ShowElem):
@@ -132,16 +135,17 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
         """ Return a list of search terms to search for this show. """
         return set(map(match.format_title, self.titles))
 
-    def match(self, f, total=True):
+    def match(self, name, total=True, format_name=True):
         """ Return true if the given File object matches this show. """
+        f = files.File(name, format_name)
         if total:
             # filename must not match any season name (if seasons > 1)
             # e.g. Season 1 of a show has the same name as the show itself.
             #      Season 2 has a different name, then any torrent that matches
             #      the show name may just contain season 1, so we reject it.
             semax = max(self.keys())
-            if (any(se.match(f, True) for se in self.values()) and semax > 1
-               and f.season is None and f.episode is None):
+            if (any(se.match(name, True, format_name) for se in self.values())
+               and semax > 1 and f.season is None and f.episode is None):
                 return False
 
             # there must be no episode number
