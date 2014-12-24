@@ -35,18 +35,30 @@ class FileManager:
 
     def _rank_file(self, f):
         _LOG.debug(f.filename)
-        rank = sum(filt.filter(f) for filt in self.filters)
+        values = [filt.filter(f) for filt in self.filters]
+        if None in values:
+            # None indicates reject this file
+            rank = None
+        else:
+            rank = sum(values)
         _LOG.debug(rank)
         return rank
 
     def _best_file(self, files):
-        if files:
-            _LOG.debug("Finding best file:")
-            best = max(files, key=lambda f: self._rank_file(f))
-            _LOG.debug("Best file found:")
-            _LOG.debug(best.filename)
-            return best
-        return None
+        if len(files) == 0:
+            # No files given
+            return None
+
+        _LOG.debug("Finding best file:")
+        best = max(files, key=lambda f: self._rank_file(f))
+
+        if best is None:
+            # none of the files are accepted by the filters
+            return None
+
+        _LOG.debug("Best file found:")
+        _LOG.debug(best.filename)
+        return best
 
     def _is_valid_file(self, f, entry):
         # no 'bad' tags
@@ -66,7 +78,7 @@ class FileManager:
     def _find_all_files(self, entry):
         # only search for aired shows
         if not entry.has_aired():
-            return None
+            return []
 
         _LOG.info("Searching for %s" % entry)
         results = []
@@ -77,7 +89,7 @@ class FileManager:
                 for result in source.find(entry):
                     results.append(files.Torrent(**result))
         except exception.PluginError:
-            return None
+            return []
 
         if not results:
             _LOG.info("No file found for %s" % entry)
