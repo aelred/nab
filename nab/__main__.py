@@ -144,7 +144,10 @@ class _Nab:
 
     def _check_downloads(self):
         for path in self.download_manager.pop_completed():
-            self._rename_file_sched('asap', path)
+            success = self._rename_file_sched('asap', path)
+            if not success:
+                # retry again later
+                self._rename_file_sched('delay', 5 * 60, path)
 
     def _show_plugins(self):
         """ Display information about plugins. """

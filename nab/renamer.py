@@ -76,24 +76,28 @@ class Renamer:
             return True
 
     def rename_file(self, path):
-        """ Rename and move the video file on the given path. """
+        """
+        Rename and move the video file on the given path.
+
+        Return true if successful.
+        """
         # must be a file
         if not os.path.isfile(path):
-            return
+            return True
 
         f = files.File(os.path.basename(path))
 
         # must be a video file
         if f.ext not in files.VIDEO_EXTS + files.SUB_EXTS:
             _LOG.debug("Ignoring non-video file %s" % f)
-            return
+            return True
 
         # check if this is a video file (as oppposed to e.g. a subtitle file)
         is_video = f.ext in files.VIDEO_EXTS
 
         if "sample" in f.filename.lower():
             _LOG.debug("Ignoring sample file %s" % f)
-            return
+            return True
 
         _LOG.debug("File created %s" % f)
 
@@ -114,7 +118,7 @@ class Renamer:
 
         if episode is None:
             _LOG.warning("No match found for %s" % f)
-            return
+            return False
 
         _LOG.debug("%s matches %s" % (f, episode))
 
@@ -128,6 +132,7 @@ class Renamer:
             # mark episode as owned
             if is_video:
                 episode.owned = True
+
+            return True
         else:
-            # retry again later
-            self._rename_file_sched('delay', 5 * 60, path)
+            return False
