@@ -58,7 +58,7 @@ class TVDB(Database):
         else:
             return {"tvdb": str(data["id"])}
 
-    def get_banner(self, show_titles, show_ids):
+    def get_show_banner(self, show_titles, show_ids):
         """ Return thetvdb show banner url. """
         data = _show_get(show_titles, show_ids)
         if data is None:

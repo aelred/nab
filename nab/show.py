@@ -91,7 +91,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
         # get banner for show
         for db in databases:
-            self.banner = db.get_banner(**args())
+            self.banner = db.get_show_banner(**args())
             if self.banner:
                 break
 
