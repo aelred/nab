@@ -35,6 +35,7 @@ class TagFilter(KeywordFilter):
 
     def filter(self, f):
         return self.filter_field(f.tags)
+TagFilter.register("tags")
 
 
 class Quality(TagFilter):
@@ -76,18 +77,6 @@ class Fansubs(Groups):
 Fansubs.register("fansubs")
 
 
-class BadTags(TagFilter):
-    def filter(self, f):
-        has_tag = TagFilter.filter(self, f)
-        if has_tag is not None:
-            # includes a bad tag
-            return None
-        else:
-            # does not include a bad tag
-            return 1.0
-BadTags.register("badtags")
-
-
 class Seeds(FileFilter):
 
     def __init__(self, minimum=1):
@@ -106,17 +95,66 @@ class Seeds(FileFilter):
 Seeds.register("seeds")
 
 
-class Weighted(FileFilter):
-    def __init__(self, weight, filters):
-        self.weight = weight
-        self.filters = FileFilter.get_all(filters)
+class MetaFilter(FileFilter):
+    """ Accepts child filters. """
+    def __init__(self, *args, **kwargs):
+        self.filters = FileFilter.get_all(args) + FileFilter.get_all(kwargs)
 
+
+class AndFilter(MetaFilter):
+    """ Allow file only if all child filters accept it. """
+    def filter(self, f):
+        for filt in self.filters:
+            if filt.filter(f) is None:
+                return None
+        return 1.0
+
+
+class OrFilter(MetaFilter):
+    """ Allow file if any child filter accepts it. """
+    def filter(self, f):
+        for filt in self.filters:
+            if filt.filter(f) is not None:
+                return 1.0
+        return None
+
+
+class NotFilter(MetaFilter):
+    """
+    Invert given filters (accept is reject, reject is accept).
+
+    With just one filter behaves like NOT, but with many like NOR.
+    """
+    def filter(self, f):
+        for filt in self.filters:
+            if filt.filter(f) is not None:
+                return None
+        return 1.0
+NotFilter.register("not")
+
+
+class SumFilter(MetaFilter):
+    """ Returns the sum of child filters. """
     def filter(self, f):
         values = [filt.filter(f) for filt in self.filters]
         if None in values:
             return None
         else:
-            return sum(values) * self.weight
+            return sum(values)
+SumFilter.register("sum")
+
+
+class Weighted(SumFilter):
+    def __init__(self, weight, filters):
+        SumFilter.__init__(self, *filters)
+        self.weight = weight
+
+    def filter(self, f):
+        value = SumFilter.filter(self, f)
+        if value is not None:
+            return value * self.weight
+        else:
+            return None
 
 
 Weighted.register("weighted")

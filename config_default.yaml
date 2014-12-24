@@ -131,9 +131,10 @@ files:
       - Xvid
 
     # 'Internal' tags often imply camrips and poor quality.
-    badtags:
-      - raw
-      - internal
+    not: 
+      tags:
+        - raw
+        - internal
 
     # Weighted rank based on number of seeds. This is the most important thing,
     # so it is given five times higher weighting compared to other filters.
