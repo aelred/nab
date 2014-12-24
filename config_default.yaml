@@ -73,7 +73,7 @@ files:
     # Kickass Torrents, good for just about everything.
     - feed:
         name: Kickass Torrents
-        url: "https://kickass.so/usearch/{s}%20category%3Atv/{p}/?field=seeders&sorder=desc&rss=1"
+        url: "http://kickass.so/usearch/{s}%20category%3Atv/{p}/?field=seeders&sorder=desc&rss=1"
 
     # Nyaa, good for anime.
     - feed:
