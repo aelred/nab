@@ -137,4 +137,4 @@ class Renamer:
                 episode.owned = True
         else:
             # retry again later
-            self._rename_file_sched('timed', 5 * 60, path)
+            self._rename_file_sched('delay', 5 * 60, path)

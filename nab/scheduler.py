@@ -122,7 +122,9 @@ class Scheduler(object):
     Schedule some events:
     >>> import time
     >>> sched_func('lazy', 'Did I miss anything?')
-    >>> sched_func('timed', 3, "Where's everybody gone?")
+    >>> sched_func('delay', 3, "Where's everybody gone?")
+    >>> sched_func('timed', time.strptime('October 21, 2015', '%B %d, %Y'),
+    ...            'Roads? Where we're going, we don't need roads.')
     >>> sched_func('asap', 'Hello World!')
     >>> sched.start()
     Hello World!
@@ -221,7 +223,8 @@ class Scheduler(object):
 
         'asap':  Occur before any lazy or timed events.
         'lazy':  Occur before timed events.
-        'timed': Occur after the time in seconds given in the second argument.
+        'timed': Occur on the time (in UNIX time) given in the second argument.
+        'delay': Occur after the time in seconds given in the second argument.
 
         This also allows the scheduler object to decorate functions and
         automagically make them schedule functions.
@@ -229,11 +232,13 @@ class Scheduler(object):
         self._tasks[f.__name__] = f
 
         def inner(sched_type, *args):
-            return {
-                'timed': self._add_timed,
-                'asap': self._add_asap,
-                'lazy': self._add_lazy
-            }[sched_type](f.__name__, *args)
+            queue, time_, nargs = {
+                'timed': lambda: (self.queue, args[0], args[1:]),
+                'delay': lambda: (self.queue, time.time() + args[0], args[1:]),
+                'asap': lambda: (self.queue_asap, None, args),
+                'lazy': lambda: (self.queue_lazy, None, args)
+            }[sched_type]()
+            return self._add(queue, time_, f.__name__, nargs)
 
         return inner
 
@@ -365,36 +370,22 @@ class Scheduler(object):
 
         _LOG.debug("Stopping")
 
-    def _add(self, queue, delay, action, arguments):
+    def _add(self, queue, time_, action, arguments):
         """ Add event to the given queue. """
         arguments = self.encode_arguments(arguments)
 
-        if delay is None:
-            dtime = None
+        if time_ is None:
             tstr = ""
         else:
-            dtime = time.time() + delay
-            tstr = " at %s" % time.ctime(dtime)
+            tstr = " at %s" % time.ctime(time_)
 
         with self._qlock:
-            if queue.push(dtime, action, arguments):
+            if queue.push(time_, action, arguments):
                 _LOG.debug("Scheduling %s%s on %s%s"
                            % (action, tuple(arguments), queue.name, tstr))
                 self._save_invalidate = True
                 self._save_decision()
             self._qlock.notify()
-
-    def _add_timed(self, action, delay, *arguments):
-        """ Add a task to the scheduler which will run after time delay. """
-        self._add(self.queue, delay, action, arguments)
-
-    def _add_asap(self, action, *arguments):
-        """ Add a task to the scheduler which will run as soon as possible. """
-        self._add(self.queue_asap, None, action, arguments)
-
-    def _add_lazy(self, action, *arguments):
-        """ Add a task to the scheduler which will run after ASAP tasks. """
-        self._add(self.queue_lazy, None, action, arguments)
 
 
 class NabScheduler(Scheduler):

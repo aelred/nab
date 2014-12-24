@@ -35,7 +35,7 @@ class FileManager:
         else:
             delay = -time_since_aired  # nab as soon as it airs
 
-        self._find_file_sched('timed', delay, entry, True)
+        self._find_file_sched('delay', delay, entry, True)
 
     def _rank_file(self, f):
         _LOG.debug(f.filename)

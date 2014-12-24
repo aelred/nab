@@ -62,7 +62,7 @@ class DownloadManager:
     def _check_downloads(self):
         """ Check downloads to see if any have completed. """
         # every 15 seconds
-        self._check_downloads_sched('timed', 15)
+        self._check_downloads_sched('delay', 15)
 
         paths = []
         for d in list(self._downloads):

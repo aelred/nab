@@ -35,6 +35,8 @@ class Config(FileSystemEventHandler):
         # read config files
         self._accounts_file = os.path.join(config_dir, 'accounts.yaml')
         self._config_file = os.path.join(config_dir, 'config.yaml')
+        self.accounts = {}
+        self.config = {}
 
         _LOG.info('Reloading config and accounts files')
         self._load_accounts()

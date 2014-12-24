@@ -88,7 +88,7 @@ class _Nab:
         self._refresh_sched('asap')
 
         # schedule first refresh of show data a week from now
-        self._update_shows_sched('timed', 60 * 60 * 24 * 7)
+        self._update_shows_sched('delay', 60 * 60 * 24 * 7)
 
         # start scheduler
         self.scheduler.start()
@@ -99,13 +99,13 @@ class _Nab:
     def _update_shows(self):
         """ Update data for all shows. """
         # reschedule to refresh show data in a week's time
-        self._update_shows_sched('timed', 60 * 60 * 24 * 7)
+        self._update_shows_sched('delay', 60 * 60 * 24 * 7)
         self.shows.update_data(self.config.config['databases'])
 
     def _refresh(self):
         """ Refresh list of shows and find files for any wanted episodes. """
         # reschedule to get data every hour
-        self._refresh_sched('timed', 60 * 60)
+        self._refresh_sched('delay', 60 * 60)
 
         # add all shows
         for show in self.show_manager.get_shows():
