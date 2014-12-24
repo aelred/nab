@@ -22,7 +22,12 @@ class KeywordFilter(FileFilter):
         try:
             rank = self.keywords.index(keyword)
         except ValueError:
-            rank = self.keywords.index("Other")
+            # keyword is not listed, check for 'Other' wildcard
+            try:
+                rank = self.keywords.index("Other")
+            except ValueError:
+                # other is not listed either! Reject file completely
+                return None
         return 1.0 - float(rank) / len(self.keywords)
 
 
@@ -71,8 +76,28 @@ class Fansubs(Groups):
 Fansubs.register("fansubs")
 
 
-class Seeds(FileFilter):
+class BadTags(TagFilter):
     def filter(self, f):
+        has_tag = TagFilter.filter(self, f)
+        if has_tag is not None:
+            # includes a bad tag
+            return None
+        else:
+            # does not include a bad tag
+            return 1.0
+BadTags.register("badtags")
+
+
+class Seeds(FileFilter):
+
+    def __init__(self, minimum=1):
+        self.minimum = minimum
+
+    def filter(self, f):
+        # if num seeds are below minimum, reject
+        if f.seeds is not None and f.seeds < self.minimum:
+            return None
+
         if f.seeds is None:
             # if seed number is unknown, behave like there are 0.5 seeds
             # better than no seeds, but not as good as one!
@@ -87,5 +112,11 @@ class Weighted(FileFilter):
         self.filters = FileFilter.get_all(filters)
 
     def filter(self, f):
-        return sum(filt.filter(f) for filt in self.filters) * self.weight
+        values = [filt.filter(f) for filt in self.filters]
+        if None in values:
+            return None
+        else:
+            return sum(values) * self.weight
+
+
 Weighted.register("weighted")

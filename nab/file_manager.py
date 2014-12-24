@@ -60,21 +60,6 @@ class FileManager:
         _LOG.debug(best.filename)
         return best
 
-    def _is_valid_file(self, f, entry):
-        # no 'bad' tags
-        bad_tags = ['raw', 'internal']
-
-        for tag in f.tags:
-            if tag in bad_tags:
-                return False
-
-        # must have at least one seeder
-        if f.seeds is not None and f.seeds == 0:
-            return False
-
-        # must match given entry
-        return entry.match(f.filename)
-
     def _find_all_files(self, entry):
         # only search for aired shows
         if not entry.has_aired():
@@ -94,7 +79,7 @@ class FileManager:
         if not results:
             _LOG.info("No file found for %s" % entry)
 
-        return [r for r in results if self._is_valid_file(r, entry)]
+        return [r for r in results if entry.match(r.filename)]
 
     def find_file(self, entry, reschedule):
         """
