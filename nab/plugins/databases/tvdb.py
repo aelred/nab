@@ -60,7 +60,11 @@ class TVDB(Database):
 
     def get_banner(self, show_titles, show_ids):
         """ Return thetvdb show banner url. """
-        return _show_get(show_titles, show_ids)['banner']
+        data = _show_get(show_titles, show_ids)
+        if data is None:
+            return None
+        else:
+            return data['banner']
 
     def get_num_seasons(self, show_titles, show_ids):
         data = _show_get(show_titles, show_ids)
