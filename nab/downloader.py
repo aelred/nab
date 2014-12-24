@@ -17,8 +17,9 @@ class DownloadManager:
         renamer_ = renamer.Renamer(config, shows)
         self._rename_file_sched = scheduler(renamer_.rename_file)
 
+        # check downloads every 15 seconds
         self._check_downloads_sched = scheduler(self._check_downloads)
-        self._check_downloads_sched('asap')
+        self._check_downloads_sched('repeat', 15)
 
     def _downloader(self):
         return self._config.config['downloader']
@@ -61,9 +62,6 @@ class DownloadManager:
 
     def _check_downloads(self):
         """ Check downloads to see if any have completed. """
-        # every 15 seconds
-        self._check_downloads_sched('delay', 15)
-
         paths = []
         for d in list(self._downloads):
             if self._downloader().get_download_status(d.id)['completed']:

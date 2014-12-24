@@ -16,7 +16,7 @@ class _SchedQueue(object):
         self._queue = deque()
         self.name = name
 
-    def _yaml_entry(self, dtime, action, arguments):
+    def _yaml_entry(self, dtime, repeat, action, arguments):
 
         def time_str(dtime):
             try:
@@ -24,20 +24,20 @@ class _SchedQueue(object):
             except TypeError:
                 return dtime
 
-        return {"time": dtime, "tstr": time_str(dtime),
+        return {"time": dtime, "tstr": time_str(dtime), "repeat": repeat,
                 "action": action, "arguments": arguments}
 
     def to_yaml(self):
         yml = []
-        for action, arguments in self._queue:
-            yml.append(self._yaml_entry(self.name, action, arguments))
+        for repeat, action, arguments in self._queue:
+            yml.append(self._yaml_entry(self.name, repeat, action, arguments))
         return yml
 
-    def push(self, dtime, action, arguments):
+    def push(self, dtime, repeat, action, arguments):
         if (action, arguments) in self._set:
             return False
 
-        self._queue.append((action, arguments))
+        self._queue.append((repeat, action, arguments))
         self._set.add((action, arguments))
         return True
 
@@ -48,9 +48,9 @@ class _SchedQueue(object):
         if not self.has_next():
             return None
 
-        task = self._queue.popleft()
-        self._set.remove(task)
-        return task
+        repeat, action, arguments = self._queue.popleft()
+        self._set.remove((action, arguments))
+        return repeat, action, arguments
 
 
 class _SchedQueueTimed(_SchedQueue):
@@ -63,18 +63,18 @@ class _SchedQueueTimed(_SchedQueue):
     def to_yaml(self):
         yml = []
         # sort by time
-        for dtime, action, arguments in sorted(self._queue,
-                                               key=lambda e: e[0]):
-            yml.append(self._yaml_entry(dtime, action, arguments))
+        for dtime, repeat, action, arguments in sorted(self._queue,
+                                                       key=lambda e: e[0]):
+            yml.append(self._yaml_entry(dtime, repeat, action, arguments))
         return yml
 
-    def push(self, dtime, action, arguments):
+    def push(self, dtime, repeat, action, arguments):
         if (action, arguments) in self._set:
             # if entry already present, look it up
             match = None
-            for (d_q, act_q, arg_q) in self._queue:
+            for (d_q, r_q, act_q, arg_q) in self._queue:
                 if (act_q, arg_q) == (action, arguments):
-                    match = (d_q, act_q, arg_q)
+                    match = (d_q, r_q, act_q, arg_q)
                     break
 
             # if match found and new time is SOONER, replace it
@@ -85,14 +85,14 @@ class _SchedQueueTimed(_SchedQueue):
             else:
                 return False
 
-        heapq.heappush(self._queue, (dtime, action, arguments))
+        heapq.heappush(self._queue, (dtime, repeat, action, arguments))
         self._set.add((action, arguments))
         return True
 
     def has_next(self):
         if self._queue:
             # get information about next item
-            action_time, action, arguments = self._queue[0]
+            action_time, repeat, action, arguments = self._queue[0]
 
             # if time for next item, return true
             if time.time() >= action_time:
@@ -101,16 +101,16 @@ class _SchedQueueTimed(_SchedQueue):
         return False
 
     def pop(self):
-        action_time, action, arguments = heapq.heappop(self._queue)
+        action_time, repeat, action, arguments = heapq.heappop(self._queue)
         self._set.remove((action, arguments))
-        return action, arguments
+        return repeat, action, arguments
 
 
 class Scheduler(object):
     """
     A scheduler class that lets you schedule functions.
 
-    Example usage:
+    Creating a scheduler:
     >>> sched = Scheduler()
 
     Register a function with the scheduler:
@@ -122,15 +122,19 @@ class Scheduler(object):
     Schedule some events:
     >>> import time
     >>> sched_func('lazy', 'Did I miss anything?')
-    >>> sched_func('delay', 3, "Where's everybody gone?")
-    >>> sched_func('timed', time.strptime('October 21, 2015', '%B %d, %Y'),
-    ...            'Roads? Where we're going, we don't need roads.')
     >>> sched_func('asap', 'Hello World!')
-    >>> sched.start()
+
+    Start the scheduler:
+    >>> sched.start(); time.sleep(1)
     Hello World!
     Did I miss anything?
+
+    Schedule events for particular times:
+    >>> sched_func('delay', 3, "Time's up!")
+    >>> future = time.mktime(time.strptime('October 21, 2015', '%B %d, %Y'))
+    >>> sched_func('timed', future, "Where we're going, we don't need roads.")
     >>> time.sleep(4)
-    Where's everybody gone?
+    Time's up!
 
     'Schedule-ize' functions with the decorator:
     >>> @sched
@@ -141,40 +145,39 @@ class Scheduler(object):
     ...     if n > 0:
     ...         countdown('timed', 1, n-1)
     ...
-
-    An event can schedule additional events or itself:
-    >>> countdown('asap', 3)
-    >>> time.sleep(5)
+    >>> countdown('asap', 3); time.sleep(5)
     3
     2
     1
     0
     Lift off!
 
+    Events can be repeated at intervals:
+    >>> sched_func('repeat', 5, 'DING')
+    >>> sched_func('drepeat', 2, 'tick tock')
+    >>> time.sleep(6.5)
+    DING
+    tick tock
+    tick tock
+    DING
+
     Stop the scheduler:
     >>> sched.stop()
 
-    Events are functions, which must be registered before they can be run.
-    To register a function, call scheduler.register(func) or scheduler(func),
-    or decorate the function with the scheduler.
+    sched(f) and sched.register(f) return a 'schedulable' version of the
+    function which will schedule the event. The first argument of the new
+    function is the type of event ('timed', 'lazy', 'asap'...).
 
-    These both return a 'schedulable' version of the function which can be
-    called to schedule the event. The first argument of the new function is
-    the type of event ('timed', 'lazy' or 'asap'). If 'timed' is
-    chosen then the next argument must be a delay measured in seconds.
-
-    Event arguments must be hashable. There are additional functions
-    encode_arguments and decode_arguments that can be overriden to convert
-    arguments into hashable or more concise representations.
+    Event arguments must be hashable. Keyword arguments are not supported.
+    There are additional functions encode_arguments and decode_arguments that
+    can be overriden to convert arguments into hashable representations.
 
     Tasks are run in a single thread, one after the other. This avoids any
-    concurrency issues.
+    concurrency issues. Delays and timing are done in real time. This means
+    that the computer going to sleep counts as time passing.
 
-    A scheduler can optionally use a file to save and load state automatically.
-    Whenever the scheduler is started, it will reload the events from the file.
-    In this case, it is very important to register all functions before
-    starting the scheduler, as there may be functions in the schedule file
-    that will run as soon as the scheduler starts.
+    A scheduler can optionally use a file to maintain state.
+    In this case, you must register all functions before scheduler.start().
     """
 
     def __init__(self, scheduler_file=None):
@@ -225,6 +228,9 @@ class Scheduler(object):
         'lazy':  Occur before timed events.
         'timed': Occur on the time (in UNIX time) given in the second argument.
         'delay': Occur after the time in seconds given in the second argument.
+        'repeat': Occur every number of seconds given in the second argument.
+                  First occurance happens 'lazily', but with no delay.
+        'drepeat': Like 'repeat', but does not immediately occur with no delay.
 
         This also allows the scheduler object to decorate functions and
         automagically make them schedule functions.
@@ -232,13 +238,17 @@ class Scheduler(object):
         self._tasks[f.__name__] = f
 
         def inner(sched_type, *args):
-            queue, time_, nargs = {
-                'timed': lambda: (self.queue, args[0], args[1:]),
-                'delay': lambda: (self.queue, time.time() + args[0], args[1:]),
-                'asap': lambda: (self.queue_asap, None, args),
-                'lazy': lambda: (self.queue_lazy, None, args)
+            queue, time_, repeat, nargs = {
+                'timed': lambda: (self.queue, args[0], None, args[1:]),
+                'delay': lambda: (self.queue, time.time() + args[0],
+                                  None, args[1:]),
+                'asap': lambda: (self.queue_asap, None, None, args),
+                'lazy': lambda: (self.queue_lazy, None, None, args),
+                'repeat': lambda: (self.queue_lazy, None, args[0], args[1:]),
+                'drepeat': lambda: (self.queue, time.time() + args[0],
+                                    args[0], args[1:])
             }[sched_type]()
-            return self._add(queue, time_, f.__name__, nargs)
+            return self._add(queue, time_, repeat, f.__name__, nargs)
 
         return inner
 
@@ -278,6 +288,7 @@ class Scheduler(object):
 
             for entry in yml["queue"]:
                 dtime = entry["time"]
+                repeat = entry["repeat"]
                 action = entry["action"]
                 arguments = self.decode_arguments(entry["arguments"])
                 arguments = self.encode_arguments(arguments)
@@ -285,11 +296,11 @@ class Scheduler(object):
                 # this is to add back in tuples, which are hashable
 
                 if dtime == 'asap':
-                    self.queue_asap.push(None, action, arguments)
+                    self.queue_asap.push(None, repeat, action, arguments)
                 elif dtime == 'lazy':
-                    self.queue_lazy.push(None, action, arguments)
+                    self.queue_lazy.push(None, repeat, action, arguments)
                 else:
-                    self.queue.push(dtime, action, arguments)
+                    self.queue.push(dtime, repeat, action, arguments)
 
     def save(self):
         """ Save scheduler events to the schedule yaml file. """
@@ -355,7 +366,12 @@ class Scheduler(object):
             if task is None:
                 continue
 
-            action, arguments = task
+            repeat, action, arguments = task
+
+            # reschedule event if repeating
+            if repeat is not None:
+                self._add(self.queue, time.time() + repeat, repeat,
+                          action, arguments)
 
             _LOG.debug("Executing scheduled task %s%s"
                        % (action, tuple(arguments)))
@@ -370,7 +386,7 @@ class Scheduler(object):
 
         _LOG.debug("Stopping")
 
-    def _add(self, queue, time_, action, arguments):
+    def _add(self, queue, time_, repeat, action, arguments):
         """ Add event to the given queue. """
         arguments = self.encode_arguments(arguments)
 
@@ -380,7 +396,7 @@ class Scheduler(object):
             tstr = " at %s" % time.ctime(time_)
 
         with self._qlock:
-            if queue.push(time_, action, arguments):
+            if queue.push(time_, repeat, action, arguments):
                 _LOG.debug("Scheduling %s%s on %s%s"
                            % (action, tuple(arguments), queue.name, tstr))
                 self._save_invalidate = True

@@ -83,12 +83,11 @@ class _Nab:
         """ Start nabbing shows. """
         server.init(self)
 
-        # add command to refresh data
-        # if command is already scheduled, this will be ignored
-        self._refresh_sched('asap')
+        # add command to refresh data every hour
+        self._refresh_sched('repeat', 60 * 60)
 
-        # schedule first refresh of show data a week from now
-        self._update_shows_sched('delay', 60 * 60 * 24 * 7)
+        # update shows a week from now, on repeat every week
+        self._update_shows_sched('drepeat', 60 * 60 * 24 * 7)
 
         # start scheduler
         self.scheduler.start()
@@ -98,15 +97,10 @@ class _Nab:
 
     def _update_shows(self):
         """ Update data for all shows. """
-        # reschedule to refresh show data in a week's time
-        self._update_shows_sched('delay', 60 * 60 * 24 * 7)
         self.shows.update_data(self.config.config['databases'])
 
     def _refresh(self):
         """ Refresh list of shows and find files for any wanted episodes. """
-        # reschedule to get data every hour
-        self._refresh_sched('delay', 60 * 60)
-
         # add all shows
         for show in self.show_manager.get_shows():
             self.shows[show.title] = show
