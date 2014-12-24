@@ -11,16 +11,12 @@ _LOG = logging.getLogger(__name__)
 
 class FileManager:
 
-    def __init__(self, scheduler, config, download_manager):
-        self._config = config
+    def __init__(self, scheduler, download_manager,
+                 sources=None, filters=None):
+        self.sources = sources or []
+        self.filters = filters or []
         self._download_manager = download_manager
         self._find_file_sched = scheduler(self.find_file)
-
-    def _sources(self):
-        return self._config.config['files']['sources']
-
-    def _filters(self):
-        return self._config.config['files']['filters']
 
     def _schedule_find(self, entry):
         if entry.aired is None:
@@ -39,7 +35,7 @@ class FileManager:
 
     def _rank_file(self, f):
         _LOG.debug(f.filename)
-        rank = sum(filt.filter(f) for filt in self._filters())
+        rank = sum(filt.filter(f) for filt in self.filters)
         _LOG.debug(rank)
         return rank
 
@@ -75,7 +71,7 @@ class FileManager:
         _LOG.info("Searching for %s" % entry)
         results = []
         try:
-            for source in self._sources():
+            for source in self.sources:
                 source.__class__.log.debug("Searching in %s" % source)
 
                 for result in source.find(entry):

@@ -7,6 +7,7 @@ from nab import server
 from nab import log
 from nab import downloader
 from nab import plugins
+from nab import renamer
 
 import os
 import logging
@@ -47,14 +48,29 @@ class _Nab:
 
         self.shows = show_manager.ShowTree(_SHOWS_FILE)
         self.scheduler = scheduler.NabScheduler(_SCHEDULE_FILE, self.shows)
-        self.config = config.Config(_CONFIG_DIR, self.scheduler)
+        self.config = config.Config(_CONFIG_DIR, self.scheduler,
+                                    self._on_config_reload)
 
-        self.show_manager = show_manager.ShowManager(self.config)
+        self.show_manager = show_manager.ShowManager(
+            self.config.config['shows']['following'],
+            self.config.config['shows']['library'],
+            self.config.config['shows']['filters'],
+            self.config.config['databases'])
+
+        self.renamer = renamer.Renamer(
+            self.config.config['settings']['videos'],
+            self.config.config['renamer'], self.shows)
+
         self.download_manager = downloader.DownloadManager(
-            self.scheduler, self.config, self.options, self.shows)
-        self.file_manager = file_manager.FileManager(
-            self.scheduler, self.config, self.download_manager)
+            self.config.config['downloader'], self.options.test)
 
+        self.file_manager = file_manager.FileManager(
+            self.scheduler, self.download_manager,
+            self.config.config['files']['sources'],
+            self.config.config['files']['filters'])
+
+        self._check_downloads_sched = self.scheduler(self._check_downloads)
+        self._rename_file_sched = self.scheduler(self.renamer.rename_file)
         self._refresh_sched = self.scheduler(self._refresh)
         self._update_shows_sched = self.scheduler(self._update_shows)
 
@@ -83,6 +99,9 @@ class _Nab:
         """ Start nabbing shows. """
         server.init(self)
 
+        # check downloads every 15 seconds
+        self._check_downloads_sched('repeat', 15)
+
         # add command to refresh data every hour
         self._refresh_sched('repeat', 60 * 60)
 
@@ -94,6 +113,18 @@ class _Nab:
 
         # start server
         server.run()
+
+    def _on_config_reload(self):
+        """ When config reloads, set new values in all objects. """
+        self.show_manager.following = self.config.config['shows']['following']
+        self.show_manager.library = self.config.config['shows']['library']
+        self.show_manager.filters = self.config.config['shows']['filters']
+        self.show_manager.databases = self.config.config['databases']
+
+        self.file_manager.sources = self.config.config['files']['sources']
+        self.file_manager.filters = self.config.config['files']['filters']
+
+        self.download_manager.downloader = self.config.config['downloader']
 
     def _update_shows(self):
         """ Update data for all shows. """
@@ -110,6 +141,10 @@ class _Nab:
 
         # write data to file for backup purposes
         self.shows.save()
+
+    def _check_downloads(self):
+        for path in self.download_manager.pop_completed():
+            self._rename_file_sched('asap', path)
 
     def _show_plugins(self):
         """ Display information about plugins. """

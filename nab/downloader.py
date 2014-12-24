@@ -1,6 +1,5 @@
 """ Handles downloader plugins and downloads. """
 from nab import exception
-from nab import renamer
 
 import logging
 
@@ -9,20 +8,10 @@ _LOG = logging.getLogger(__name__)
 
 class DownloadManager:
 
-    def __init__(self, scheduler, config, options, shows):
+    def __init__(self, downloader, test_mode):
         self._downloads = {}
-        self._config = config
-        self._options = options
-
-        renamer_ = renamer.Renamer(config, shows)
-        self._rename_file_sched = scheduler(renamer_.rename_file)
-
-        # check downloads every 15 seconds
-        self._check_downloads_sched = scheduler(self._check_downloads)
-        self._check_downloads_sched('repeat', 15)
-
-    def _downloader(self):
-        return self._config.config['downloader']
+        self.downloader = downloader
+        self.test_mode = test_mode
 
     def download(self, entry, torrent):
         """
@@ -39,16 +28,15 @@ class DownloadManager:
 
         _LOG.info('For "%s" downloading %s' % (entry, torrent))
         _LOG.debug(torrent.url)
-        if self._options.test:
+        if self.test_mode:
             raise exception.DownloadException(
                 "Nab is in test mode, no downloading allowed")
 
         try:
             if torrent.url:
-                self._downloader().download_url(torrent.id, torrent.url)
+                self.downloader.download_url(torrent.id, torrent.url)
             else:
-                self._downloader().download_magnet(torrent.id,
-                                                   torrent.magnet)
+                self.downloader.download_magnet(torrent.id, torrent.magnet)
         except exception.PluginError:
             # unsuccessful, raise exception
             raise exception.DownloadException('Failed to download torrent')
@@ -60,16 +48,14 @@ class DownloadManager:
             for episode in entry.epwanted:
                 episode.wanted = False
 
-    def _check_downloads(self):
+    def pop_completed(self):
         """ Check downloads to see if any have completed. """
         paths = []
         for d in list(self._downloads):
-            if self._downloader().get_download_status(d.id)['completed']:
-                paths += sorted(self._downloader().get_files(d.id))
+            if self.downloader.get_download_status(d.id)['completed']:
+                paths += sorted(self.downloader.get_files(d.id))
                 del self._downloads[d]
-
-        for path in paths:
-            self._rename_file_sched('asap', path)
+        return paths
 
     def get_downloads(self):
         """

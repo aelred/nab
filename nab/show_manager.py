@@ -54,20 +54,11 @@ class ShowTree(show_elem.ShowParentElem):
 
 class ShowManager:
 
-    def __init__(self, config):
-        self._config = config
-
-    def _following(self):
-        return self._config.config['shows']['following']
-
-    def _library(self):
-        return self._config.config['shows']['library']
-
-    def _filters(self):
-        return self._config.config['shows']['filters']
-
-    def _databases(self):
-        return self._config.config['databases']
+    def __init__(self, following, library, filters, databases):
+        self.following = following
+        self.library = library
+        self.filters = filters
+        self.databases = databases
 
     def get_shows(self):
         """ Get shows from all ShowSources. """
@@ -75,7 +66,7 @@ class ShowManager:
 
         # get wanted shows from 'following' list
         titles = []
-        for source in self._following():
+        for source in self.following:
             source.__class__.log.info("Searching show source %s" % source)
             try:
                 titles += source.get_cached_shows()
@@ -84,7 +75,7 @@ class ShowManager:
                 # shows will be looked up again in an hour
                 pass
 
-        return [show.Show(self._databases(), title) for title in titles]
+        return [show.Show(self.databases, title) for title in titles]
 
     def _filter_entry(self, entry, filter_funcs, permissive):
         wanted = not permissive
@@ -133,7 +124,7 @@ class ShowManager:
         _LOG.info("Filtering shows")
 
         # get owned/watched info for all episodes
-        sources = self._following() + self._library()
+        sources = self.following + self.library
         try:
             for ep in shows.episodes:
                 for source in sources:
@@ -160,10 +151,10 @@ class ShowManager:
         _LOG.info("Applying filters")
 
         # first filter using show sources and permissive filtering
-        self._apply_filters(shows, self._following(), True)
+        self._apply_filters(shows, self.following, True)
 
         # filter using show filters and strict filtering (meet all criteria)
-        self._apply_filters(shows, self._filters(), False)
+        self._apply_filters(shows, self.filters, False)
 
         _LOG.info("Found %s needed episode(s)" % len(shows.epwanted))
         for ep in shows.epwanted:

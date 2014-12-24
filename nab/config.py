@@ -31,12 +31,14 @@ class Config(FileSystemEventHandler):
     If the base files are modified, a reload is automatically scheduled.
     """
 
-    def __init__(self, config_dir, scheduler):
+    def __init__(self, config_dir, scheduler, alert_func=None):
         # read config files
         self._accounts_file = os.path.join(config_dir, 'accounts.yaml')
         self._config_file = os.path.join(config_dir, 'config.yaml')
         self.accounts = {}
         self.config = {}
+
+        self._alert_func = lambda: None
 
         _LOG.info('Reloading config and accounts files')
         self._load()
@@ -44,6 +46,9 @@ class Config(FileSystemEventHandler):
         # watch config directory
         self._observer = Observer()
         self._observer.schedule(self, config_dir)
+
+        if alert_func:
+            self._alert_func = alert_func
 
         self._load_sched = scheduler(self._load)
 
@@ -71,6 +76,8 @@ class Config(FileSystemEventHandler):
     def _load(self):
         self._load_accounts()
         self._load_config()
+        # alert to new configs loaded
+        self._alert_func()
 
     def _load_config(self):
         """ Load config file, creating it if it don't exist. """

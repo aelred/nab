@@ -12,18 +12,10 @@ _LOG = logging.getLogger(__name__)
 
 class Renamer:
 
-    def __init__(self, config, shows):
-        self._config = config
+    def __init__(self, videos_path, settings, shows):
+        self.videos_path = videos_path
+        self.settings = settings
         self._shows = shows
-
-    def _videos_path(self):
-        return self._config.config['settings']['videos']
-
-    def _pattern(self):
-        return self._config.config['renamer']['pattern']
-
-    def _copy(self):
-        return self._config.config['renamer']['copy']
 
     def _find_episode(self, file_):
         for ep in self._shows.episodes:
@@ -47,7 +39,7 @@ class Renamer:
 
         # format pattern with episode information
         mapping = {
-            "videos": self._videos_path(),
+            "videos": self.videos_path,
             "t": format_fname(episode.show.title),
             "st": format_fname(episode.show.title),
             "et": format_fname(episode.title),
@@ -57,7 +49,8 @@ class Renamer:
         if episode.season.title:
             mapping["st"] = format_fname(episode.season.title)
 
-        return ".".join([self._pattern().format(**mapping), file_.ext])
+        return ".".join([self.settings['pattern'].format(**mapping),
+                         file_.ext])
 
     def _move_file(self, origin, dest):
         dest_dir = os.path.dirname(dest)
@@ -72,7 +65,7 @@ class Renamer:
                 return False
 
         try:
-            if self._copy():
+            if self.settings['copy']:
                 shutil.copyfile(origin, dest)
             else:
                 shutil.move(origin, dest)
