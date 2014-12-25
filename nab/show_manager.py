@@ -76,7 +76,8 @@ class ShowManager:
                 # shows will be looked up again in an hour
                 pass
 
-        return [show.Show(self.databases, files.File(name, False).title)
+        return [show.Show(self.databases,
+                          files.parse_name(name, False)['title'])
                 for name in names]
 
     def _filter_entry(self, entry, filter_funcs, permissive):

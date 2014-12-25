@@ -217,22 +217,25 @@ class Episode(show_elem.ShowElem):
 
     def match(self, name, total=True, format_name=True):
         """ Return true if the given string matches this episode. """
-        f = files.File(name, format_name)
+        parse = files.parse_name(name, format_name)
         # match by title if a special
         if self.season.num == 0:
             titles = [" ".join([match.format_title(t), self.title])
                       for t in self.show.titles]
-            return f.title in titles
+            return parse['title'] in titles
 
         # match by absolute number if using absolute numbering or season 1
-        if ((self.show.absolute or self.season.num == 1) and f.season is None
+        if ((self.show.absolute or self.season.num == 1)
+           and 'season' not in parse
            and self.show.match(name, False, format_name)
-           and self.absolute >= f.episode and self.absolute <= f.eprange):
+           and 'episode' in parse and self.absolute >= parse['episode']
+           and 'eprange' in parse and self.absolute <= parse['eprange']):
             return True
 
         # match if season matches and episode matches
         return (self.season.match(name, False, format_name)
-                and self.num >= f.episode and self.num <= f.eprange)
+                and 'episode' in parse and self.num >= parse['episode']
+                and 'eprange' in parse and self.num <= parse['eprange'])
 
     def __str__(self):
         """ Return a readable representation of this episode. """

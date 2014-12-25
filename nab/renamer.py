@@ -23,19 +23,20 @@ class Renamer:
                 return ep
         return None
 
-    def _new_name(self, file_, episode):
+    def _new_name(self, name, episode):
         # valid range of characters for a filename
         valid_fname = "-_.()[]! %s%s" % (string.ascii_letters, string.digits)
+        file_ = files.parse_name(name)
 
         def format_fname(name):
             # eliminate invalid filename characters
             return "".join(c for c in name if c in valid_fname)
 
         # check if file is a range of episodes (e.g. a two-parter)
-        if file_.episode is not None and file_.episode == file_.eprange:
+        if 'episode' in file_ and file_['episode'] == file_.get('eprange'):
             epnum = "%02d" % episode.num
         else:
-            epnum = "%02d-%02d" % (file_.episode, file_.eprange)
+            epnum = "%02d-%02d" % (file_['episode'], file_['eprange'])
 
         # format pattern with episode information
         mapping = {
@@ -50,7 +51,7 @@ class Renamer:
             mapping["st"] = format_fname(episode.season.title)
 
         return ".".join([self.settings['pattern'].format(**mapping),
-                         file_.ext])
+                         file_['ext']])
 
     def _move_file(self, origin, dest):
         dest_dir = os.path.dirname(dest)

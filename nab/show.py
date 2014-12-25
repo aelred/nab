@@ -137,7 +137,7 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
 
     def match(self, name, total=True, format_name=True):
         """ Return true if the given File object matches this show. """
-        f = files.File(name, format_name)
+        parse = files.parse_name(name, format_name)
         if total:
             # filename must not match any season name (if seasons > 1)
             # e.g. Season 1 of a show has the same name as the show itself.
@@ -145,23 +145,26 @@ class Show(show_elem.ShowParentElem, show_elem.ShowElem):
             #      the show name may just contain season 1, so we reject it.
             semax = max(self.keys())
             if (any(se.match(name, True, format_name) for se in self.values())
-               and semax > 1 and f.season is None and f.episode is None):
+               and semax > 1 and 'season' not in parse
+               and 'episode' not in parse):
                 return False
 
             # there must be no episode number
             # or the file must give the full range of episodes
             epmax = len([ep for ep in self.episodes if ep.season.num != 0])
-            if (f.episode is not None and
-               (not self.absolute or f.episode != 1 or f.eprange != epmax)):
+            if ('episode' in parse and
+                (not self.absolute or parse['episode'] != 1
+                 or parse.get('eprange') != epmax)):
                 return False
 
             # there must be no season number
             # or the file must give the full range of seasons (e.g. 1-4)
-            if f.season is not None and (f.season != 1 or f.serange != semax):
+            if ('season' in parse and
+               (parse['season'] != 1 or parse.get('serange') != semax)):
                 return False
 
         titles = map(match.format_title, self.titles)
-        return match.format_title(f.title) in titles
+        return match.format_title(parse['title']) in titles
 
     def __str__(self):
         """ Return a readable representation of this show. """

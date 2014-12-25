@@ -34,7 +34,7 @@ class KeywordFilter(FileFilter):
 class TagFilter(KeywordFilter):
 
     def filter(self, f):
-        return self.filter_field(f.tags)
+        return self.filter_field(f.data['tags'])
 TagFilter.register("tags")
 
 
@@ -68,13 +68,9 @@ Encoding.register("encoding")
 
 class Groups(KeywordFilter):
     def filter(self, f):
-        return self.filter_field([f.group])
+        return self.filter_field([f.data.get('group')])
 Groups.register("groups")
-
-
-class Fansubs(Groups):
-    pass
-Fansubs.register("fansubs")
+Groups.register("fansubs")
 
 
 class Seeds(FileFilter):

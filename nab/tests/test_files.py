@@ -1,5 +1,5 @@
 import unittest
-from nab.files import File
+from nab.files import parse_name
 from nab.show import Show
 from nab.plugins.databases import tvdb
 from nab.plugins.databases import anidb
@@ -123,16 +123,16 @@ file_tests = [
 
 class TestFile(unittest.TestCase):
 
-    def test_file(self):
+    def test_parse_name(self):
         databases = [tvdb.TVDB(), anidb.Anidb()]
 
         for filename, data in file_tests:
             self._test_example(databases, filename, data)
 
     def _test_example(self, databases, filename, data):
-        f = File(filename)
+        parse = parse_name(filename)
         print filename
-        print f.__dict__
+        print parse
 
         for name, value in data.iteritems():
             if name == 'tags':
@@ -140,7 +140,8 @@ class TestFile(unittest.TestCase):
                 # extra tags are acceptable and unavoidable
                 for tag in value:
                     print "Asserting %s in tags" % tag
-                    self.assertIn(tag, f.__dict__[name])
+                    self.assertIn(name, parse)
+                    self.assertIn(tag, parse[name])
             elif name == 'entry':
                 # lookup the details for this show
                 # and find out if it's a match
@@ -158,7 +159,11 @@ class TestFile(unittest.TestCase):
 
             else:
                 print "Asserting %s = %s" % (name, value)
-                self.assertEquals(f.__dict__[name], value)
+                if value is None:
+                    self.assertNotIn(name, parse)
+                else:
+                    self.assertIn(name, parse)
+                    self.assertEquals(parse[name], value)
 
 if __name__ == '__main__':
     unittest.main()

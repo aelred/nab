@@ -125,7 +125,7 @@ def _down_yaml(download):
     entry = _nab.download_manager.get_downloads()[download]
     status = _nab.downloader().get_download_status(download.id)
     status['id'] = download.id
-    status['filename'] = download.filename
+    status['filename'] = download.data['name']
     status['url'] = download.url
     status['magnet'] = download.magnet
     status['entry'] = entry.id

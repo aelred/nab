@@ -25,7 +25,7 @@ _CHARSWAP = {
 _CHARSWAP_P = re.compile('|'.join(map(re.escape, _CHARSWAP)), re.IGNORECASE)
 
 
-def format_filename(fname):
+def format_name(fname):
     """ Format a filename, eliminating capitals and some punctuation. """
     formatted = fname
     if isinstance(formatted, unicode):
@@ -44,7 +44,7 @@ def format_filename(fname):
 def format_title(title):
     """ Format a title. Like format_filename, but removes hyphens. """
     formatted = re.sub(' -', '', title)  # remove hyphens from titles
-    formatted = format_filename(formatted)
+    formatted = format_name(formatted)
     return formatted
 
 

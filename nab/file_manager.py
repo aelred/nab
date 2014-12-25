@@ -34,7 +34,7 @@ class FileManager:
         self._find_file_sched('delay', delay, entry, True)
 
     def _rank_file(self, f):
-        _LOG.debug(f.filename)
+        _LOG.debug(f)
         values = [filt.filter(f) for filt in self.filters]
         if None in values:
             # None indicates reject this file
@@ -57,7 +57,7 @@ class FileManager:
             return None
 
         _LOG.debug("Best file found:")
-        _LOG.debug(best.filename)
+        _LOG.debug(best)
         return best
 
     def _find_all_files(self, entry):
@@ -79,7 +79,7 @@ class FileManager:
         if not results:
             _LOG.info("No file found for %s" % entry)
 
-        return [r for r in results if entry.match(r.filename)]
+        return [r for r in results if entry.match(r.data['name'])]
 
     def find_file(self, entry, reschedule):
         """

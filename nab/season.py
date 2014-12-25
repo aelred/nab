@@ -128,9 +128,9 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
 
     def match(self, name, total=True, format_name=True):
         """ Return true if the given File object matches this season. """
-        f = files.File(name, format_name)
+        parse = files.parse_name(name, format_name)
         # if this is a total match, there must be no episode number
-        if total and f.episode is not None:
+        if total and 'episode' in parse:
             # if using absolute numbering, see if this file matches
             # this season's absolute episode numbers
             # must match against SHOW not season in this case
@@ -141,18 +141,20 @@ class Season(show_elem.ShowParentElem, show_elem.ShowElem):
             else:
                 if (self.show.absolute and
                    self.show.match(name, False, format_name) and
-                   f.episode == start and f.eprange == start + len(self) - 1):
+                   parse.get('episode') == start and
+                   parse.get('eprange') == start + len(self) - 1):
                     return True
 
             # ...or episode range must match episodes in season
-            if f.episode != 1 or f.eprange != len(self):
+            if parse.get('episode') != 1 or parse.get('eprange') != len(self):
                 return False
 
         titles = map(match.format_title, self.titles)
 
-        return ((f.title in titles and f.season is None) or
+        return ((parse['title'] in titles and 'season' not in parse) or
                 (self.show.match(name, False, format_name) and
-                 f.season == self.num and f.serange == self.num))
+                 parse.get('season') == self.num and
+                 parse.get('serange') == self.num))
 
     def __str__(self):
         """ Return a readable representation of this season. """
