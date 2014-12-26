@@ -1,0 +1,4 @@
+#!/bin/bash
+sfood-checker nab
+sfood nab --internal --follow | sfood-cluster "nab/plugins" | \
+sfood-graph | grep -v 'size' | dot -Tpng -o depgraph.png
