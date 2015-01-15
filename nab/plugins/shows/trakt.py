@@ -78,6 +78,10 @@ class Trakt:
 
 class TraktSource(Trakt, ShowSource):
 
+    def __init__(self, account):
+        Trakt.__init__(self, account)
+        ShowSource.__init__(self)
+
     def get_shows(self):
         try:
             TraktSource.log.debug("Getting library")
