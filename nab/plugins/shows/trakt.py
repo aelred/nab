@@ -94,6 +94,7 @@ class TraktSource(ShowSource, Trakt):
             raise PluginError(
                 self, 'Error decoding trakt library and watchlist data')
 
+        sort = lambda s: s["title"].lower()
         shows_data = sorted(r1 + r2, key=sort)
 
         # remove duplicate shows
