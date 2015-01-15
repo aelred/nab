@@ -76,7 +76,7 @@ class Trakt:
         return j
 
 
-class TraktSource(ShowSource, Trakt):
+class TraktSource(Trakt, ShowSource):
 
     def get_shows(self):
         try:
@@ -134,7 +134,7 @@ class TraktSource(ShowSource, Trakt):
 TraktSource.register("trakt", req_account=True)
 
 
-class TraktDB(Database, Trakt):
+class TraktDB(Trakt, Database):
 
     def get_show_titles(self, show_titles, show_ids):
         return [self.get_data(show_titles, show_ids)["title"]]
