@@ -102,7 +102,7 @@ class Libtorrent(Downloader):
                 with file(libtorrent_file) as f:
                     data = yaml.load(f)
                     for torrent in data['torrents']:
-                        self._add_torrent(torrent['tid'])
+                        self.download_url(torrent['tid'], torrent['tid'])
                         self.upload_total[torrent['tid']] = torrent['up']
                         self.download_total[torrent['tid']] = torrent['down']
 
