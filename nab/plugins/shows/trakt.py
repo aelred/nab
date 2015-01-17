@@ -21,23 +21,22 @@ class Trakt:
     def __init__(self, account):
         self._account = account
 
-    def _get(self, url, *args, **kwargs):
+    def _get(self, url, get_func=requests.get, *args, **kwargs):
         try:
-            return requests.get(Trakt._url + url,
-                                auth=(self._account['username'],
-                                      self._account['password']),
-                                *args, **kwargs).json()
+            return get_func(Trakt._url + url,
+                            auth=(self._account['username'],
+                                  self._account['password']),
+                            headers={
+                                'content-type': 'application/json',
+                                'trakt-api-key': self._accounts['api'],
+                                'trakt-api-version': 1
+                            },
+                            *args, **kwargs).json()
         except requests.exceptions.ConnectionError:
             raise PluginError(self, 'Error connecting to trakt')
 
     def _cget(self, url, *args, **kwargs):
-        try:
-            return _cget(Trakt._url + url,
-                         auth=(self._account['username'],
-                               self._account['password']),
-                         *args, **kwargs)
-        except requests.exceptions.ConnectionError:
-            raise PluginError(self, 'Error connecting to trakt')
+        return self._get(url, get_func=_cget, *args, **kwargs)
 
     def get_data(self, show_titles, show_ids):
         if "tvdb" in show_ids:
@@ -50,16 +49,15 @@ class Trakt:
             # search for longest names first (avoid searching for initials)
             for title in reversed(sorted(show_titles, key=len)):
                 try:
-                    results = self._cget("/search/shows.json/%s" %
-                                         self._account['api'],
-                                         params={"query": title, "limit": 1})
+                    results = self._cget(
+                        "/search", params={"query": title, "type": "show"})
                 except ValueError:
                     raise PluginError(
                         self, 'Error decoding trakt search data for %s' %
                         show_titles)
 
                 if results:
-                    tvdb_id = results[0]["tvdb_id"]
+                    tvdb_id = results[0]["ids"]["tvdb"]
                     break
             else:
                 return None  # no result found
