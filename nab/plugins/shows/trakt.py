@@ -9,7 +9,7 @@ from nab.exception import PluginError
 
 @filecache(60 * 60)
 def _cget(*args, **kwargs):
-    return requests.get(*args, **kwargs).json()
+    return requests.get(*args, **kwargs)
 
 show_data = {}
 
@@ -31,7 +31,7 @@ class Trakt:
                                 'trakt-api-key': self._account['api'],
                                 'trakt-api-version': 1
                             },
-                            *args, **kwargs)
+                            *args, **kwargs).json()
         except requests.exceptions.ConnectionError:
             raise PluginError(self, 'Error connecting to trakt')
 
