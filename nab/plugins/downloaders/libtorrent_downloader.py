@@ -254,7 +254,6 @@ class Libtorrent(Downloader):
                 if p.what() in ["torrent_finished_alert",
                                 "torrent_added_alert"]:
                     self.log.info(p)
-                    continue
 
                 if (p.what() == "state_changed_alert" or
                    p.category() == lt.alert.category_t.error_notification):
