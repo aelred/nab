@@ -29,7 +29,7 @@ class Trakt:
                             headers={
                                 'content-type': 'application/json',
                                 'trakt-api-key': self._account['api'],
-                                'trakt-api-version': 1
+                                'trakt-api-version': '1'
                             },
                             *args, **kwargs).json()
         except requests.exceptions.ConnectionError:
