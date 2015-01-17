@@ -16,7 +16,7 @@ show_data = {}
 
 class Trakt:
 
-    _url = "http://api.trakt.tv"
+    _url = "https://api.trakt.tv"
 
     def __init__(self, account):
         self._account = account
