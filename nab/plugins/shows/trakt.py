@@ -28,7 +28,7 @@ class Trakt:
                                   self._account['password']),
                             headers={
                                 'content-type': 'application/json',
-                                'trakt-api-key': self._accounts['api'],
+                                'trakt-api-key': self._account['api'],
                                 'trakt-api-version': 1
                             },
                             *args, **kwargs).json()
