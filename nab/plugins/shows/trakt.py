@@ -50,7 +50,8 @@ class Trakt:
             for title in reversed(sorted(show_titles, key=len)):
                 try:
                     results = self._cget(
-                        "/search", params={"query": title, "type": "show"})
+                        "/search", params={"query": title, "limit": 1,
+                                           "type": "show"})
                 except ValueError:
                     raise PluginError(
                         self, 'Error decoding trakt search data for %s' %
