@@ -31,7 +31,7 @@ class Trakt:
                                 'trakt-api-key': self._account['api'],
                                 'trakt-api-version': 1
                             },
-                            *args, **kwargs).json()
+                            *args, **kwargs)
         except requests.exceptions.ConnectionError:
             raise PluginError(self, 'Error connecting to trakt')
 
