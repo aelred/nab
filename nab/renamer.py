@@ -40,7 +40,7 @@ class Renamer:
 
         # format pattern with episode information
         mapping = {
-            "videos": self.videos_path,
+            "videos": self.videos_path[0],
             "t": format_fname(episode.show.title),
             "st": format_fname(episode.show.title),
             "et": format_fname(episode.title),
