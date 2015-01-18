@@ -87,7 +87,7 @@ class Renamer:
             return True
 
         name = os.path.basename(path)
-        ext = os.path.splitext(name)[1]
+        ext = os.path.splitext(name)[1][1:]
 
         # must be a video file
         if ext not in files.VIDEO_EXTS + files.SUB_EXTS:
